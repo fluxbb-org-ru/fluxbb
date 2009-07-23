@@ -50,7 +50,7 @@ $lang_common = array(
 'Announcement'			=>	'Announcement',
 'Options'				=>	'Options',
 'Actions'				=>	'Actions',
-'Submit'				=>	'Submit',	// "name" of submit buttons
+'Submit'                                          =>        'Submit', // "Name" of submit buttons
 'Ban message'			=>	'You are banned from this forum.',
 'Ban message 2'			=>	'The ban expires at the end of',
 'Ban message 3'			=>	'The administrator or moderator that banned you left the following message:',
@@ -58,19 +58,19 @@ $lang_common = array(
 'Never'					=>	'Never',
 'Today'					=>	'Today',
 'Yesterday'				=>	'Yesterday',
-'Info'					=>	'Info',		// a common table header
+'Info'					=>	'Info', // A common table header
 'Go back'				=>	'Go back',
 'Maintenance'			=>	'Maintenance',
 'Redirecting'			=>	'Redirecting',
 'Click redirect'		=>	'Click here if you do not want to wait any longer (or if your browser does not automatically forward you)',
-'on'					=>	'on',		// as in "BBCode is on"
+'on'					=>	'on', // As in "BBCode is on"
 'off'					=>	'off',
 'Invalid e-mail'		=>	'The e-mail address you entered is invalid.',
-'required field'		=>	'is a required field in this form.',	// for javascript form validation
+'required field'		=>	'is a required field in this form.', // For javascript form validation
 'Last post'				=>	'Last post',
-'by'					=>	'by',	// as in last post by someuser
-'New posts'				=>	'New&nbsp;posts',	// the link that leads to the first new post (use &nbsp; for spaces)
-'New posts info'		=>	'Go to the first new post in this topic.',	// the popup text for new posts links
+'by'					=>	'by', // As in last post by someuser
+'New posts'				=>	'New&nbsp;posts', // The link that leads to the first new post (use &nbsp; for spaces)
+'New posts info'		=>	'Go to the first new post in this topic.', // The popup text for new posts links
 'Username'				=>	'Username',
 'Password'				=>	'Password',
 'E-mail'				=>	'E-mail',
@@ -95,6 +95,9 @@ $lang_common = array(
 'Mailer'				=>	'Mailer',	// As in "MyForums Mailer" in the signature of outgoing e-mails
 'Important information'	=>	'Important information',
 'Write message legend'	=>	'Write your message and submit',
+'Previous'				=>	'Previous',
+'Next'					=>	'Next',
+'Spacer'				=>	'&hellip;', // Ellipsis for paginate
 
 // Title
 'Title'					=>	'Title',
@@ -105,14 +108,14 @@ $lang_common = array(
 'Guest'					=>	'Guest',
 
 // Stuff for include/parser.php
-'BBCode error 1'         =>    '[/%1$s] was found without a matching [%1$s]',
-'BBCode error 2'         =>    '[%s] tag is empty',
-'BBCode error 3'         =>    '[%1$s] was opened within [%2$s], this is not allowed',
-'BBCode error 4'         =>    '[%s] was opened within itself, this is not allowed',
-'BBCode error 5'         =>    '[%1$s] was found without a matching [/%1$s]',
-'BBCode error 6'         =>    '[%s] tag had an empty attribute section',
-'BBCode nested list'     =>    '[list] tags cannot be nested',
-'BBCode code problem'    =>    'There is a problem with your [code] tags',
+'BBCode error 1'		=>	'[/%1$s] was found without a matching [%1$s]',
+'BBCode error 2'		=>	'[%s] tag is empty',
+'BBCode error 3'		=>	'[%1$s] was opened within [%2$s], this is not allowed',
+'BBCode error 4'		=>	'[%s] was opened within itself, this is not allowed',
+'BBCode error 5'		=>	'[%1$s] was found without a matching [/%1$s]',
+'BBCode error 6'		=>	'[%s] tag had an empty attribute section',
+'BBCode nested list'	=>	'[list] tags cannot be nested',
+'BBCode code problem'	=>	'There is a problem with your [code] tags',
 
 // Stuff for the navigator (top of every page)
 'Index'					=>	'Index',
@@ -140,7 +143,7 @@ $lang_common = array(
 'Show your posts'		=>	'Show your posts',
 'Show subscriptions'	=>	'Show your subscribed topics',
 'Jump to'				=>	'Jump to',
-'Go'					=>	' Go ',		// submit button in forum jump
+'Go'					=>	' Go ', // Submit button in forum jump
 'Moderate topic'		=>	'Moderate topic',
 'Move topic'			=>  'Move topic',
 'Open topic'			=>  'Open topic',
@@ -149,25 +152,25 @@ $lang_common = array(
 'Stick topic'			=>  'Stick topic',
 'Moderate forum'		=>	'Moderate forum',
 'Delete posts'			=>	'Delete multiple posts', // Deprecated
-'Powered by'			=> 'Powered by %s',
+'Powered by'			=>	'Powered by %s',
 
 // Debug information
 'Debug table'			=>	'Debug information',
-'Querytime'			=>    'Generated in %1$s seconds, %2$s queries executed',
-'Query times'			=>    'Time (s)',
-'Query'				=>    'Query',
-'Total query time'			=>    'Total query time: %s',
+'Querytime'				=>	'Generated in %1$s seconds, %2$s queries executed',
+'Query times'			=>	'Time (s)',
+'Query'					=>	'Query',
+'Total query time'		=>	'Total query time: %s',
 
 // Email related notifications
-'New user notification'					=>	'Alert - New registration',
+'New user notification'				=>	'Alert - New registration',
 'New user message'					=>	'User \'%s\' registered in the forums at %s',
-'Banned email notification'				=>	'Alert - Banned e-mail detected',
-'Banned email register message'				=>	'User \'%s\' registered with banned e-mail address: %s',
-'Banned email change message'				=>	'User \'%s\' changed to banned e-mail address: %s',
-'Duplicate email notification'				=>	'Alert - Duplicate e-mail detected',
-'Duplicate email register message'			=>	'User \'%s\' registered with an e-mail address that also belongs to: %s',
-'Duplicate email change message'			=>	'User \'%s\' changed to an e-mail address that also belongs to: %s',
-'Report notification'					=>	'Report(%d) - \'%s\'',
+'Banned email notification'			=>	'Alert - Banned e-mail detected',
+'Banned email register message'		=>	'User \'%s\' registered with banned e-mail address: %s',
+'Banned email change message'		=>	'User \'%s\' changed to banned e-mail address: %s',
+'Duplicate email notification'		=>	'Alert - Duplicate e-mail detected',
+'Duplicate email register message'	=>	'User \'%s\' registered with an e-mail address that also belongs to: %s',
+'Duplicate email change message'	=>	'User \'%s\' changed to an e-mail address that also belongs to: %s',
+'Report notification'				=>	'Report(%d) - \'%s\'',
 'Report message 1'					=>	'User \'%s\' has reported the following message: %s',
 'Report message 2'					=>	'Reason: %s',
 

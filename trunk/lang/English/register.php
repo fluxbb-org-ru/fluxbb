@@ -14,8 +14,8 @@ $lang_register = array(
 'Register'					=>	'Register',
 
 // Form validation stuff (some of these are also used in post.php)
-'Registration errors'			=>	'Registration errors',
-'Registration errors info'		=>	'The following errors need to be corrected before you can register:',
+'Registration errors'		=>	'Registration errors',
+'Registration errors info'	=>	'The following errors need to be corrected before you can register:',
 'Username censor'			=>	'The username you entered contains one or more censored words. Please choose a different username.',
 'Username dupe 1'			=>	'Someone is already registered with the username',
 'Username dupe 2'			=>	'The username you entered is too similar. The username must differ from that by at least one alphanumerical character (a-z or 0-9). Please choose a different username.',

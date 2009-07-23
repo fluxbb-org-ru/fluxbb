@@ -52,7 +52,7 @@ $lang_misc = array(
 'Move topic redirect'		=>	'Topic moved. Redirecting &hellip;',
 'Move topics redirect'		=>	'Topics moved. Redirecting &hellip;',
 'Confirm delete legend'		=>	'Please confirm deletion',
-'Delete topics'			=>	'Delete topics',
+'Delete topics'				=>	'Delete topics',
 'Delete topics comply'		=>	'Are you sure you want to delete the selected topics?',
 'Delete topics redirect'	=>	'Topics deleted. Redirecting &hellip;',
 'Open topic redirect'		=>	'Topic opened. Redirecting &hellip;',
@@ -63,14 +63,14 @@ $lang_misc = array(
 'Not enough topics selected'	=>	'You must select at least two topics for merge.',
 'Stick topic redirect'		=>	'Topic sticked. Redirecting &hellip;',
 'Unstick topic redirect'	=>	'Topic unsticked. Redirecting &hellip;',
-'Merge topics'			=>	'Merge topics',
+'Merge topics'				=>	'Merge topics',
 'Merge topics redirect'		=>	'Topics merged. Redirecting &hellip;',
 'Confirm merge legend'		=>	'Please confirm merge',
-'New subject'			=>	'New subject',
+'New subject'				=>	'New subject',
 
 // Split multiple posts in topic
 'Confirm split legend'		=>	'Please confirm split of selected posts.',
-'Split posts'			=>	'Split posts',
+'Split posts'				=>	'Split posts',
 'Split posts comply'		=>	'Are you sure you want to split the selected posts?',
 'Split posts redirect'		=>	'Posts have been split. Redirecting &hellip;',
 
