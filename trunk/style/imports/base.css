@@ -100,7 +100,7 @@ LABEL.conl {
 
 /* 5.2 Set up page numbering and posts links */
 
-DIV.linkst .conl, DIV.linksb .conl, DIV.postlinksb .conl {WIDTH:18em}
+DIV.linkst .conl, DIV.linksb .conl, DIV.postlinksb .conl {WIDTH:32em}
 
 DIV.linkst .conr, DIV.linksb .conr, DIV.postlinksb .conr {WIDTH:16em}
 
@@ -203,6 +203,7 @@ DIV.postmsg OL.alpha LI {LIST-STYLE-TYPE: lower-alpha}
 
 DIV.incqbox {WIDTH: 100%; OVERFLOW: hidden}
 DIV.scrollbox {WIDTH: 100%; OVERFLOW: auto}
+DIV.codebox {OVERFLOW: auto}
 IMG.postimg {max-width: 100%}
 A .postimg {max-width: 100%}
 
