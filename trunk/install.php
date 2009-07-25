@@ -936,6 +936,11 @@ else
 				'allow_null'	=> false,
 				'default'		=> '0'
 			),
+			'downloads'		=> array(
+				'datatype'		=> 'MEDIUMINT(8) UNSIGNED',
+				'allow_null'	=> false,
+				'default'		=> '0'
+			)
 		),
 		'PRIMARY KEY'	=> array('id'),
 		'INDEXES'		=> array(

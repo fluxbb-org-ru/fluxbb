@@ -108,6 +108,25 @@ else if ($footer_style == 'viewforum' || $footer_style == 'viewtopic')
 
 	echo "\t\t\t".'</div>'."\n";
 }
+else if ($footer_style == 'file')
+{
+	echo "\n\t\t\t".'<div class="conl">'."\n";
+	if ($pun_user['g_search'] == '1')
+	{
+		echo "\n\t\t\t".'<dl id="searchlinks" class="conl">';
+		echo "\n\t\t\t\t".'<dt><strong>'.$lang_common['Search links'].'</strong></dt>';
+		if (!empty($user_id))
+		{
+			echo "\n\t\t\t\t".'<dd><a href="file.php?action=browse'.($forum_id==-1?'&amp;forum_id=-1':'').'">'.$lang_file['All users'].'</a></dd>'."\n";
+		}
+		if ($forum_id == -1)
+			echo "\n\t\t\t\t".'<dd><a href="file.php?action=browse'.(!empty($user_id)?'&amp;user_id='.$user_id:'').'">'.$lang_file['Unattached files'].'</a></dd>'."\n";
+		else
+			echo "\n\t\t\t\t".'<dd><a href="file.php?action=browse&amp;forum_id=-1'.(!empty($user_id)?'&amp;user_id='.$user_id:'').'">'.$lang_file['Attached files'].'</a></dd>'."\n";
+		echo "\n\t\t\t".'</dl>'."\n";
+	}
+	echo "\t\t\t".'</div>'."\n";
+}
 
 ?>
 			<p class="conr"><?php printf($lang_common['Powered by'], '<a href="http://fluxbb.org/">FluxBB</a>'.(($pun_config['o_show_version'] == '1') ? ' '.$pun_config['o_cur_version'] : '')) ?></p>

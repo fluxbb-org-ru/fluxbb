@@ -126,6 +126,7 @@ $lang_common = array(
 'Login'					=>  'Вход',
 'Not logged in'			=>  'Вы не вошли.',
 'Profile'				=>	'Профиль',
+'Files'					=>	'Файлы',
 'Logout'				=>	'Выход',
 'Logged in as'			=>	'Вошли как',
 'Admin'					=>	'Администрирование',

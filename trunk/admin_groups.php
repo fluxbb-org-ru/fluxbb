@@ -211,6 +211,20 @@ if (isset($_POST['add_group']) || isset($_GET['edit_group']))
 									</td>
 								</tr>
 <?php endif; ?>								<tr>
+									<th scope="row">Download files</th>
+									<td>
+										<input type="radio" name="download" value="1"<?php if ($group['g_download'] == '1') echo ' checked="checked"' ?> tabindex="21" />&nbsp;<strong>Yes</strong>&nbsp;&nbsp;&nbsp;<input type="radio" name="download" value="0"<?php if ($group['g_download'] == '0') echo ' checked="checked"' ?> tabindex="22" />&nbsp;<strong>No</strong>
+										<span>Allow users in this group to download files from forum.</span>
+									</td>
+								</tr>
+								<tr>
+									<th scope="row">Upload files</th>
+									<td>
+										<input type="radio" name="upload" value="1"<?php if ($group['g_upload'] == '1') echo ' checked="checked"' ?> tabindex="21" />&nbsp;<strong>Yes</strong>&nbsp;&nbsp;&nbsp;<input type="radio" name="upload" value="0"<?php if ($group['g_upload'] == '0') echo ' checked="checked"' ?> tabindex="22" />&nbsp;<strong>No</strong>
+										<span>Allow users in this group to upload files to forum.</span>
+									</td>
+								</tr>
+								<tr>
 									<th scope="row">Post flood interval</th>
 									<td>
 										<input type="text" name="post_flood" size="5" maxlength="4" value="<?php echo $group['g_post_flood'] ?>" tabindex="24" />
@@ -274,6 +288,8 @@ else if (isset($_POST['add_edit_group']))
 	$search = isset($_POST['search']) ? intval($_POST['search']) : '1';
 	$search_users = isset($_POST['search_users']) ? intval($_POST['search_users']) : '1';
 	$send_email = (isset($_POST['send_email']) && $_POST['send_email'] == '1') || $is_admin_group ? '1' : '0';
+	$download = (isset($_POST['download']) && $_POST['download'] == '1') || $is_admin_group ? '1' : '0';
+	$upload = (isset($_POST['upload']) && $_POST['upload'] == '1') || $is_admin_group ? '1' : '0';
 	$post_flood = isset($_POST['post_flood']) ? intval($_POST['post_flood']) : '0';
 	$search_flood = isset($_POST['search_flood']) ? intval($_POST['search_flood']) : '0';
 	$email_flood = isset($_POST['email_flood']) ? intval($_POST['email_flood']) : '0';
@@ -289,7 +305,7 @@ else if (isset($_POST['add_edit_group']))
 		if ($db->num_rows($result))
 			message('There is already a group with the title \''.pun_htmlspecialchars($title).'\'.');
 
-		$db->query('INSERT INTO '.$db->prefix.'groups (g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_post_flood, g_search_flood, g_email_flood) VALUES(\''.$db->escape($title).'\', '.$user_title.', '.$moderator.', '.$mod_edit_users.', '.$mod_rename_users.', '.$mod_change_passwords.', '.$mod_ban_users.', '.$read_board.', '.$view_users.', '.$post_replies.', '.$post_topics.', '.$edit_posts.', '.$delete_posts.', '.$delete_topics.', '.$set_title.', '.$search.', '.$search_users.', '.$send_email.', '.$post_flood.', '.$search_flood.', '.$email_flood.')') or error('Unable to add group', __FILE__, __LINE__, $db->error());
+		$db->query('INSERT INTO '.$db->prefix.'groups (g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_download, g_upload, g_post_flood, g_search_flood, g_email_flood) VALUES(\''.$db->escape($title).'\', '.$user_title.', '.$moderator.', '.$mod_edit_users.', '.$mod_rename_users.', '.$mod_change_passwords.', '.$mod_ban_users.', '.$read_board.', '.$view_users.', '.$post_replies.', '.$post_topics.', '.$edit_posts.', '.$delete_posts.', '.$delete_topics.', '.$set_title.', '.$search.', '.$search_users.', '.$send_email.', '.$download.', '.$upload.', '.$post_flood.', '.$search_flood.', '.$email_flood.')') or error('Unable to add group', __FILE__, __LINE__, $db->error());
 		$new_group_id = $db->insert_id();
 
 		// Now lets copy the forum specific permissions from the group which this group is based on
@@ -303,7 +319,7 @@ else if (isset($_POST['add_edit_group']))
 		if ($db->num_rows($result))
 			message('There is already a group with the title \''.pun_htmlspecialchars($title).'\'.');
 
-		$db->query('UPDATE '.$db->prefix.'groups SET g_title=\''.$db->escape($title).'\', g_user_title='.$user_title.', g_moderator='.$moderator.', g_mod_edit_users='.$mod_edit_users.', g_mod_rename_users='.$mod_rename_users.', g_mod_change_passwords='.$mod_change_passwords.', g_mod_ban_users='.$mod_ban_users.', g_read_board='.$read_board.', g_view_users='.$view_users.', g_post_replies='.$post_replies.', g_post_topics='.$post_topics.', g_edit_posts='.$edit_posts.', g_delete_posts='.$delete_posts.', g_delete_topics='.$delete_topics.', g_set_title='.$set_title.', g_search='.$search.', g_search_users='.$search_users.', g_send_email='.$send_email.', g_post_flood='.$post_flood.', g_search_flood='.$search_flood.', g_email_flood='.$email_flood.' WHERE g_id='.intval($_POST['group_id'])) or error('Unable to update group', __FILE__, __LINE__, $db->error());
+		$db->query('UPDATE '.$db->prefix.'groups SET g_title=\''.$db->escape($title).'\', g_user_title='.$user_title.', g_moderator='.$moderator.', g_mod_edit_users='.$mod_edit_users.', g_mod_rename_users='.$mod_rename_users.', g_mod_change_passwords='.$mod_change_passwords.', g_mod_ban_users='.$mod_ban_users.', g_read_board='.$read_board.', g_view_users='.$view_users.', g_post_replies='.$post_replies.', g_post_topics='.$post_topics.', g_edit_posts='.$edit_posts.', g_delete_posts='.$delete_posts.', g_delete_topics='.$delete_topics.', g_set_title='.$set_title.', g_search='.$search.', g_search_users='.$search_users.', g_send_email='.$send_email.', g_download='.$download.', g_upload='.$upload.', g_post_flood='.$post_flood.', g_search_flood='.$search_flood.', g_email_flood='.$email_flood.' WHERE g_id='.intval($_POST['group_id'])) or error('Unable to update group', __FILE__, __LINE__, $db->error());
 	}
 
 	// Regenerate the quickjump cache

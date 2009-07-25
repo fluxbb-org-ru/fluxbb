@@ -126,6 +126,7 @@ $lang_common = array(
 'Login'					=>  'Login',
 'Not logged in'			=>  'You are not logged in.',
 'Profile'				=>	'Profile',
+'Files'					=>	'Files',
 'Logout'				=>	'Logout',
 'Logged in as'			=>	'Logged in as',
 'Admin'					=>	'Administration',

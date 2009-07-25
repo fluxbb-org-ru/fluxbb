@@ -189,25 +189,27 @@ else if (isset($_GET['edit_forum']))
 		// Now let's deal with the permissions
 		if (isset($_POST['read_forum_old']))
 		{
-			$result = $db->query('SELECT g_id, g_read_board, g_post_replies, g_post_topics FROM '.$db->prefix.'groups WHERE g_id!='.PUN_ADMIN) or error('Unable to fetch user group list', __FILE__, __LINE__, $db->error());
+			$result = $db->query('SELECT g_id, g_read_board, g_post_replies, g_post_topics, g_download, g_upload FROM '.$db->prefix.'groups WHERE g_id!='.PUN_ADMIN) or error('Unable to fetch user group list', __FILE__, __LINE__, $db->error());
 			while ($cur_group = $db->fetch_assoc($result))
 			{
 				$read_forum_new = ($cur_group['g_read_board'] == '1') ? isset($_POST['read_forum_new'][$cur_group['g_id']]) ? '1' : '0' : intval($_POST['read_forum_old'][$cur_group['g_id']]);
 				$post_replies_new = isset($_POST['post_replies_new'][$cur_group['g_id']]) ? '1' : '0';
 				$post_topics_new = isset($_POST['post_topics_new'][$cur_group['g_id']]) ? '1' : '0';
+				$download_new = isset($_POST['download_new'][$cur_group['g_id']]) ? '1' : '0';
+				$upload_new = isset($_POST['upload_new'][$cur_group['g_id']]) ? '1' : '0';
 
 				// Check if the new settings differ from the old
-				if ($read_forum_new != $_POST['read_forum_old'][$cur_group['g_id']] || $post_replies_new != $_POST['post_replies_old'][$cur_group['g_id']] || $post_topics_new != $_POST['post_topics_old'][$cur_group['g_id']])
+				if ($read_forum_new != $_POST['read_forum_old'][$cur_group['g_id']] || $post_replies_new != $_POST['post_replies_old'][$cur_group['g_id']] || $post_topics_new != $_POST['post_topics_old'][$cur_group['g_id']] || $download_new != $_POST['download_old'][$cur_group['g_id']] || $upload_new != $_POST['upload_old'][$cur_group['g_id']])
 				{
 					// If the new settings are identical to the default settings for this group, delete it's row in forum_perms
-					if ($read_forum_new == '1' && $post_replies_new == $cur_group['g_post_replies'] && $post_topics_new == $cur_group['g_post_topics'])
+					if ($read_forum_new == '1' && $post_replies_new == $cur_group['g_post_replies'] && $post_topics_new == $cur_group['g_post_topics'] && $download_new == $cur_group['g_download'] && $upload_new == $cur_group['g_upload'])
 						$db->query('DELETE FROM '.$db->prefix.'forum_perms WHERE group_id='.$cur_group['g_id'].' AND forum_id='.$forum_id) or error('Unable to delete group forum permissions', __FILE__, __LINE__, $db->error());
 					else
 					{
 						// Run an UPDATE and see if it affected a row, if not, INSERT
-						$db->query('UPDATE '.$db->prefix.'forum_perms SET read_forum='.$read_forum_new.', post_replies='.$post_replies_new.', post_topics='.$post_topics_new.' WHERE group_id='.$cur_group['g_id'].' AND forum_id='.$forum_id) or error('Unable to insert group forum permissions', __FILE__, __LINE__, $db->error());
+						$db->query('UPDATE '.$db->prefix.'forum_perms SET read_forum='.$read_forum_new.', post_replies='.$post_replies_new.', post_topics='.$post_topics_new.', download='.$download_new.', upload='.$upload_new.' WHERE group_id='.$cur_group['g_id'].' AND forum_id='.$forum_id) or error('Unable to insert group forum permissions', __FILE__, __LINE__, $db->error());
 						if (!$db->affected_rows())
-							$db->query('INSERT INTO '.$db->prefix.'forum_perms (group_id, forum_id, read_forum, post_replies, post_topics) VALUES('.$cur_group['g_id'].', '.$forum_id.', '.$read_forum_new.', '.$post_replies_new.', '.$post_topics_new.')') or error('Unable to insert group forum permissions', __FILE__, __LINE__, $db->error());
+							$db->query('INSERT INTO '.$db->prefix.'forum_perms (group_id, forum_id, read_forum, post_replies, post_topics, download, upload) VALUES('.$cur_group['g_id'].', '.$forum_id.', '.$read_forum_new.', '.$post_replies_new.', '.$post_topics_new.', '.$download_new.', '.$upload_new.')') or error('Unable to insert group forum permissions', __FILE__, __LINE__, $db->error());
 					}
 				}
 			}
@@ -315,23 +317,29 @@ else if (isset($_GET['edit_forum']))
 									<th>Read forum</th>
 									<th>Post replies</th>
 									<th>Post topics</th>
+									<th>Download files</th>
+									<th>Upload files</th>
 								</tr>
 							</thead>
 							<tbody>
 <?php
 
-	$result = $db->query('SELECT g.g_id, g.g_title, g.g_read_board, g.g_post_replies, g.g_post_topics, fp.read_forum, fp.post_replies, fp.post_topics FROM '.$db->prefix.'groups AS g LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (g.g_id=fp.group_id AND fp.forum_id='.$forum_id.') WHERE g.g_id!='.PUN_ADMIN.' ORDER BY g.g_id') or error('Unable to fetch group forum permission list', __FILE__, __LINE__, $db->error());
+	$result = $db->query('SELECT g.g_id, g.g_title, g.g_read_board, g.g_post_replies, g.g_post_topics, g.g_download, g.g_upload, fp.read_forum, fp.post_replies, fp.post_topics, fp.download, fp.upload FROM '.$db->prefix.'groups AS g LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (g.g_id=fp.group_id AND fp.forum_id='.$forum_id.') WHERE g.g_id!='.PUN_ADMIN.' ORDER BY g.g_id') or error('Unable to fetch group forum permission list', __FILE__, __LINE__, $db->error());
 
 	while ($cur_perm = $db->fetch_assoc($result))
 	{
 		$read_forum = ($cur_perm['read_forum'] != '0') ? true : false;
 		$post_replies = (($cur_perm['g_post_replies'] == '0' && $cur_perm['post_replies'] == '1') || ($cur_perm['g_post_replies'] == '1' && $cur_perm['post_replies'] != '0')) ? true : false;
 		$post_topics = (($cur_perm['g_post_topics'] == '0' && $cur_perm['post_topics'] == '1') || ($cur_perm['g_post_topics'] == '1' && $cur_perm['post_topics'] != '0')) ? true : false;
+		$download = (($cur_perm['g_download'] == '0' && $cur_perm['download'] == '1') || ($cur_perm['g_download'] == '1' && $cur_perm['download'] != '0')) ? true : false;
+		$upload = (($cur_perm['g_upload'] == '0' && $cur_perm['upload'] == '1') || ($cur_perm['g_upload'] == '1' && $cur_perm['upload'] != '0')) ? true : false;
 
 		// Determine if the current sittings differ from the default or not
 		$read_forum_def = ($cur_perm['read_forum'] == '0') ? false : true;
 		$post_replies_def = (($post_replies && $cur_perm['g_post_replies'] == '0') || (!$post_replies && ($cur_perm['g_post_replies'] == '' || $cur_perm['g_post_replies'] == '1'))) ? false : true;
 		$post_topics_def = (($post_topics && $cur_perm['g_post_topics'] == '0') || (!$post_topics && ($cur_perm['g_post_topics'] == '' || $cur_perm['g_post_topics'] == '1'))) ? false : true;
+		$download_def = (($download && $cur_perm['g_download'] == '0') || (!$download && ($cur_perm['g_download'] == '' || $cur_perm['g_download'] == '1'))) ? false : true;
+		$upload_def = (($upload && $cur_perm['g_upload'] == '0') || (!$upload && ($cur_perm['g_upload'] == '' || $cur_perm['g_upload'] == '1'))) ? false : true;
 
 ?>
 								<tr>
@@ -347,6 +355,14 @@ else if (isset($_GET['edit_forum']))
 									<td<?php if (!$post_topics_def && $cur_forum['redirect_url'] == '') echo ' class="nodefault"'; ?>>
 										<input type="hidden" name="post_topics_old[<?php echo $cur_perm['g_id'] ?>]" value="<?php echo ($post_topics) ? '1' : '0'; ?>" />
 										<input type="checkbox" name="post_topics_new[<?php echo $cur_perm['g_id'] ?>]" value="1"<?php echo ($post_topics) ? ' checked="checked"' : ''; ?><?php echo ($cur_forum['redirect_url'] != '') ? ' disabled="disabled"' : ''; ?> />
+									</td>
+									<td<?php if (!$download_def && $cur_forum['redirect_url'] == '') echo ' class="nodefault"'; ?>>
+										<input type="hidden" name="download_old[<?php echo $cur_perm['g_id'] ?>]" value="<?php echo ($download) ? '1' : '0'; ?>" />
+										<input type="checkbox" name="download_new[<?php echo $cur_perm['g_id'] ?>]" value="1"<?php echo ($download) ? ' checked="checked"' : ''; ?><?php echo ($cur_forum['redirect_url'] != '') ? ' disabled="disabled"' : ''; ?> />
+									</td>
+									<td<?php if (!$upload_def && $cur_forum['redirect_url'] == '') echo ' class="nodefault"'; ?>>
+										<input type="hidden" name="upload_old[<?php echo $cur_perm['g_id'] ?>]" value="<?php echo ($upload) ? '1' : '0'; ?>" />
+										<input type="checkbox" name="upload_new[<?php echo $cur_perm['g_id'] ?>]" value="1"<?php echo ($upload) ? ' checked="checked"' : ''; ?><?php echo ($cur_forum['redirect_url'] != '') ? ' disabled="disabled"' : ''; ?> />
 									</td>
 								</tr>
 <?php

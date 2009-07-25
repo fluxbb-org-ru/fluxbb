@@ -141,7 +141,7 @@ function authenticate_user($user, $password, $password_is_hash = false)
 	// Check if there's a user matching $user and $password
 	$result = $db->query('SELECT u.*, g.*, o.logged, o.idle FROM '.$db->prefix.'users AS u INNER JOIN '.$db->prefix.'groups AS g ON g.g_id=u.group_id LEFT JOIN '.$db->prefix.'online AS o ON o.user_id=u.id WHERE '.(is_int($user) ? 'u.id='.intval($user) : 'u.username=\''.$db->escape($user).'\'')) or error('Unable to fetch user info', __FILE__, __LINE__, $db->error());
 	$pun_user = $db->fetch_assoc($result);
-	
+
 	if (!isset($pun_user['id']) ||
 		($password_is_hash && $password != $pun_user['password']) ||
 		(!$password_is_hash && pun_hash($password) != $pun_user['password']))
@@ -386,12 +386,14 @@ function generate_navlinks()
 				$links[] = '<li id="navsearch"><a href="search.php">'.$lang_common['Search'].'</a>';
 
 			$links[] = '<li id="navprofile"><a href="profile.php?id='.$pun_user['id'].'">'.$lang_common['Profile'].'</a>';
+			$links[] = '<li id="navfile"><a href="file.php?action=browse&amp;user_id='.$pun_user['id'].'">'.$lang_common['Files'].'</a>';
 			$links[] = '<li id="navlogout"><a href="login.php?action=out&amp;id='.$pun_user['id'].'&amp;csrf_token='.pun_hash($pun_user['id'].pun_hash(get_remote_address())).'">'.$lang_common['Logout'].'</a>';
 		}
 		else
 		{
 			$links[] = '<li id="navsearch"><a href="search.php">'.$lang_common['Search'].'</a>';
 			$links[] = '<li id="navprofile"><a href="profile.php?id='.$pun_user['id'].'">'.$lang_common['Profile'].'</a>';
+			$links[] = '<li id="navfile"><a href="file.php?action=browse&amp;user_id='.$pun_user['id'].'">'.$lang_common['Files'].'</a>';
 			$links[] = '<li id="navadmin"><a href="admin_index.php">'.$lang_common['Admin'].'</a>';
 			$links[] = '<li id="navlogout"><a href="login.php?action=out&amp;id='.$pun_user['id'].'&amp;csrf_token='.pun_hash($pun_user['id'].pun_hash(get_remote_address())).'">'.$lang_common['Logout'].'</a>';
 		}
@@ -1271,7 +1273,7 @@ function forum_unregister_globals()
 	// Prevent script.php?GLOBALS[foo]=bar
 	if (isset($_REQUEST['GLOBALS']) || isset($_FILES['GLOBALS']))
 		exit('I\'ll have a steak sandwich and... a steak sandwich.');
-	
+
 	// Variables that shouldn't be unset
 	$no_unset = array('GLOBALS', '_GET', '_POST', '_COOKIE', '_REQUEST', '_SERVER', '_ENV', '_FILES');
 
