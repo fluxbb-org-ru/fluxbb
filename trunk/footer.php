@@ -117,7 +117,7 @@ else if ($footer_style == 'file')
 		echo "\n\t\t\t\t".'<dt><strong>'.$lang_common['Search links'].'</strong></dt>';
 		if (!empty($user_id))
 		{
-			echo "\n\t\t\t\t".'<dd><a href="file.php?action=browse'.($forum_id==-1?'&amp;forum_id=-1':'').'">'.$lang_file['All users'].'</a></dd>'."\n";
+			echo "\n\t\t\t\t".'<dd><a href="file.php?action=browse'.($forum_id==-1?'&amp;forum_id=-1':'').'">'.$lang_file['All users files'].'</a></dd>'."\n";
 		}
 		if ($forum_id == -1)
 			echo "\n\t\t\t\t".'<dd><a href="file.php?action=browse'.(!empty($user_id)?'&amp;user_id='.$user_id:'').'">'.$lang_file['Unattached files'].'</a></dd>'."\n";

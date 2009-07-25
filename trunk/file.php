@@ -212,7 +212,7 @@ if ($action == 'browse' || $action == 'info' || ($action == 'upload' && !isset($
 	if ($user_id < 0)
 		message($lang_common['Bad request']);
 	else if ($user_id == 0)
-		$crumbs[] = '<a href="file.php?action=browse">'.$lang_file['All users'].'</a>';
+		$crumbs[] = '<a href="file.php?action=browse">'.$lang_file['All users files'].'</a>';
 	else if ($user_id == $pun_user['id'])
 		$crumbs[] = '<a href="file.php?action=browse&amp;user_id='.$user_id.'">'.sprintf($lang_file['Files of'], pun_htmlspecialchars($pun_user['username'])).'</a>';
 	else

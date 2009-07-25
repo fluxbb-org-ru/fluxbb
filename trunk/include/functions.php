@@ -371,7 +371,10 @@ function generate_navlinks()
 	if ($pun_user['is_guest'])
 	{
 		if ($pun_user['g_read_board'] == '1' && $pun_user['g_search'] == '1')
+		{
 			$links[] = '<li id="navsearch"><a href="search.php">'.$lang_common['Search'].'</a>';
+			$links[] = '<li id="navfile"><a href="file.php?action=browse&amp;user_id='.$pun_user['id'].'">'.$lang_common['Files'].'</a>';
+		}
 
 		$links[] = '<li id="navregister"><a href="register.php">'.$lang_common['Register'].'</a>';
 		$links[] = '<li id="navlogin"><a href="login.php">'.$lang_common['Login'].'</a>';
@@ -383,17 +386,19 @@ function generate_navlinks()
 		if (!$pun_user['is_admmod'])
 		{
 			if ($pun_user['g_read_board'] == '1' && $pun_user['g_search'] == '1')
+			{
 				$links[] = '<li id="navsearch"><a href="search.php">'.$lang_common['Search'].'</a>';
+				$links[] = '<li id="navfile"><a href="file.php?action=browse&amp;user_id='.$pun_user['id'].'">'.$lang_common['Files'].'</a>';
+			}
 
 			$links[] = '<li id="navprofile"><a href="profile.php?id='.$pun_user['id'].'">'.$lang_common['Profile'].'</a>';
-			$links[] = '<li id="navfile"><a href="file.php?action=browse&amp;user_id='.$pun_user['id'].'">'.$lang_common['Files'].'</a>';
 			$links[] = '<li id="navlogout"><a href="login.php?action=out&amp;id='.$pun_user['id'].'&amp;csrf_token='.pun_hash($pun_user['id'].pun_hash(get_remote_address())).'">'.$lang_common['Logout'].'</a>';
 		}
 		else
 		{
 			$links[] = '<li id="navsearch"><a href="search.php">'.$lang_common['Search'].'</a>';
-			$links[] = '<li id="navprofile"><a href="profile.php?id='.$pun_user['id'].'">'.$lang_common['Profile'].'</a>';
 			$links[] = '<li id="navfile"><a href="file.php?action=browse&amp;user_id='.$pun_user['id'].'">'.$lang_common['Files'].'</a>';
+			$links[] = '<li id="navprofile"><a href="profile.php?id='.$pun_user['id'].'">'.$lang_common['Profile'].'</a>';
 			$links[] = '<li id="navadmin"><a href="admin_index.php">'.$lang_common['Admin'].'</a>';
 			$links[] = '<li id="navlogout"><a href="login.php?action=out&amp;id='.$pun_user['id'].'&amp;csrf_token='.pun_hash($pun_user['id'].pun_hash(get_remote_address())).'">'.$lang_common['Logout'].'</a>';
 		}

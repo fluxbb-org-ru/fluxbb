@@ -727,12 +727,12 @@ else
 			'g_download'				=> array(
 				'datatype'		=> 'TINYINT(1)',
 				'allow_null'	=> false,
-				'default'		=> '1'
+				'default'		=> '0'
 			),
 			'g_upload'				=> array(
 				'datatype'		=> 'TINYINT(1)',
 				'allow_null'	=> false,
-				'default'		=> '1'
+				'default'		=> '0'
 			),
 			'g_post_flood'				=> array(
 				'datatype'		=> 'SMALLINT(6)',
@@ -1547,6 +1547,14 @@ else
 	// Check if the upload directory is writable
 	if (!@is_writable('./upload/'))
 		$alerts .= '<p style="font-size: 1.1em"><span style="color: #C03000"><strong>The upload directory is currently not writable!</strong></span> In order for FluxBB to function properly, the directory named <em>upload</em> must be writable by PHP. Use chmod to set the appropriate directory permissions. If in doubt, chmod to 0777.</p>';
+
+	// Check if the upload directory is writable
+	foreach (array('square', 'thumbnail', 'small', 'medium', 'large') as $subdir)
+		if (!@is_writable('./img/preview/'.$subdir))
+		{
+			$alerts .= '<p style="font-size: 1.1em"><span style="color: #C03000"><strong>The image preview sub-directories are currently not writable!</strong></span> In order for FluxBB to function properly, the directory named <em>upload</em> must be writable by PHP. Use chmod to set the appropriate directory permissions. If in doubt, chmod to 0777.</p>';
+			break;
+		}
 
 	// Check if default avatar directory is writable
 	if (!@is_writable('./img/avatars/'))
