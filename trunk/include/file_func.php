@@ -319,3 +319,23 @@ function download($id)
 	}
 	fclose($file_handler);
 }
+
+
+//
+// Produce valid class name for file link
+//
+function mime_to_class($mime)
+{	return 'file '.str_replace('/',' ', $mime);
+}
+
+
+//
+// Produce array of links from
+//
+function array_to_links($arr)
+{
+	$result = array();
+	foreach ($arr as $item)
+		$result[] = '<a href="file.php?action=info&amp;id='.$item['id'].'" title="'.pun_htmlspecialchars($item['title']).'" class="'.mime_to_class($item['mime']).'">'.pun_htmlspecialchars($item['filename']).'</a>';
+	return $result;
+}

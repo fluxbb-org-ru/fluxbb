@@ -197,7 +197,22 @@ $post_count = 0;	// Keep track of post numbers
 
 // Retrieve the posts (and their respective poster/online status)
 $result = $db->query('SELECT u.email, u.title, u.url, u.location, u.signature, u.email_setting, u.num_posts, u.registered, u.admin_note, p.id, p.poster AS username, p.poster_id, p.poster_ip, p.poster_email, p.message, p.hide_smilies, p.posted, p.edited, p.edited_by, g.g_id, g.g_user_title, o.user_id AS is_online FROM '.$db->prefix.'posts AS p INNER JOIN '.$db->prefix.'users AS u ON u.id=p.poster_id INNER JOIN '.$db->prefix.'groups AS g ON g.g_id=u.group_id LEFT JOIN '.$db->prefix.'online AS o ON (o.user_id=u.id AND o.user_id!=1 AND o.idle=0) WHERE p.topic_id='.$id.' ORDER BY p.id LIMIT '.$start_from.','.$pun_user['disp_posts'], true) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
+$posts = array();
 while ($cur_post = $db->fetch_assoc($result))
+	$posts[$cur_post['id']] = $cur_post;
+$post_ids = array_keys($posts);
+
+// Retrieve the post attachments
+$result = $db->query('SELECT fi.* FROM '.$db->prefix.'files AS fi WHERE fi.post_id IN('.implode(',', $post_ids).')') or error('Unable to fetch attachments', __FILE__, __LINE__, $db->error());
+if ($db->num_rows($result))
+{
+	require_once PUN_ROOT.'include/file_func.php';
+
+	while ($attachment = $db->fetch_assoc($result))
+		$posts[$attachment['post_id']]['attachments'][] = $attachment;
+}
+
+foreach ($posts as $post_id => $cur_post)
 {
 	$post_count++;
 	$user_avatar = '';
@@ -343,6 +358,11 @@ while ($cur_post = $db->fetch_assoc($result))
 <?php if ($cur_post['edited'] != '') echo "\t\t\t\t\t".'<p class="postedit"><em>'.$lang_topic['Last edit'].' '.pun_htmlspecialchars($cur_post['edited_by']).' ('.format_time($cur_post['edited']).')</em></p>'."\n"; ?>
 				</div>
 <?php if ($signature != '') echo "\t\t\t\t".'<div class="postsignature"><hr />'.$signature.'</div>'."\n"; ?>
+<?php if (isset($cur_post['attachments'])): ?>
+				<div class="postsignature attachments"><hr />
+					<ul><li><?php echo implode($lang_topic['Link separator'].'</li><li>', array_to_links($cur_post['attachments'])) ?></ul>
+				</div>
+<?php endif; ?>
 			</div>
 			<div class="clearer"></div>
 			<div class="postfootleft"><?php if ($cur_post['poster_id'] > 1) echo '<p>'.$is_online.'</p>'; ?></div>

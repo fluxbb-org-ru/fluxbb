@@ -246,3 +246,28 @@ DIV.searchposts DIV.icon {MARGIN-LEFT: 0}
 margin creates space for the post status indicator */
 
 TD DIV.tclcon {MARGIN-LEFT: 2.3em}
+
+/****************************************************************/
+/* 11. ATTACHMENTS LOOK & FEEL */
+/****************************************************************/
+
+/* 11.1 File icons next by attachment link. */
+DIV.attachments A.file {
+    PADDING: 2px 0 4px 20px;
+	BACKGROUND: url(../img/icon/attach.png) left center no-repeat;
+}
+
+DIV.attachments A.text {
+	BACKGROUND-IMAGE: url(../img/icon/page_white.png);
+}
+
+DIV.attachments A.image {
+	BACKGROUND-IMAGE: url(../img/icon/image.png);
+}
+
+DIV.attachments A.zip {
+	BACKGROUND-IMAGE: url(../img/icon/compress.png);
+}
+
+/* 11.2 Attachment list. */
+DIV.attachments UL LI {display: inline}

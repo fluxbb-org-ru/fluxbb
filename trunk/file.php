@@ -1,6 +1,5 @@
 <?php
 
-
 define('PUN_ROOT', './');
 require PUN_ROOT.'include/common.php';
 
@@ -212,7 +211,7 @@ if ($action == 'browse' || $action == 'info' || ($action == 'upload' && !isset($
 	if ($user_id < 0)
 		message($lang_common['Bad request']);
 	else if ($user_id == 0)
-		$crumbs[] = '<a href="file.php?action=browse">'.$lang_file['All users files'].'</a>';
+		$crumbs[] = '<a href="file.php?action=browse">'.$lang_file['All files'].'</a>';
 	else if ($user_id == $pun_user['id'])
 		$crumbs[] = '<a href="file.php?action=browse&amp;user_id='.$user_id.'">'.sprintf($lang_file['Files of'], pun_htmlspecialchars($pun_user['username'])).'</a>';
 	else
@@ -451,6 +450,7 @@ else if ($action == 'browse')
 ?>
 				<tr>
 					<td colspan="4">
+						<div class="icon"><div class="nosize"><!-- --></div></div>
 						<div class="tclcon">
 							<h3><?php echo $lang_common['Topic'] ?>: <a href="viewtopic.php?id=<?php echo $cur_file['tid'] ?>"><?php echo pun_htmlspecialchars($cur_file['subject']) ?></a></h3>
 						</div>
@@ -465,9 +465,8 @@ else if ($action == 'browse')
 ?>
 				<tr>
 					<td class="tcl">
-						<div class="icon"><div class="nosize"><!-- --></div></div>
-						<div class="tclcon">
-						<a href="file.php?action=info&amp;id=<?php echo $cur_file['id'] ?>"><?php echo pun_htmlspecialchars($cur_file['filename']) ?></a>
+						<div class="tclcon attachments">
+						<a href="file.php?action=info&amp;id=<?php echo $cur_file['id'] ?>" class="<?php echo mime_to_class($cur_file['mime']) ?>"><?php echo pun_htmlspecialchars($cur_file['filename']) ?></a>
 						<p><?php echo pun_htmlspecialchars($cur_file['title']) ?></p>
 						</div>
 					</td>
