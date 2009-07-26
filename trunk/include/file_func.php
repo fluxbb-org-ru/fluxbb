@@ -1,6 +1,6 @@
 <?php
 
-define('MAX_FILE_SIZE', 1048576);		// 10M
+define('MAX_FILE_SIZE', 10485760);		// 10M
 define('MAX_FILES_IN_FOLDER', 1000);	// rational limit for FAT
 define('PREVIEW_QUALITY', 80);			// good quality
 define('IMAGE_FILL_COLOR', 0xFFFFFF);	// white background
