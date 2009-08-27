@@ -229,6 +229,7 @@ function upload_file($file_request, $title)
 
 //
 // Delete files
+// $file_ids is CSV or array
 //
 function delete_files($file_ids, $check = false)
 {
@@ -236,6 +237,8 @@ function delete_files($file_ids, $check = false)
 
 	if (empty($file_ids))
 		return;
+	else if (is_array($file_ids))
+		$file_ids = implode(',', $file_ids);
 
 	$pun_config = $GLOBALS['pun_config'];
 	$pun_user = $GLOBALS['pun_user'];
@@ -243,9 +246,9 @@ function delete_files($file_ids, $check = false)
 
 	// Prevent attack
 	if ($check)
-		$sql = 'SELECT a.id, a.location, a.poster_id, f.moderators, fp.upload FROM '.$db->prefix.'files AS a LEFT JOIN '.$db->prefix.'posts AS p ON p.id=a.post_id LEFT JOIN '.$db->prefix.'topics AS t ON t.id=p.topic_id INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE a.id IN ('.implode(',', $file_ids).')';
+		$sql = 'SELECT a.id, a.location, a.poster_id, f.moderators, fp.upload FROM '.$db->prefix.'files AS a LEFT JOIN '.$db->prefix.'posts AS p ON p.id=a.post_id LEFT JOIN '.$db->prefix.'topics AS t ON t.id=p.topic_id INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE a.id IN ('.$file_ids.')';
 	else
-		$sql = 'SELECT a.id, a.location, a.poster_id, \'\' AS moderators, 0 AS upload FROM '.$db->prefix.'files AS a WHERE a.id IN ('.implode(',', $file_ids).')';
+		$sql = 'SELECT a.id, a.location, a.poster_id, \'\' AS moderators, 0 AS upload FROM '.$db->prefix.'files AS a WHERE a.id IN ('.$file_ids.')';
 	$result = $db->query($sql) or error('Unable to fetch files to delete', __FILE__, __LINE__, $db->error());
 
 	$file_ids = array();
@@ -268,6 +271,29 @@ function delete_files($file_ids, $check = false)
 	// Delete records from table
 	if (!empty($file_ids))
 		$db->query('DELETE FROM '.$db->prefix.'files WHERE id IN ('.implode(',', $file_ids).')') or error('Unable delete files', __FILE__, __LINE__, $db->error());
+}
+
+
+//
+// Delete files attached to posts
+// $post_ids is CSV or array
+//
+function delete_post_files($post_ids, $check = false)
+{
+	global $db;
+
+	if (empty($post_ids))
+		return;
+	else if (is_array($post_ids))
+		$post_ids = implode(',', $post_ids);
+
+	// Delete attached files
+	$file_ids = array();
+	$result = $db->query('SELECT id FROM '.$db->prefix.'files WHERE post_id IN('.$post_ids.')') or error('Unable to fetch files', __FILE__, __LINE__, $db->error());
+	while ($row = $db->fetch_row($result))
+		$file_ids[] = $row[0];
+	if (!empty($file_ids))
+		delete_files($file_ids, $check);
 }
 
 

@@ -228,7 +228,7 @@ else if ($action == 'change_email')
 			if ($pun_config['p_allow_banned_email'] == '0')
 				message($lang_prof_reg['Banned e-mail']);
 			else if ($pun_config['o_mailing_list'] != '')
-			{				
+			{
 				$mail_subject = $lang_common['Banned email notification'];
 				$mail_message = sprintf($lang_common['Banned email change message'], $pun_user['username'], $new_email)."\n";
 				$mail_message .= sprintf($lang_common['User profile'], $pun_config['o_base_url'].'/profile.php?id='.$id)."\n";
@@ -248,7 +248,7 @@ else if ($action == 'change_email')
 			{
 				while ($cur_dupe = $db->fetch_assoc($result))
 					$dupe_list[] = $cur_dupe['username'];
-				
+
 				$mail_subject = $lang_common['Duplicate email notification'];
 				$mail_message = sprintf($lang_common['Duplicate email change message'], $pun_user['username'], implode(', ', $dupe_list))."\n";
 				$mail_message .= sprintf($lang_common['User profile'], $pun_config['o_base_url'].'/profile.php?id='.$id)."\n";
@@ -324,7 +324,7 @@ else if ($action == 'upload_avatar' || $action == 'upload_avatar2')
 	{
 		if (!isset($_FILES['req_file']))
 			message($lang_profile['No file']);
-			
+
 		$uploaded_file = $_FILES['req_file'];
 
 		// Make sure the upload went smooth
@@ -587,6 +587,7 @@ else if (isset($_POST['delete_user']) || isset($_POST['delete_user_comply']))
 		if (isset($_POST['delete_posts']))
 		{
 			require PUN_ROOT.'include/search_idx.php';
+			require PUN_ROOT.'include/file_func.php';
 			@set_time_limit(0);
 
 			// Find all posts made by this user
@@ -1090,7 +1091,7 @@ else
 			$posts_field = '<p>'.$lang_common['Posts'].': '.forum_number_format($user['num_posts']).($pun_user['g_search'] == '1' ? ' - <a href="search.php?action=show_user&amp;user_id='.$id.'">'.$lang_profile['Show posts'].'</a>' : '').'</p>'."\n";
 		else if ($pun_user['g_search'] == '1')
 			$posts_field = '<p><a href="search.php?action=show_user&amp;user_id='.$id.'">'.$lang_profile['Show posts'].'</a></p>'."\n";
-		
+
 
 		$page_title = pun_htmlspecialchars($pun_config['o_board_title']).' / '.$lang_common['Profile'];
 		$required_fields = array('req_username' => $lang_common['Username'], 'req_email' => $lang_common['E-mail']);
@@ -1205,7 +1206,7 @@ else
 								?>
 							</select>
 							<br /></label>
-							
+
 <?php
 
 		$languages = array();
@@ -1338,7 +1339,7 @@ else
 			message($lang_common['Bad request']);
 
 		$avatar_field = '<a href="profile.php?action=upload_avatar&amp;id='.$id.'">'.$lang_profile['Change avatar'].'</a>';
-		
+
 		$user_avatar = generate_avatar_markup($id);
 		if ($user_avatar)
 			$avatar_field .= '&nbsp;&nbsp;&nbsp;<a href="profile.php?action=delete_avatar&amp;id='.$id.'">'.$lang_profile['Delete avatar'].'</a>';
@@ -1366,7 +1367,7 @@ else
 					<fieldset id="profileavatar">
 						<legend><?php echo $lang_profile['Avatar legend'] ?></legend>
 						<div class="infldset">
-							<?php if ($user_avatar) echo $user_avatar ?>					
+							<?php if ($user_avatar) echo $user_avatar ?>
 							<p><?php echo $lang_profile['Avatar info'] ?></p>
 							<p class="clearb"><?php echo $avatar_field ?></p>
 						</div>

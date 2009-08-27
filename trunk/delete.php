@@ -66,6 +66,7 @@ if (isset($_POST['delete']))
 		confirm_referrer('delete.php');
 
 	require PUN_ROOT.'include/search_idx.php';
+	require PUN_ROOT.'include/file_func.php';
 
 	if ($is_topic_post)
 	{

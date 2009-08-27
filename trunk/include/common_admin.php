@@ -143,6 +143,10 @@ function prune($forum_id, $prune_sticky, $prune_date)
 			// We removed a bunch of posts, so now we have to update the search index
 			require_once PUN_ROOT.'include/search_idx.php';
 			strip_search_index($post_ids);
+
+			// Delete attached files
+			require_once PUN_ROOT.'include/file_func.php';
+			delete_post_files($post_ids);
 		}
 	}
 }

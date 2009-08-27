@@ -600,20 +600,10 @@ function delete_topic($topic_id)
 	if ($post_ids != '')
 	{
 		strip_search_index($post_ids);
+		delete_post_files($post_ids);
 
 		// Delete posts in topic
 		$db->query('DELETE FROM '.$db->prefix.'posts WHERE topic_id='.$topic_id) or error('Unable to delete posts', __FILE__, __LINE__, $db->error());
-
-		// Delete attached files
-		$file_ids = array();
-		$result = $db->query('SELECT id FROM '.$db->prefix.'files WHERE post_id IN('.$post_ids.')') or error('Unable to fetch files', __FILE__, __LINE__, $db->error());
-		while ($row = $db->fetch_row($result))
-			$file_ids[] = $row[0];
-		if (!empty($file_ids))
-		{
-			require PUN_ROOT.'include/file_func.php';
-			delete_files($file_ids);
-		}
 	}
 
 	// Delete any subscriptions for this topic
@@ -636,6 +626,7 @@ function delete_post($post_id, $topic_id)
 	$db->query('DELETE FROM '.$db->prefix.'posts WHERE id='.$post_id) or error('Unable to delete post', __FILE__, __LINE__, $db->error());
 
 	strip_search_index($post_id);
+	delete_post_files($post_id);
 
 	// Count number of replies in the topic
 	$result = $db->query('SELECT COUNT(id) FROM '.$db->prefix.'posts WHERE topic_id='.$topic_id) or error('Unable to fetch post count for topic', __FILE__, __LINE__, $db->error());
@@ -654,17 +645,6 @@ function delete_post($post_id, $topic_id)
 	else
 		// Otherwise we just decrement the reply counter
 		$db->query('UPDATE '.$db->prefix.'topics SET num_replies='.$num_replies.' WHERE id='.$topic_id) or error('Unable to update topic', __FILE__, __LINE__, $db->error());
-
-	// Delete attached files
-	$file_ids = array();
-	$result = $db->query('SELECT id FROM '.$db->prefix.'files WHERE post_id='.$post_id) or error('Unable to fetch files', __FILE__, __LINE__, $db->error());
-	while ($row = $db->fetch_row($result))
-		$file_ids[] = $row[0];
-	if (!empty($file_ids))
-	{
-		require PUN_ROOT.'include/file_func.php';
-		delete_files($file_ids);
-	}
 }
 
 
@@ -1386,7 +1366,7 @@ function display_saved_queries()
 
 ?>
 				<tr>
-					<td class="tcl" colspan="2"><?php printf($lang_common['Total query time'], $query_time_totals.' s') ?></td>
+					<td class="tcl" colspan="2"><?php printf($lang_common['Total query time'], $query_time_total.' s') ?></td>
 				</tr>
 			</tbody>
 			</table>

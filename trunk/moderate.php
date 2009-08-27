@@ -115,6 +115,10 @@ if (isset($_GET['tid']))
 			require PUN_ROOT.'include/search_idx.php';
 			strip_search_index($posts);
 
+			// Delete attached files
+			require PUN_ROOT.'include/file_func.php';
+			delete_post_files($posts);
+
 			// Get last_post, last_post_id, and last_poster for the topic after deletion
 			$result = $db->query('SELECT id, poster, posted FROM '.$db->prefix.'posts WHERE topic_id='.$tid.' ORDER BY id DESC LIMIT 1') or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
 			$last_post = $db->fetch_assoc($result);
@@ -597,6 +601,7 @@ else if (isset($_POST['delete_topics']) || isset($_POST['delete_topics_comply'])
 			message($lang_common['Bad request']);
 
 		require PUN_ROOT.'include/search_idx.php';
+		require PUN_ROOT.'include/file_func.php';
 
 		// Verify that the topic IDs are valid
 		$result = $db->query('SELECT 1 FROM '.$db->prefix.'topics WHERE id IN('.$topics.') AND forum_id='.$fid) or error('Unable to check topics', __FILE__, __LINE__, $db->error());
@@ -619,7 +624,10 @@ else if (isset($_POST['delete_topics']) || isset($_POST['delete_topics_comply'])
 
 		// We have to check that we actually have a list of post ID's since we could be deleting just a redirect topic
 		if ($post_ids != '')
+		{
 			strip_search_index($post_ids);
+			delete_post_files($post_ids);
+        }
 
 		// Delete posts
 		$db->query('DELETE FROM '.$db->prefix.'posts WHERE topic_id IN('.$topics.')') or error('Unable to delete posts', __FILE__, __LINE__, $db->error());
