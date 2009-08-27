@@ -38,9 +38,9 @@ if ($tid < 1 && $fid < 1 || $tid > 0 && $fid > 0)
 
 // Fetch some info about the topic and/or the forum
 if ($tid)
-	$result = $db->query('SELECT f.id, f.forum_name, f.moderators, f.redirect_url, fp.post_replies, fp.post_topics, t.subject, t.closed FROM '.$db->prefix.'topics AS t INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND t.id='.$tid) or error('Unable to fetch forum info', __FILE__, __LINE__, $db->error());
+	$result = $db->query('SELECT f.id, f.forum_name, f.moderators, f.redirect_url, fp.post_replies, fp.post_topics, fp.upload, t.subject, t.closed FROM '.$db->prefix.'topics AS t INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND t.id='.$tid) or error('Unable to fetch forum info', __FILE__, __LINE__, $db->error());
 else
-	$result = $db->query('SELECT f.id, f.forum_name, f.moderators, f.redirect_url, fp.post_replies, fp.post_topics FROM '.$db->prefix.'forums AS f LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND f.id='.$fid) or error('Unable to fetch forum info', __FILE__, __LINE__, $db->error());
+	$result = $db->query('SELECT f.id, f.forum_name, f.moderators, f.redirect_url, fp.post_replies, fp.post_topics, fp.upload FROM '.$db->prefix.'forums AS f LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND f.id='.$fid) or error('Unable to fetch forum info', __FILE__, __LINE__, $db->error());
 
 if (!$db->num_rows($result))
 	message($lang_common['Bad request']);
@@ -62,8 +62,24 @@ if ((($tid && (($cur_posting['post_replies'] == '' && $pun_user['g_post_replies'
 	!$is_admmod)
 	message($lang_common['No permission']);
 
+// Do we have permission to upload file?
+if ($pun_user['is_guest'])
+	$can_upload = false;
+else if ($pun_user['g_id'] == PUN_ADMIN)
+	$can_upload = true;
+else
+	$can_upload = ($cur_posting['upload'] == '' && $pun_user['g_upload'] == '1') || $cur_posting['upload'] == '1';
+
 // Load the post.php language file
 require PUN_ROOT.'lang/'.$pun_user['language'].'/post.php';
+
+if ($can_upload)
+{
+	// Load the file-upload language file
+	require PUN_ROOT.'lang/'.$pun_user['language'].'/file.php';
+	// Include file & image support functions
+	require PUN_ROOT.'include/file_func.php';
+}
 
 // Start with a clean slate
 $errors = array();
@@ -72,9 +88,31 @@ $errors = array();
 // Did someone just hit "Submit" or "Preview"?
 if (isset($_POST['form_sent']))
 {
+
 	// Make sure form_user is correct
 	if (($pun_user['is_guest'] && $_POST['form_user'] != 'Guest') || (!$pun_user['is_guest'] && $_POST['form_user'] != $pun_user['username']))
 		message($lang_common['Bad request']);
+
+	if ($can_upload)
+	{
+		// Process attachments if any
+		$attach_ids = array();
+		if (isset($_FILES['attach']))
+		{
+			foreach ($_FILES['attach']['error'] as $file_key => $file_error)
+			{
+				if ($file_error != UPLOAD_ERR_NO_FILE)
+				{
+					$file_item = file_item('attach', $file_key);
+					$result = upload_file($file_item, '');
+					if (is_array($result))
+						$errors = array_merge($errors, $result);
+					else
+						$attach_ids[] = $result;
+				}
+			}
+		}
+	}
 
 	// Flood protection
 	if (!isset($_POST['preview']) && $pun_user['last_post'] != '' && (time() - $pun_user['last_post']) < $pun_user['g_post_flood'])
@@ -113,14 +151,14 @@ if (isset($_POST['form_sent']))
 		if (strlen($username) < 2)
 			$errors[] = $lang_prof_reg['Username too short'];
 		else if (pun_strlen($username) > 25)	// This usually doesn't happen since the form element only accepts 25 characters
-			$errors[] = $lang_prof_reg['Username too long'];			
+			$errors[] = $lang_prof_reg['Username too long'];
 		else if (!strcasecmp($username, 'Guest') || !strcasecmp($username, $lang_common['Guest']))
 			$errors[] = $lang_prof_reg['Username guest'];
 		else if (preg_match('/[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/', $username) || preg_match('/((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(([0-9A-Fa-f]{1,4}:){0,5}:((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(::([0-9A-Fa-f]{1,4}:){0,5}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))/', $username))
 			$errors[] = $lang_prof_reg['Username IP'];
 		else if ((strpos($username, '[') !== false || strpos($username, ']') !== false) && strpos($username, '\'') !== false && strpos($username, '"') !== false)
 			$errors[] = $lang_prof_reg['Username reserved chars'];
-		else if (preg_match('#\[b\]|\[/b\]|\[u\]|\[/u\]|\[i\]|\[/i\]|\[color|\[/color\]|\[quote\]|\[quote=|\[/quote\]|\[code\]|\[/code\]|\[img\]|\[/img\]|\[url|\[/url\]|\[email|\[/email\]#i', $username))
+		else if (preg_match('/(?:\[\/?(?:b|u|i|h|colou?r|quote|code|img|url|email|list)\]|\[(?:code|quote|list)=)/i', $username))
 			$errors[] = $lang_prof_reg['Username BBCode'];
 
 		// Check username for any censored words
@@ -155,7 +193,7 @@ if (isset($_POST['form_sent']))
 		$message = ucwords(strtolower($message));
 
 	// Validate BBCode syntax
-	if ($pun_config['p_message_bbcode'] == '1' && strpos($message, '[') !== false && strpos($message, ']') !== false)
+	if ($pun_config['p_message_bbcode'] == '1' || $pun_config['o_make_links'] == '1')
 	{
 		require PUN_ROOT.'include/parser.php';
 		$message = preparse_bbcode($message, $errors);
@@ -178,9 +216,9 @@ if (isset($_POST['form_sent']))
 			if (!$pun_user['is_guest'])
 			{
 				$new_tid = $tid;
-				
+
 				// Insert the new post
-				$db->query('INSERT INTO '.$db->prefix.'posts (poster, poster_id, poster_ip, message, hide_smilies, posted, topic_id) VALUES(\''.$db->escape($username).'\', '.$pun_user['id'].', \''.get_remote_address().'\', \''.$db->escape($message).'\', \''.$hide_smilies.'\', '.$now.', '.$tid.')') or error('Unable to create post', __FILE__, __LINE__, $db->error());
+				$db->query('INSERT INTO '.$db->prefix.'posts (poster, poster_id, poster_ip, message, hide_smilies, posted, topic_id) VALUES(\''.$db->escape($username).'\', '.$pun_user['id'].', \''.get_remote_address().'\', \''.$db->escape($message).'\', '.$hide_smilies.', '.$now.', '.$tid.')') or error('Unable to create post', __FILE__, __LINE__, $db->error());
 				$new_pid = $db->insert_id();
 
 				// To subscribe or not to subscribe, that ...
@@ -195,7 +233,7 @@ if (isset($_POST['form_sent']))
 			{
 				// It's a guest. Insert the new post
 				$email_sql = ($pun_config['p_force_guest_email'] == '1' || $email != '') ? '\''.$email.'\'' : 'NULL';
-				$db->query('INSERT INTO '.$db->prefix.'posts (poster, poster_ip, poster_email, message, hide_smilies, posted, topic_id) VALUES(\''.$db->escape($username).'\', \''.get_remote_address().'\', '.$email_sql.', \''.$db->escape($message).'\', \''.$hide_smilies.'\', '.$now.', '.$tid.')') or error('Unable to create post', __FILE__, __LINE__, $db->error());
+				$db->query('INSERT INTO '.$db->prefix.'posts (poster, poster_ip, poster_email, message, hide_smilies, posted, topic_id) VALUES(\''.$db->escape($username).'\', \''.get_remote_address().'\', '.$email_sql.', \''.$db->escape($message).'\', '.$hide_smilies.', '.$now.', '.$tid.')') or error('Unable to create post', __FILE__, __LINE__, $db->error());
 				$new_pid = $db->insert_id();
 			}
 
@@ -298,13 +336,13 @@ if (isset($_POST['form_sent']))
 					$db->query('INSERT INTO '.$db->prefix.'subscriptions (user_id, topic_id) VALUES('.$pun_user['id'].' ,'.$new_tid.')') or error('Unable to add subscription', __FILE__, __LINE__, $db->error());
 
 				// Create the post ("topic post")
-				$db->query('INSERT INTO '.$db->prefix.'posts (poster, poster_id, poster_ip, message, hide_smilies, posted, topic_id) VALUES(\''.$db->escape($username).'\', '.$pun_user['id'].', \''.get_remote_address().'\', \''.$db->escape($message).'\', \''.$hide_smilies.'\', '.$now.', '.$new_tid.')') or error('Unable to create post', __FILE__, __LINE__, $db->error());
+				$db->query('INSERT INTO '.$db->prefix.'posts (poster, poster_id, poster_ip, message, hide_smilies, posted, topic_id) VALUES(\''.$db->escape($username).'\', '.$pun_user['id'].', \''.get_remote_address().'\', \''.$db->escape($message).'\', '.$hide_smilies.', '.$now.', '.$new_tid.')') or error('Unable to create post', __FILE__, __LINE__, $db->error());
 			}
 			else
 			{
 				// Create the post ("topic post")
 				$email_sql = ($pun_config['p_force_guest_email'] == '1' || $email != '') ? '\''.$email.'\'' : 'NULL';
-				$db->query('INSERT INTO '.$db->prefix.'posts (poster, poster_ip, poster_email, message, hide_smilies, posted, topic_id) VALUES(\''.$db->escape($username).'\', \''.get_remote_address().'\', '.$email_sql.', \''.$db->escape($message).'\', \''.$hide_smilies.'\', '.$now.', '.$new_tid.')') or error('Unable to create post', __FILE__, __LINE__, $db->error());
+				$db->query('INSERT INTO '.$db->prefix.'posts (poster, poster_ip, poster_email, message, hide_smilies, posted, topic_id) VALUES(\''.$db->escape($username).'\', \''.get_remote_address().'\', '.$email_sql.', \''.$db->escape($message).'\', '.$hide_smilies.', '.$now.', '.$new_tid.')') or error('Unable to create post', __FILE__, __LINE__, $db->error());
 			}
 			$new_pid = $db->insert_id();
 
@@ -330,6 +368,13 @@ if (isset($_POST['form_sent']))
 			$db->query('UPDATE '.$db->prefix.'online SET last_post='.$now.' WHERE ident=\''.$db->escape(get_remote_address()).'\'' ) or error('Unable to update user', __FILE__, __LINE__, $db->error());
 		}
 
+		// Attach files uploaded into post
+		if ($can_upload && !empty($attach_ids))
+		{
+			// Just in case: verify poster and attach info
+			$db->query('UPDATE '.$db->prefix.'files SET post_id='.$new_pid.' WHERE poster_id='.$pun_user['id'].' AND post_id=0 AND id IN('.implode(',', $attach_ids).')' ) or error('Unable to update files post_id', __FILE__, __LINE__, $db->error());
+		}
+
 		redirect('viewtopic.php?pid='.$new_pid.'#p'.$new_pid, $lang_post['Post redirect']);
 	}
 }
@@ -339,7 +384,7 @@ if (isset($_POST['form_sent']))
 if ($tid)
 {
 	$action = $lang_post['Post a reply'];
-	$form = '<form id="post" method="post" action="post.php?action=post&amp;tid='.$tid.'" onsubmit="this.submit.disabled=true;if(process_form(this)){return true;}else{this.submit.disabled=false;return false;}">';
+	$form = '<form id="post" method="post" action="post.php?action=post&amp;tid='.$tid.'" onsubmit="this.submit.disabled=true;if(process_form(this)){return true;}else{this.submit.disabled=false;return false;}" enctype="multipart/form-data">';
 
 	// If a quote-id was specified in the url.
 	if (isset($_GET['qid']))
@@ -354,7 +399,7 @@ if ($tid)
 
 		list($q_poster, $q_message) = $db->fetch_row($result);
 
-		$q_message = str_replace('[img]', '[url]', $q_message);
+		$q_message = preg_replace('%\[img(?:=.*?)?\]%', '[url]', $q_message);
 		$q_message = str_replace('[/img]', '[/url]', $q_message);
 		$q_message = pun_htmlspecialchars($q_message);
 
@@ -392,7 +437,7 @@ if ($tid)
 else if ($fid)
 {
 	$action = $lang_post['Post new topic'];
-	$form = '<form id="post" method="post" action="post.php?action=post&amp;fid='.$fid.'" onsubmit="return process_form(this)">';
+	$form = '<form id="post" method="post" action="post.php?action=post&amp;fid='.$fid.'" onsubmit="return process_form(this)" enctype="multipart/form-data">';
 
 	$forum_name = pun_htmlspecialchars($cur_posting['forum_name']);
 }
@@ -510,6 +555,10 @@ if ($fid): ?>
 					</div>
 				</fieldset>
 <?php
+
+// Include file input field(s) if possible
+if ($can_upload)
+	include PUN_ROOT.'include/template/post/attach_input.php';
 
 $checkboxes = array();
 if (!$pun_user['is_guest'])

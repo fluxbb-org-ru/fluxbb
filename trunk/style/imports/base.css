@@ -35,6 +35,7 @@
 
 DIV.blockpost DIV.box, DIV.postleft, DIV.postsignature, DIV.postmsg {OVERFLOW: hidden}
 
+
 /****************************************************************/
 /* 3. BUG FIXES - VERY IMPORTANT - DO NOT CHANGE */
 /****************************************************************/
@@ -191,7 +192,7 @@ DIV.blockpost>DIV>DIV.inbox {PADDING-BOTTOM: 1px}
 
 /* 7.3 This is the div which actually contains the post and is inside .postright */
 
-DIV.postmsg {WIDTH:100%}
+DIV.postmsg {WIDTH:100%;}
 DIV.postmsg P {MARGIN: 0 0 1.5em}
 DIV.postmsg UL, DIV.postmsg OL {MARGIN: 0 0 1.5em 0.5em;PADDING-LEFT: 1.5em}
 DIV.postmsg OL {MARGIN: 0 0 1.5em 1em}
@@ -201,9 +202,11 @@ DIV.postmsg OL.alpha LI {LIST-STYLE-TYPE: lower-alpha}
 
 /* 7.4 These items control overflow and scrolling within posts. */
 
-DIV.incqbox {WIDTH: 100%; OVERFLOW: hidden}
-DIV.scrollbox {WIDTH: 100%; OVERFLOW: auto}
-DIV.codebox {OVERFLOW: auto}
+DIV.quotebox blockquote {WIDTH: 100%; OVERFLOW: hidden}
+
+DIV.codebox pre {padding: 0; margin: 0 0 0 0; min-height: 3em; overflow: auto; width: 100%;}
+*DIV.codebox pre {overflow-y: hidden; min-height: 2em; padding-bottom: 18px}
+
 IMG.postimg {max-width: 100%}
 A .postimg {max-width: 100%}
 
@@ -288,3 +291,33 @@ DIV.txtarea TEXTAREA, INPUT.longinput {WIDTH: 100%}
 #helpfile UL LI {LIST-STYLE-TYPE: circle}
 #helpfile OL.decimal LI {LIST-STYLE-TYPE: decimal}
 #helpfile OL.alpha LI {LIST-STYLE-TYPE: lower-alpha}
+
+/****************************************************************/
+/* 11. ATTACHMENTS. */
+/****************************************************************/
+
+/* 11.1 Put some space between file items */
+
+.attachments {
+	POSITION: relative;
+	WIDTH: 99.9%;
+	OVERFLOW: hidden;
+}
+
+.attachments LI {
+	FLOAT: left;
+	WIDTH: 15em;
+	OVERFLOW: hidden;
+/*	MARGIN-BOTTOM: 0.5em;
+	BORDER-LEFT: 1px dotted; */
+}
+
+.attachments LI.first-item {
+	BORDER-LEFT: none;
+}
+
+.attachments LI A.file {
+	DISPLAY: block;
+    PADDING: 2px 0 2px 20px;
+	BACKGROUND: url(../../img/icon/attach.png) 2px center no-repeat;
+}

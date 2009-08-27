@@ -25,7 +25,7 @@
 
 // The FluxBB version this script installs
 define('FORUM_VERSION', '1.4');
-define('FORUM_DB_REVISION', 0);
+define('FORUM_DB_REVISION', 2);
 
 
 define('PUN_ROOT', './');
@@ -97,7 +97,7 @@ if (!isset($_POST['form_sent']))
 	if (function_exists('mysql_connect'))
 	{
 		$db_extensions[] = array('mysql', 'MySQL Standard');
-		$db_extensions[] = array('mysql_innodb', 'MySQL (InnoDB)');
+		$db_extensions[] = array('mysql_innodb', 'MySQL Standard (InnoDB)');
 		$mysql_innodb = true;
 
 		if (count($db_extensions) > 2)
@@ -1419,8 +1419,11 @@ else
 
 	// Insert the four preset groups
 	$db->query('INSERT INTO '.$db->prefix."groups (g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_download, g_upload, g_post_flood, g_search_flood, g_email_flood) VALUES('Administrators', 'Administrator', 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0)") or error('Unable to add group', __FILE__, __LINE__, $db->error());
+
 	$db->query('INSERT INTO '.$db->prefix."groups (g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_download, g_upload, g_post_flood, g_search_flood, g_email_flood) VALUES('Moderators', 'Moderator', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)") or error('Unable to add group', __FILE__, __LINE__, $db->error());
+
 	$db->query('INSERT INTO '.$db->prefix."groups (g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_download, g_upload, g_post_flood, g_search_flood, g_email_flood) VALUES('Guest', NULL, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 60, 30, 0)") or error('Unable to add group', __FILE__, __LINE__, $db->error());
+
 	$db->query('INSERT INTO '.$db->prefix."groups (g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_download, g_upload, g_post_flood, g_search_flood, g_email_flood) VALUES('Members', NULL, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 60, 30, 60)") or error('Unable to add group', __FILE__, __LINE__, $db->error());
 
 	// Insert guest and first admin user
@@ -1432,6 +1435,17 @@ else
 
 	// Enable/disable avatars depending on file_uploads setting in PHP configuration
 	$avatars = in_array(strtolower(@ini_get('file_uploads')), array('on', 'true', '1')) ? 1 : 0;
+
+
+	// Predefined list of image previews (width, height, do cut)
+	$previews = array(
+		'square'	=>	array(75, 75, true),
+		'thumbnail'	=>	array(100, 100, false),
+		'small'		=>	array(240, 240, false),
+		'medium'	=>	array(500, 500, false),
+		'large'		=>	array(1024, 1024, false)
+	);
+
 
 	// Insert config data
 	$config = array(
@@ -1507,7 +1521,8 @@ else
 		'p_sig_lines'				=> "'4'",
 		'p_allow_banned_email'		=> "'1'",
 		'p_allow_dupe_email'		=> "'0'",
-		'p_force_guest_email'		=> "'1'"
+		'p_force_guest_email'		=> "'1'",
+		'f_previews'				=> "'".serialize($previews)."'"
 	);
 
 	while (list($conf_name, $conf_value) = @each($config))

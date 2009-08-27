@@ -1,21 +1,11 @@
 <?php
 
+// TO DO: pun these params to $pun_config
 define('MAX_FILE_SIZE', 10485760);		// 10M
 define('MAX_FILES_IN_FOLDER', 1000);	// rational limit for FAT
 define('PREVIEW_QUALITY', 80);			// good quality
 define('IMAGE_FILL_COLOR', 0xFFFFFF);	// white background
 define('FILE_CHUNK', 10240);			// download by 10K parts
-
-
-// Predefined list of preview sizes
-// (width, height, do cut)
-$previews = array(
-	'square'	=>	array(75, 75, true),
-	'thumbnail'	=>	array(100, 100, false),
-	'small'		=>	array(240, 240, false),
-	'medium'	=>	array(500, 500, false),
-	'large'		=>	array(1024, 1024, false)
-);
 
 
 //
@@ -24,8 +14,9 @@ $previews = array(
 // or null if requested preview is too big
 //
 function preview_metrix($preview_id, $file_width, $file_height)
-{	global $previews, $pun_config;
+{	global $pun_config;
 
+	$previews = unserialize($pun_config['f_previews']);
 	if (!isset($previews[$preview_id]))
 		return null;
 
@@ -67,8 +58,9 @@ function preview_metrix($preview_id, $file_width, $file_height)
 //
 function preview($preview_id, $file_id)
 {
-	global $previews, $pun_config;
+	global $pun_config;
 
+	$previews = unserialize($pun_config['f_previews']);
 	if (!isset($previews[$preview_id]))
 		return $pun_config['o_base_url'].'/file.php?action=download&amp;id='.$file_id;
 
@@ -82,7 +74,7 @@ function preview($preview_id, $file_id)
 // Returns preview URI
 //
 function preview_check($preview_id, $file_id, $src_file, $mime, $src_w, $src_h)
-{	global $previews, $pun_config;
+{	global $pun_config;
 
 	$params = preview_metrix($preview_id, $src_w, $src_h);
 	// Return link to original file, when requested preview is too big
@@ -145,7 +137,7 @@ function preview_check($preview_id, $file_id, $src_file, $mime, $src_w, $src_h)
 // Returns new file id on success
 // or array of error messages
 //
-function upload($file_request, $title)
+function upload_file($file_request, $title)
 {
 	global $db, $pun_user, $lang_file;	static $max_id, $dir;
 
@@ -232,6 +224,50 @@ function upload($file_request, $title)
 	}
 
 	return $errors;
+}
+
+
+//
+// Delete files
+//
+function delete_files($file_ids, $check = false)
+{
+	global $db;
+
+	if (empty($file_ids))
+		return;
+
+	$pun_config = $GLOBALS['pun_config'];
+	$pun_user = $GLOBALS['pun_user'];
+	$preview_ids = array_keys(unserialize($pun_config['f_previews']));
+
+	// Prevent attack
+	if ($check)
+		$sql = 'SELECT a.id, a.location, a.poster_id, f.moderators, fp.upload FROM '.$db->prefix.'files AS a LEFT JOIN '.$db->prefix.'posts AS p ON p.id=a.post_id LEFT JOIN '.$db->prefix.'topics AS t ON t.id=p.topic_id INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE a.id IN ('.implode(',', $file_ids).')';
+	else
+		$sql = 'SELECT a.id, a.location, a.poster_id, \'\' AS moderators, 0 AS upload FROM '.$db->prefix.'files AS a WHERE a.id IN ('.implode(',', $file_ids).')';
+	$result = $db->query($sql) or error('Unable to fetch files to delete', __FILE__, __LINE__, $db->error());
+
+	$file_ids = array();
+	while(list($file_id, $location, $poster_id, $moderators, $upload) = $db->fetch_row($result))
+	{
+		if ($check)
+			; // TO DO: check user privileges
+
+		$file_ids[] = $file_id;
+		// Remove file
+		@unlink(PUN_ROOT.$location);
+		// Remove previews
+		foreach($preview_ids as $preview_id)
+		{
+			$preview_dir = sprintf('%04d', intval($file_id / MAX_FILES_IN_FOLDER + 1));
+			@unlink(PUN_ROOT.'img/preview/'.$preview_id.'/'.$preview_dir.'/'.$file_id.'.jpg');
+		}
+	}
+
+	// Delete records from table
+	if (!empty($file_ids))
+		$db->query('DELETE FROM '.$db->prefix.'files WHERE id IN ('.implode(',', $file_ids).')') or error('Unable delete files', __FILE__, __LINE__, $db->error());
 }
 
 
@@ -336,6 +372,20 @@ function array_to_links($arr)
 {
 	$result = array();
 	foreach ($arr as $item)
-		$result[] = '<a href="file.php?action=info&amp;id='.$item['id'].'" title="'.pun_htmlspecialchars($item['title']).'" class="'.mime_to_class($item['mime']).'">'.pun_htmlspecialchars($item['filename']).'</a>';
+		$result[] = '<a href="file.php?action=info&amp;id='.$item['id'].'" title="'.pun_htmlspecialchars($item['title']=='' ? $item['filename'] : $item['title']).'" class="'.mime_to_class($item['mime']).'">'.pun_htmlspecialchars($item['filename']).'</a>';
 	return $result;
+}
+
+
+//
+// Extract file item from $_FILES['name'] structure
+//
+function file_item($name, $key)
+{	return array(
+		'name'		=> $_FILES[$name]['name'][$key],
+		'type'		=> $_FILES[$name]['type'][$key],
+		'tmp_name'	=> $_FILES[$name]['tmp_name'][$key],
+		'error'		=> $_FILES[$name]['error'][$key],
+		'size'		=> $_FILES[$name]['size'][$key]
+	);
 }

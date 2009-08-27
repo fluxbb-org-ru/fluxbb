@@ -360,7 +360,7 @@ foreach ($posts as $post_id => $cur_post)
 <?php if ($signature != '') echo "\t\t\t\t".'<div class="postsignature"><hr />'.$signature.'</div>'."\n"; ?>
 <?php if (isset($cur_post['attachments'])): ?>
 				<div class="postsignature attachments"><hr />
-					<ul><li><?php echo implode($lang_topic['Link separator'].'</li><li>', array_to_links($cur_post['attachments'])) ?></ul>
+					<ul><li class="first-item"><?php echo implode('</li><li>', array_to_links($cur_post['attachments'])) ?></ul>
 				</div>
 <?php endif; ?>
 			</div>

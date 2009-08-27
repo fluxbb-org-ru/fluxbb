@@ -28,7 +28,7 @@ if (!defined('PUN_ROOT'))
 
 // Define the version and database revision that this code was written for
 define('FORUM_VERSION', '1.4');
-define('FORUM_DB_REVISION', 0);
+define('FORUM_DB_REVISION', 2);
 
 
 // Attempt to load the configuration file config.php
@@ -69,7 +69,8 @@ list($usec, $sec) = explode(' ', microtime());
 $pun_start = ((float)$usec + (float)$sec);
 
 // Make sure PHP reports all errors except E_NOTICE. FluxBB supports E_ALL, but a lot of scripts it may interact with, do not.
-error_reporting(E_ALL ^ E_NOTICE);
+//error_reporting(E_ALL ^ E_NOTICE);
+error_reporting(E_ALL);
 
 // Turn off magic_quotes_runtime
 if (get_magic_quotes_runtime())

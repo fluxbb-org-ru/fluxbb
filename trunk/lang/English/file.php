@@ -4,7 +4,7 @@
 $lang_file = array(
 'Post file legend'		=>	'Select your file to upload',
 'Files'					=>	'Files',
-'Post new file'			=> 'Post new file',
+'Post new file'			=>	'Post new file',
 'Title'					=>	'File title',
 'File'					=>	'File',
 'Upload redirect'		=>	'File uploaded. Redirecting &hellip;',
@@ -14,11 +14,14 @@ $lang_file = array(
 'Download'				=>	'Download',
 'Info'					=>	'Info',
 'Browse'				=>	'Browse',
+'Delete'				=>	'Delete',
 
 'Unattached files'		=>	'Unattached files',
 'Attached files'		=>	'Attached files',
 'Files of'				=>	'Files of %s',
-'All users files'		=>	'All users files',
+'All files'				=>	'All files',
+'Your files'			=>	'Your files',
+
 'Mime-type'				=>	'File type',
 'Downloads'				=>	'Downloads',
 'File size'				=>	'File size',
@@ -28,6 +31,8 @@ $lang_file = array(
 'Uploaded'				=>	'Uploaded',
 'Poster'				=>	'Poster',
 
+'Attachments'			=>	'Attachments',
+
 'Error ini size'		=>	'File exceeds the upload_max_filesize in php.ini',
 'Error form size'		=>	'File exceeds maximum size',
 'Error partially'		=>	'File partially uploaded',
@@ -36,5 +41,4 @@ $lang_file = array(
 'Error not moved'		=>	'File cannot save',
 
 );
-
 

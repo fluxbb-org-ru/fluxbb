@@ -14,8 +14,9 @@ $action = isset($_GET['action']) ? $_GET['action'] : 'browse';
 if (!in_array($action, array('upload', 'download', 'info', 'browse')))
 	message($lang_common['Bad request']);
 
-// Load the post required language files
+// Load required language files
 require PUN_ROOT.'lang/'.$pun_user['language'].'/post.php';
+require PUN_ROOT.'lang/'.$pun_user['language'].'/search.php';
 require PUN_ROOT.'lang/'.$pun_user['language'].'/file.php';
 
 // Start with a clean slate
@@ -46,7 +47,7 @@ if ($action == 'upload')
 		else if ($pun_config['p_subject_all_caps'] == '0' && strtoupper($title) == $title && !$pun_user['is_admmod'])
 			$title = ucwords(strtolower($title));
 
-		$result = upload($_FILES['req_file'], $title);
+		$result = upload_file($_FILES['req_file'], $title);
 		if (is_array($result))
 			$errors = array_merge($errors, $result);
 		else
@@ -90,6 +91,7 @@ else if ($action == 'info')
 
 		$cur_size = isset($_GET['size']) ? $_GET['size'] : 'square';
 
+		$previews = unserialize($pun_config['f_previews']);
 		$keys_with_original = $keys = array_keys($previews);
 		$keys_with_original[] = 'original';
 		if (!in_array($cur_size, $keys_with_original))
@@ -133,6 +135,9 @@ else if ($action == 'download')
 
 else if ($action == 'browse')
 {
+	if ($pun_user['g_search'] == '0')
+		message($lang_search['No search permission']);
+
 	if ($forum_id == 0)
 	{
 		$attached = false;
@@ -163,7 +168,7 @@ else if ($action == 'browse')
 		if ($forum_id > 0)
 			$sql .= ' AND (f.id='.$forum_id.')';
 
-		$order = ' ORDER BY c.disp_position, c.id, f.disp_position, t.posted DESC, fi.filename';
+		$order = ' ORDER BY c.disp_position, c.id, f.disp_position, t.posted DESC, fi.id';
 	}
 
 	if ($user_id > 0)
@@ -173,7 +178,7 @@ else if ($action == 'browse')
 
 
 	if ($pun_user['g_upload'] == '1')
-		$post_link = '<a href="file.php?action=upload">'.$lang_file['Upload'].'</a>';
+		$post_link = '<a href="file.php?action=upload">'.$lang_file['Post new file'].'</a>';
 	else
 		$post_link = '&nbsp;';
 
@@ -465,7 +470,7 @@ else if ($action == 'browse')
 ?>
 				<tr>
 					<td class="tcl">
-						<div class="tclcon attachments">
+						<div class="<?php if ($attached) echo 'tclcon '; ?>attachments">
 						<a href="file.php?action=info&amp;id=<?php echo $cur_file['id'] ?>" class="<?php echo mime_to_class($cur_file['mime']) ?>"><?php echo pun_htmlspecialchars($cur_file['filename']) ?></a>
 						<p><?php echo pun_htmlspecialchars($cur_file['title']) ?></p>
 						</div>

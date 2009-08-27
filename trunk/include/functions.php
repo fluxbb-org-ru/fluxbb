@@ -603,6 +603,17 @@ function delete_topic($topic_id)
 
 		// Delete posts in topic
 		$db->query('DELETE FROM '.$db->prefix.'posts WHERE topic_id='.$topic_id) or error('Unable to delete posts', __FILE__, __LINE__, $db->error());
+
+		// Delete attached files
+		$file_ids = array();
+		$result = $db->query('SELECT id FROM '.$db->prefix.'files WHERE post_id IN('.$post_ids.')') or error('Unable to fetch files', __FILE__, __LINE__, $db->error());
+		while ($row = $db->fetch_row($result))
+			$file_ids[] = $row[0];
+		if (!empty($file_ids))
+		{
+			require PUN_ROOT.'include/file_func.php';
+			delete_files($file_ids);
+		}
 	}
 
 	// Delete any subscriptions for this topic
@@ -643,6 +654,17 @@ function delete_post($post_id, $topic_id)
 	else
 		// Otherwise we just decrement the reply counter
 		$db->query('UPDATE '.$db->prefix.'topics SET num_replies='.$num_replies.' WHERE id='.$topic_id) or error('Unable to update topic', __FILE__, __LINE__, $db->error());
+
+	// Delete attached files
+	$file_ids = array();
+	$result = $db->query('SELECT id FROM '.$db->prefix.'files WHERE post_id='.$post_id) or error('Unable to fetch files', __FILE__, __LINE__, $db->error());
+	while ($row = $db->fetch_row($result))
+		$file_ids[] = $row[0];
+	if (!empty($file_ids))
+	{
+		require PUN_ROOT.'include/file_func.php';
+		delete_files($file_ids);
+	}
 }
 
 
@@ -815,7 +837,7 @@ function paginate($num_pages, $cur_page, $link)
 			$pages[] = '<a'.(empty($pages) ? ' class="item1"' : '').' href="'.$link.'&amp;p='.($cur_page +1).'">'.$lang_common['Next'].'</a>';
 	}
 
-	return implode('&nbsp;', $pages);
+	return implode(' ', $pages);
 }
 
 
@@ -1202,9 +1224,12 @@ function error($message, $file, $line, $db_error = false)
 {
 	global $pun_config;
 
-	// Set a default title if the script failed before $pun_config could be populated
+	// Set some default settings if the script failed before $pun_config could be populated
 	if (empty($pun_config))
+	{
 		$pun_config['o_board_title'] = 'FluxBB';
+		$pun_config['o_gzip'] = '0';
+	}
 
 	// Empty all output buffers and stop buffering
 	while (@ob_end_clean());

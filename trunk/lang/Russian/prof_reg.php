@@ -38,7 +38,6 @@ $lang_prof_reg = array(
 'characters'				=>	'символов',
 'Sig too many lines'		=>	'Подпись не может быть длиннее',
 'lines'						=>	'строк',
-//'Signature quote/code'		=>	'BB-коды quote и code не допускаются в подписи. Пожалуйста вернитесь и исправьте.',
 'Bad ICQ'					=>	'Вы вели неверный ICQ UIN. Пожалуйста вернитесь и исправьте.'
 
 );

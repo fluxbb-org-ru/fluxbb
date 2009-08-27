@@ -36,7 +36,7 @@ if ($id < 1)
 	message($lang_common['Bad request']);
 
 // Fetch some info about the post, the topic and the forum
-$result = $db->query('SELECT f.id AS fid, f.forum_name, f.moderators, f.redirect_url, fp.post_replies, fp.post_topics, t.id AS tid, t.subject, t.posted, t.first_post_id, t.closed, p.poster, p.poster_id, p.message, p.hide_smilies FROM '.$db->prefix.'posts AS p INNER JOIN '.$db->prefix.'topics AS t ON t.id=p.topic_id INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND p.id='.$id) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
+$result = $db->query('SELECT f.id AS fid, f.forum_name, f.moderators, f.redirect_url, fp.post_replies, fp.post_topics, fp.upload, t.id AS tid, t.subject, t.posted, t.first_post_id, t.closed, p.poster, p.poster_id, p.message, p.hide_smilies FROM '.$db->prefix.'posts AS p INNER JOIN '.$db->prefix.'topics AS t ON t.id=p.topic_id INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND p.id='.$id) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
 if (!$db->num_rows($result))
 	message($lang_common['Bad request']);
 
@@ -55,8 +55,31 @@ if (($pun_user['g_edit_posts'] == '0' ||
 	!$is_admmod)
 	message($lang_common['No permission']);
 
+// Do we have permission to upload file?
+if ($pun_user['is_guest'])
+	$can_upload = false;
+else if ($pun_user['g_id'] == PUN_ADMIN)
+	$can_upload = true;
+else
+	$can_upload = ($cur_post['upload'] == '' && $pun_user['g_upload'] == '1') || $cur_post['upload'] == '1';
+
 // Load the post.php/edit.php language file
 require PUN_ROOT.'lang/'.$pun_user['language'].'/post.php';
+
+// Preceed files if needed
+if ($can_upload)
+{
+	// Load the file-upload language file
+	require PUN_ROOT.'lang/'.$pun_user['language'].'/file.php';
+	// Include file & image support functions
+	require PUN_ROOT.'include/file_func.php';
+
+	// Fetch already attached files
+	$attachments = array();
+	$result = $db->query('SELECT a.* FROM '.$db->prefix.'files AS a WHERE a.post_id='.$id.' ORDER BY a.id') or error('Unable to fetch attachments', __FILE__, __LINE__, $db->error());
+	while ($attachment = $db->fetch_assoc($result))
+		$attachments[$attachment['id']] = $attachment;
+}
 
 // Start with a clean slate
 $errors = array();
@@ -66,6 +89,46 @@ if (isset($_POST['form_sent']))
 {
 	if ($is_admmod)
 		confirm_referrer('edit.php');
+
+	if ($can_upload)
+	{
+		// Process new attachments if any
+		$attach_ids = array();
+		if (isset($_FILES['attach']))
+		{
+			foreach ($_FILES['attach']['error'] as $file_key => $file_error)
+			{
+				if ($file_error != UPLOAD_ERR_NO_FILE)
+				{
+					$file_item = file_item('attach', $file_key);
+					$result = upload_file($file_item, '');
+					if (is_array($result))
+						$errors = array_merge($errors, $result);
+					else
+					{
+						$attach_ids[] = $result;
+						// Add just uploaded file to list
+						$attachment = array(
+							'id'		=> $result,
+							'title'		=> '',
+							'post_id'	=> $id,
+							'filename'	=> $file_item['name'],
+							'mime'		=> $file_item['type']);
+						$attachments[$result] = $attachment;
+					}
+				}
+			}
+		}
+
+		// Delete marked files
+		if (isset($_POST['del_attach_id']))
+		{
+			delete_files($_POST['del_attach_id']);
+			// Do not show just deleted files
+			foreach ($_POST['del_attach_id'] as $result)
+				unset($attachments[$result]);
+		}
+	}
 
 	// If it is a topic it must contain a subject
 	if ($can_edit_subject)
@@ -91,7 +154,7 @@ if (isset($_POST['form_sent']))
 		$message = ucwords(strtolower($message));
 
 	// Validate BBCode syntax
-	if ($pun_config['p_message_bbcode'] == '1' && strpos($message, '[') !== false && strpos($message, ']') !== false)
+	if ($pun_config['p_message_bbcode'] == '1' || $pun_config['o_make_links'] == '1')
 	{
 		require PUN_ROOT.'include/parser.php';
 		$message = preparse_bbcode($message, $errors);
@@ -99,6 +162,13 @@ if (isset($_POST['form_sent']))
 
 
 	$hide_smilies = isset($_POST['hide_smilies']) ? '1' : '0';
+
+	// Attach files uploaded into post
+	if ($can_upload && !empty($attach_ids))
+	{
+		// Just in case: verify poster and attach info
+		$db->query('UPDATE '.$db->prefix.'files SET post_id='.$id.' WHERE poster_id='.$pun_user['id'].' AND post_id=0 AND id IN('.implode(',', $attach_ids).')' ) or error('Unable to update files post_id', __FILE__, __LINE__, $db->error());
+	}
 
 	// Did everything go according to plan?
 	if (empty($errors) && !isset($_POST['preview']))
@@ -119,7 +189,7 @@ if (isset($_POST['form_sent']))
 			update_search_index('edit', $id, $message);
 
 		// Update the post
-		$db->query('UPDATE '.$db->prefix.'posts SET message=\''.$db->escape($message).'\', hide_smilies=\''.$hide_smilies.'\''.$edited_sql.' WHERE id='.$id) or error('Unable to update post', __FILE__, __LINE__, $db->error());
+		$db->query('UPDATE '.$db->prefix.'posts SET message=\''.$db->escape($message).'\', hide_smilies='.$hide_smilies.$edited_sql.' WHERE id='.$id) or error('Unable to update post', __FILE__, __LINE__, $db->error());
 
 		redirect('viewtopic.php?pid='.$id.'#p'.$id, $lang_post['Edit redirect']);
 	}
@@ -194,7 +264,7 @@ else if (isset($_POST['preview']))
 <div class="blockform">
 	<h2><span><?php echo $lang_post['Edit post'] ?></span></h2>
 	<div class="box">
-		<form id="edit" method="post" action="edit.php?id=<?php echo $id ?>&amp;action=edit" onsubmit="return process_form(this)">
+		<form id="edit" method="post" action="edit.php?id=<?php echo $id ?>&amp;action=edit" onsubmit="return process_form(this)" enctype="multipart/form-data">
 			<div class="inform">
 				<fieldset>
 					<legend><?php echo $lang_post['Edit post legend'] ?></legend>
@@ -212,6 +282,10 @@ else if (isset($_POST['preview']))
 					</div>
 				</fieldset>
 <?php
+
+// Include file input field(s) if possible
+if ($can_upload)
+	include PUN_ROOT.'include/template/post/attach_input.php';
 
 $checkboxes = array();
 if ($pun_config['o_smilies'] == '1')

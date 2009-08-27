@@ -115,7 +115,12 @@ else if ($footer_style == 'file')
 	{
 		echo "\n\t\t\t".'<dl id="searchlinks" class="conl">';
 		echo "\n\t\t\t\t".'<dt><strong>'.$lang_common['Search links'].'</strong></dt>';
-		if (!empty($user_id))
+		if (empty($user_id))
+		{
+			if (!$pun_user['is_guest'])
+				echo "\n\t\t\t\t".'<dd><a href="file.php?action=browse'.($forum_id==-1?'&amp;forum_id=-1&amp;user_id='.$pun_user['id']:'').'">'.$lang_file['Your files'].'</a></dd>'."\n";
+		}
+		else
 		{
 			echo "\n\t\t\t\t".'<dd><a href="file.php?action=browse'.($forum_id==-1?'&amp;forum_id=-1':'').'">'.$lang_file['All files'].'</a></dd>'."\n";
 		}
