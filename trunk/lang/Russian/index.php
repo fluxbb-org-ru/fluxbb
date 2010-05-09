@@ -4,15 +4,14 @@
 $lang_index = array(
 
 'Topics'				=>  'Темы',
-'Moderators'			=>  'Модераторы',
 'Link to'				=>	'Ссылка',	// As in "Link to http://fluxbb.org/"
 'Empty board'			=>	'Форум пуст.',
-'Newest user'			=>	'Новичок',
-'Users online'			=>	'Участников online',
-'Guests online'			=>	'Гостей online',
-'No of users'			=>	'Всего участников',
-'No of topics'			=>	'Кол-во тем',
-'No of posts'			=>	'Кол-во сообщений',
+'Newest user'			=>	'Новичок: %s',
+'Users online'			=>	'Участников online: %s',
+'Guests online'			=>	'Гостей online: %s',
+'No of users'			=>	'Всего участников: %s',
+'No of topics'			=>	'Кол-во тем: %s',
+'No of posts'			=>	'Кол-во сообщений: %s',
 'Online'				=>	'Сейчас online',	// As in "Online: User A, User B etc."
 'Board info'			=>	'Информация о форуме',
 'Board stats'			=>	'Статистика форума',

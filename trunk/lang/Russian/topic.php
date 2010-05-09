@@ -8,6 +8,9 @@ $lang_topic = array(
 'From'				=>	'Из',				// User location
 'IP'				=>	'IP',
 'Note'				=>	'Замечание',				// Admin note
+'Posts'				=>	'Сообщений:',
+'Registered'		=>	'Зарегистрирован:',
+'Replies'			=>	'Ответов:',
 'Website'			=>	'Сайт',
 'Guest'				=>	'Гость',
 'Online'			=>	'Online',
@@ -21,8 +24,8 @@ $lang_topic = array(
 'Unsubscribe'		=>	'Отписаться',
 'Subscribe'			=>	'Подписаться на тему',
 'Quick post'		=>	'Быстрое сообщение',
-
-'Link separator'	=>	' | ',	// The text that separates links in posts (website, e-mail, report, edit etc.)
-'Mod controls'		=>	'Контроль модератора'
+'Mod controls'		=>	'Контроль модератора',
+'New icon'			=>	'New post',
+'Re'				=>	'Re:'
 
 );

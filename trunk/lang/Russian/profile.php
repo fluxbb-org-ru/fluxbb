@@ -17,8 +17,6 @@ $lang_profile = array(
 'Username and pass legend'	=>	'Введите ваше имя и пароль',
 'Personal details legend'	=>	'Введите ваши личные данные',
 'Contact details legend'	=>	'Введите адреса ваших IM пейджеров',
-'Options display'			=>	'Set your display options',
-'Options post'				=>	'Set your post viewing options',
 'User activity'				=>	'Активность пользователя',
 'Paginate info'				=>	'Укажите количество тем и сообщений, выводимых на одной странице.',
 
@@ -32,15 +30,16 @@ $lang_profile = array(
 'Old pass'					=>	'Старый пароль',
 'New pass'					=>	'Новый пароль',
 'Confirm new pass'			=>	'Ещё раз новый',
+'Pass info'					=>	'Пароль должен быть хотябы 4 символа длиной. Пароль чувствителен к регистру.',
 
-// E-mail stuff
-'E-mail key bad'			=>	'Указанный ключ активации e-mail неверный или устарел. Пожалуйста повторите ваш запрос. Если ошибка повторится, свяжитесь с Админом по адресу',
-'E-mail updated'			=>	'Ваш e-mail был изменён.',
-'Activate e-mail sent'		=>	'На указанный адрес было выслано письмо с инструкциями как активировать новый адрес e-mail. В случае если оно не придёт, можете связаться с Админом по адресу',
-'E-mail legend'				=>	'Введите ваш новый адрес e-mail',
-'E-mail instructions'		=>	'На новый адрес будет выслано письмо с активационной ссылкой. Вам необходимо пройти по ссылке из письма чтобы адрес был сохранён.',
-'Change e-mail'				=>	'Смена e-mail',
-'New e-mail'				=>	'Новый e-mail',
+// Email stuff
+'Email key bad'				=>	'Указанный ключ активации e-mail неверный или устарел. Пожалуйста повторите ваш запрос. Если ошибка повторится, свяжитесь с Админом по адресу',
+'Email updated'				=>	'Ваш e-mail был изменён.',
+'Activate email sent'		=>	'На указанный адрес было выслано письмо с инструкциями как активировать новый адрес e-mail. В случае если оно не придёт, можете связаться с Админом по адресу',
+'Email legend'				=>	'Введите ваш новый адрес e-mail',
+'Email instructions'		=>	'На новый адрес будет выслано письмо с активационной ссылкой. Вам необходимо пройти по ссылке из письма чтобы адрес был сохранён.',
+'Change email'				=>	'Смена e-mail',
+'New email'					=>	'Новый e-mail',
 
 // Avatar upload stuff
 'Avatars disabled'			=>	'Админ выключил использование аватар.',
@@ -65,18 +64,20 @@ $lang_profile = array(
 'Upload'					=>	'Загрузить',	// submit button
 
 // Form validation stuff
-'Dupe username'				=>	'Someone else has already registered with that username. Please go back and try a different username.',
 'Forbidden title'			=>	'The title you entered contains a forbidden word. You must choose a different title.',
 'Profile redirect'			=>	'Profile updated. Переадресация &hellip;',
 
 // Profile display stuff
-'Not activated'				=>	'Этот пользователь ещё не активировал свой аккаунт. Аккаунт будет активирован когда он/она введёт имя и пароль в первый раз.',
+'Users profile'				=>	'профиль %s',
 'Unknown'					=>	'(Неизвестно)',	// This is displayed when a user hasn't filled out profile field (e.g. Location)
 'Private'					=>	'(Скрыто)',	// This is displayed when a user does not want to receive e-mails
 'No avatar'					=>	'(Нет аватары)',
+'Username info'				=>	'Пользователь: %s',
+'Email info'				=>	'Email: %s',
+'Posts info'				=>	'Сообщений: %s',
+'Registered info'			=>	'Зарегистрирован: %s',
+'Last post info'			=>	'Посл. сообщение: %s',
 'Show posts'				=>	'Показать все сообщения',
-'Show topics'				=>	'Показать все темы',
-'Show subscriptions'		=>	'Показать все подписки',
 'Realname'					=>	'Настоящее имя',
 'Location'					=>	'Откуда',
 'Website'					=>	'Вебсайт',
@@ -87,8 +88,7 @@ $lang_profile = array(
 'Yahoo'						=>	'Yahoo! Messenger',
 'Avatar'					=>	'Аватара',
 'Signature'					=>	'Подпись',
-'Sig max length'			=>	'Макс. длина',
-'Sig max lines'				=>	'Макс. строк',
+'Sig max size'				=>	'Макс. длина: %s символов / Макс. строк: %s',
 'Avatar legend'				=>	'Выберите вашу аватару',
 'Avatar info'				=>	'Аватара это маленькая картинка, которая будет выводиться возле каждого вашего сообщения. Вы можете загрузить аватару по ссылке ниже.',
 'Change avatar'				=>	'Сменить аватару',
@@ -96,22 +96,20 @@ $lang_profile = array(
 'Signature info'			=>	'Подпись это небольшой текст, присоединяемый к вашему сообщению. Здесь вы можете указать что угодно. Возможно вы захотите поместить сюда любимую цитату или скан вашей росписи. В подпись можно включать форматирование BBCode, если это не запрещено настройками форума. Вы можете увидеть какие именно возможности включены в примечании под полем ввода подписи.',
 'Sig preview'				=>	'Предпросмотр вашей подписи:',
 'No sig'					=>	'Вы ещё не сохранили подпись.',
-'Signature quote/code/list'	=>	'BB-коды quote, code и list запрещены в подписи.',
+'Signature quote/code/list/h'	=>	'BB-коды quote, code и list запрещены в подписи.',
 'Topics per page'			=>	'Тем',
 'Posts per page'			=>	'Сообщений',
 'Leave blank'				=>	'Когда пусто, используется значение по-умолчанию',
 'Subscription legend'		=>	'Укажите параметры вашей подписки',
 'Notify full'				=>	'Вставлять текст сообщений в e-mail.',
-'Notify full info'			=>	'Когда эта опция включена, текстовые версии сообщений будут высылаться по вашей подписке.',
 'Auto notify full'			=>	'Автоматически подписываться на темы.',
-'Auto notify full info'		=>	'Когда эта опция включена, вы будете автоматически подписаны на кадую тему, которую создаёте.',
 'Show smilies'				=>	'Показывать смайлики как графику',
 'Show images'				=>	'Показывать картинки в сообщениях',
 'Show images sigs'			=>	'Показывать картинки в подписях',
 'Show avatars'				=>	'Показывать аватары пользователей',
 'Show sigs'					=>	'Показывать подписи пользователей',
 'Style legend'				=>	'Выберите стиль',
-'Style info'				=>	'Если вы хотите видеть форум в каком-то другом стиле.',
+'Styles'					=>	'Стили',
 'Admin note'				=>	'Примечание админа',
 'Pagination legend'			=>	'Выберите как разбивать на страницы',
 'Post display legend'		=>	'Выберите параметры вывода сообщений',
@@ -136,6 +134,7 @@ $lang_profile = array(
 'User delete redirect'		=>	'Пользователь удален. Переадресация &hellip;',
 'Group membership redirect'	=>	'Назначение группы сохранено. Переадресация &hellip;',
 'Update forums redirect'	=>	'Модераторство в форумах сохранено. Переадресация &hellip;',
-'Ban redirect'				=>	'Переадресация &hellip;'
+'Ban redirect'				=>	'Переадресация &hellip;',
+'No delete admin message'	=>	'Администраторов нельзя удалить. Чтобы удалить этого пользователя, надо сначала переместить его/ее в другую группу.',
 
 );

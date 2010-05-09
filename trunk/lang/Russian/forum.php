@@ -7,6 +7,7 @@ $lang_forum = array(
 'Views'			=>	'Просмотров',
 'Moved'			=>	'Перенесено',
 'Sticky'		=>	'Выделено',
+'Closed'		=>	'Закрыто:',
 'Empty forum'	=>	'Форум пуст.'
 
 );

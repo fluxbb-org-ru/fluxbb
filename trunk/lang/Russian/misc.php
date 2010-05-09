@@ -6,18 +6,18 @@ $lang_misc = array(
 'Mark read redirect'		=>	'Все темы и форумы помечены как прочтённые. Переадресация &hellip;',
 'Mark forum read redirect'	=>	'Все темы выбранного форума помечены как прочтённые. Переадресация &hellip;',
 
-// Send e-mail
-'Form e-mail disabled'		=>	'Пользователь, которому вы пытаетесь отправить e-mail, отключил такую возможность.',
-'No e-mail subject'			=>	'Вы должны ввести заголовок.',
-'No e-mail message'			=>	'Вы должны ввести текст письма.',
-'Too long e-mail message'	=>	'Сообщение должно быть не длиннее 65535 символов (64 KB).',
+// Send email
+'Form email disabled'		=>	'Пользователь, которому вы пытаетесь отправить e-mail, отключил такую возможность.',
+'No email subject'			=>	'Вы должны ввести заголовок.',
+'No email message'			=>	'Вы должны ввести текст письма.',
+'Too long email message'	=>	'Сообщение должно быть не длиннее 65535 символов (64 KB).',
 'Email flood'				=>	'По крайней мере %s секунд должно пройти между отправками email. Пожалуйста сделайте паузу и попробуйте снова.',
-'E-mail sent redirect'		=>	'E-mail отправлен. Переадресация &hellip;',
-'Send e-mail to'			=>	'Отправить сообщение',
-'E-mail subject'			=>	'Заголовок',
-'E-mail message'			=>	'Сообщение',
-'E-mail disclosure note'	=>	'Имейте в виду, что ваш e-mail будет виден вашему адресату.',
-'Write e-mail'				=>	'Напишите и отправьте ваше сообщение по e-mail',
+'Email sent redirect'		=>	'E-mail отправлен. Переадресация &hellip;',
+'Send email to'				=>	'Отправить сообщение',
+'Email subject'				=>	'Заголовок',
+'Email message'				=>	'Сообщение',
+'Email disclosure note'		=>	'Имейте в виду, что ваш e-mail будет виден вашему адресату.',
+'Write email'				=>	'Напишите и отправьте ваше сообщение по e-mail',
 
 // Report
 'No reason'					=>	'Пожалуйста введите причину.',
@@ -48,6 +48,7 @@ $lang_misc = array(
 'Move topics'				=>	'Перенести темы',
 'Move legend'				=>	'Выберите форум-получатель',
 'Move to'					=>	'Перенести в',
+'Nowhere to move'			=>	'Нет форума, куда бы вы могли перенести темы.',
 'Leave redirect'			=>	'Оставить тему(ы) переадресации',
 'Move topic redirect'		=>	'Тема перенесена. Переадресация &hellip;',
 'Move topics redirect'		=>	'Темы перенесены. Переадресация &hellip;',
@@ -76,8 +77,14 @@ $lang_misc = array(
 
 // Delete multiple posts in topic
 'Delete posts'				=>	'Удалить сообщения',
+'Cannot select first'		=>	'Первое сообщение нельзя пометить на удаление.',
 'Delete posts comply'		=>	'Вы уверены, что хотите удалить выбранные сообщения?',
 'Delete posts redirect'		=>	'Сообщения удалены. Переадресация &hellip;',
-'No posts selected'			=>	'Вы должны выбрать хотябы одно сообщение для удаления.'
+'No posts selected'			=>	'Вы должны выбрать хотябы одно сообщение для удаления.',
+
+// Get host
+'Host info 1'					=>	'IP адрес: %s',
+'Host info 2'					=>	'Имя хоста: %s',
+'Show more users'				=>	'Показать еще информацию по IP',
 
 );
