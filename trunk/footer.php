@@ -1,27 +1,10 @@
 <?php
-/***********************************************************************
 
-  Copyright (C) 2002-2005  Rickard Andersson (rickard@punbb.org)
-
-  This file is part of PunBB.
-
-  PunBB is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published
-  by the Free Software Foundation; either version 2 of the License,
-  or (at your option) any later version.
-
-  PunBB is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-  MA  02111-1307  USA
-
-************************************************************************/
-
+/**
+ * Copyright (C) 2008-2010 FluxBB
+ * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
+ * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
+ */
 
 // Make sure no one attempts to run this script "directly"
 if (!defined('PUN'))
@@ -48,33 +31,55 @@ $footer_style = isset($footer_style) ? $footer_style : NULL;
 
 if ($footer_style == 'index' || $footer_style == 'search')
 {
+	echo "\t\t\t".'<div class="conl">'."\n";
+
 	if (!$pun_user['is_guest'] && $pun_user['g_search'] == '1')
 	{
-		echo "\n\t\t\t".'<dl id="searchlinks" class="conl">'."\n\t\t\t\t".'<dt><strong>'.$lang_common['Search links'].'</strong></dt>'."\n\t\t\t\t".'<dd><a href="search.php?action=show_24h">'.$lang_common['Show recent posts'].'</a></dd>'."\n";
-		echo "\t\t\t\t".'<dd><a href="search.php?action=show_unanswered">'.$lang_common['Show unanswered posts'].'</a></dd>'."\n";
+		echo "\t\t\t\t".'<dl id="searchlinks">'."\n";
+		echo "\t\t\t\t\t".'<dt><strong>'.$lang_common['Search links'].'</strong></dt>'."\n";
+
+		echo "\t\t\t\t\t".'<dd><a href="search.php?action=show_24h">'.$lang_common['Show recent posts'].'</a></dd>'."\n";
+		echo "\t\t\t\t\t".'<dd><a href="search.php?action=show_unanswered">'.$lang_common['Show unanswered posts'].'</a></dd>'."\n";
 
 		if ($pun_config['o_subscriptions'] == '1')
-			echo "\t\t\t\t".'<dd><a href="search.php?action=show_subscriptions">'.$lang_common['Show subscriptions'].'</a></dd>'."\n";
+			echo "\t\t\t\t\t".'<dd><a href="search.php?action=show_subscriptions">'.$lang_common['Show subscriptions'].'</a></dd>'."\n";
 
-		echo "\t\t\t\t".'<dd><a href="search.php?action=show_user&amp;user_id='.$pun_user['id'].'">'.$lang_common['Show your posts'].'</a></dd>'."\n\t\t\t".'</dl>'."\n";
+		echo "\t\t\t\t\t".'<dd><a href="search.php?action=show_user&amp;user_id='.$pun_user['id'].'">'.$lang_common['Show your posts'].'</a></dd>'."\n";
+
+		echo "\t\t\t\t".'</dl>'."\n";
 	}
 	else
 	{
 		if ($pun_user['g_search'] == '1')
 		{
-			echo "\n\t\t\t".'<dl id="searchlinks" class="conl">'."\n\t\t\t\t".'<dt><strong>'.$lang_common['Search links'].'</strong></dt><dd><a href="search.php?action=show_24h">'.$lang_common['Show recent posts'].'</a></dd>'."\n";
-			echo "\t\t\t\t".'<dd><a href="search.php?action=show_unanswered">'.$lang_common['Show unanswered posts'].'</a></dd>'."\n\t\t\t".'</dl>'."\n";
+			echo "\t\t\t\t".'<dl id="searchlinks">'."\n";
+			echo "\t\t\t\t\t".'<dt><strong>'.$lang_common['Search links'].'</strong></dt>'."\n";
+
+			echo "\t\t\t\t\t".'<dd><a href="search.php?action=show_24h">'.$lang_common['Show recent posts'].'</a></dd>'."\n";
+			echo "\t\t\t\t\t".'<dd><a href="search.php?action=show_unanswered">'.$lang_common['Show unanswered posts'].'</a></dd>'."\n";
+
+			echo "\t\t\t\t".'</dl>'."\n";
 		}
 	}
+
+	if ($footer_style == 'index')
+	{
+		if ($pun_config['o_feed_type'] == '1')
+			echo "\t\t\t\t".'<p id="feedlinks"><span class="rss"><a href="extern.php?action=feed&amp;type=rss">'.$lang_common['RSS active topics feed'].'</a></span></p>'."\n";
+		else if ($pun_config['o_feed_type'] == '2')
+			echo "\t\t\t\t".'<p id="feedlinks"><span class="atom"><a href="extern.php?action=feed&amp;type=atom">'.$lang_common['Atom active topics feed'].'</a></span></p>'."\n";
+	}
+
+	echo "\t\t\t".'</div>'."\n";
 }
 else if ($footer_style == 'viewforum' || $footer_style == 'viewtopic')
 {
-	echo "\n\t\t\t".'<div class="conl">'."\n";
+	echo "\t\t\t".'<div class="conl">'."\n";
 
 	// Display the "Jump to" drop list
 	if ($pun_config['o_quickjump'] == '1')
 	{
-		// Load cached quickjump
+		// Load cached quick jump
 		if (file_exists(FORUM_CACHE_DIR.'cache_quickjump_'.$pun_user['g_id'].'.php'))
 			include FORUM_CACHE_DIR.'cache_quickjump_'.$pun_user['g_id'].'.php';
 
@@ -88,70 +93,64 @@ else if ($footer_style == 'viewforum' || $footer_style == 'viewtopic')
 		}
 	}
 
-	if ($footer_style == 'viewforum' && $is_admmod)
-		echo "\t\t\t".'<p id="modcontrols"><a href="moderate.php?fid='.$forum_id.'&amp;p='.$p.'">'.$lang_common['Moderate forum'].'</a></p>'."\n";
-	else if ($footer_style == 'viewtopic' && $is_admmod)
+	if ($footer_style == 'viewforum')
 	{
-		echo "\t\t\t".'<dl id="modcontrols"><dt><strong>'.$lang_topic['Mod controls'].'</strong></dt><dd><a href="moderate.php?fid='.$forum_id.'&amp;tid='.$id.'&amp;p='.$p.'">'.$lang_common['Moderate topic'].'</a></dd>'."\n";
-		echo "\t\t\t".'<dd><a href="moderate.php?fid='.$forum_id.'&amp;move_topics='.$id.'">'.$lang_common['Move topic'].'</a></dd>'."\n";
+		if ($is_admmod)
+			echo "\t\t\t\t".'<p id="modcontrols"><a href="moderate.php?fid='.$forum_id.'&amp;p='.$p.'">'.$lang_common['Moderate forum'].'</a></p>'."\n";
 
-		if ($cur_topic['closed'] == '1')
-			echo "\t\t\t".'<dd><a href="moderate.php?fid='.$forum_id.'&amp;open='.$id.'">'.$lang_common['Open topic'].'</a></dd>'."\n";
-		else
-			echo "\t\t\t".'<dd><a href="moderate.php?fid='.$forum_id.'&amp;close='.$id.'">'.$lang_common['Close topic'].'</a></dd>'."\n";
+		if ($pun_config['o_feed_type'] == '1')
+			echo "\t\t\t\t".'<p id="feedlinks"><span class="rss"><a href="extern.php?action=feed&amp;fid='.$forum_id.'&amp;type=rss">'.$lang_common['RSS forum feed'].'</a></span></p>'."\n";
+		else if ($pun_config['o_feed_type'] == '2')
+			echo "\t\t\t\t".'<p id="feedlinks"><span class="atom"><a href="extern.php?action=feed&amp;fid='.$forum_id.'&amp;type=atom">'.$lang_common['Atom forum feed'].'</a></span></p>'."\n";
+	}
+	else if ($footer_style == 'viewtopic')
+	{
+		if ($is_admmod)
+		{
+			echo "\t\t\t\t".'<dl id="modcontrols">'."\n";
+			echo "\t\t\t\t\t".'<dt><strong>'.$lang_topic['Mod controls'].'</strong></dt>'."\n";
 
-		if ($cur_topic['sticky'] == '1')
-			echo "\t\t\t".'<dd><a href="moderate.php?fid='.$forum_id.'&amp;unstick='.$id.'">'.$lang_common['Unstick topic'].'</a></dd></dl>'."\n";
-		else
-			echo "\t\t\t".'<dd><a href="moderate.php?fid='.$forum_id.'&amp;stick='.$id.'">'.$lang_common['Stick topic'].'</a></dd></dl>'."\n";
+			echo "\t\t\t\t\t".'<dd><a href="moderate.php?fid='.$forum_id.'&amp;tid='.$id.'&amp;p='.$p.'">'.$lang_common['Moderate topic'].'</a></dd>'."\n";
+			echo "\t\t\t\t\t".'<dd><a href="moderate.php?fid='.$forum_id.'&amp;move_topics='.$id.'">'.$lang_common['Move topic'].'</a></dd>'."\n";
+
+			if ($cur_topic['closed'] == '1')
+				echo "\t\t\t\t\t".'<dd><a href="moderate.php?fid='.$forum_id.'&amp;open='.$id.'">'.$lang_common['Open topic'].'</a></dd>'."\n";
+			else
+				echo "\t\t\t\t\t".'<dd><a href="moderate.php?fid='.$forum_id.'&amp;close='.$id.'">'.$lang_common['Close topic'].'</a></dd>'."\n";
+
+			if ($cur_topic['sticky'] == '1')
+				echo "\t\t\t\t\t".'<dd><a href="moderate.php?fid='.$forum_id.'&amp;unstick='.$id.'">'.$lang_common['Unstick topic'].'</a></dd>'."\n";
+			else
+				echo "\t\t\t\t\t".'<dd><a href="moderate.php?fid='.$forum_id.'&amp;stick='.$id.'">'.$lang_common['Stick topic'].'</a></dd>'."\n";
+
+			echo "\t\t\t\t".'</dl>'."\n";
+		}
+
+		if ($pun_config['o_feed_type'] == '1')
+			echo "\t\t\t\t".'<p id="feedlinks"><span class="rss"><a href="extern.php?action=feed&amp;tid='.$id.'&amp;type=rss">'.$lang_common['RSS topic feed'].'</a></span></p>'."\n";
+		else if ($pun_config['o_feed_type'] == '2')
+			echo "\t\t\t\t".'<p id="feedlinks"><span class="atom"><a href="extern.php?action=feed&amp;tid='.$id.'&amp;type=atom">'.$lang_common['Atom topic feed'].'</a></span></p>'."\n";
 	}
 
-	echo "\t\t\t".'</div>'."\n";
-}
-else if ($footer_style == 'file')
-{
-	echo "\n\t\t\t".'<div class="conl">'."\n";
-	if ($pun_user['g_search'] == '1')
-	{
-		echo "\n\t\t\t".'<dl id="searchlinks" class="conl">';
-		echo "\n\t\t\t\t".'<dt><strong>'.$lang_common['Search links'].'</strong></dt>';
-		if (empty($user_id))
-		{
-			if (!$pun_user['is_guest'])
-				echo "\n\t\t\t\t".'<dd><a href="file.php?action=browse'.($forum_id==-1?'&amp;forum_id=-1&amp;user_id='.$pun_user['id']:'').'">'.$lang_file['Your files'].'</a></dd>'."\n";
-		}
-		else
-		{
-			echo "\n\t\t\t\t".'<dd><a href="file.php?action=browse'.($forum_id==-1?'&amp;forum_id=-1':'').'">'.$lang_file['All files'].'</a></dd>'."\n";
-		}
-		if ($forum_id == -1)
-			echo "\n\t\t\t\t".'<dd><a href="file.php?action=browse'.(!empty($user_id)?'&amp;user_id='.$user_id:'').'">'.$lang_file['Unattached files'].'</a></dd>'."\n";
-		else
-			echo "\n\t\t\t\t".'<dd><a href="file.php?action=browse&amp;forum_id=-1'.(!empty($user_id)?'&amp;user_id='.$user_id:'').'">'.$lang_file['Attached files'].'</a></dd>'."\n";
-		echo "\n\t\t\t".'</dl>'."\n";
-	}
 	echo "\t\t\t".'</div>'."\n";
 }
 
 ?>
-			<p class="conr"><?php printf($lang_common['Powered by'], '<a href="http://fluxbb.org/">FluxBB</a>'.(($pun_config['o_show_version'] == '1') ? ' '.$pun_config['o_cur_version'] : '')) ?></p>
+			<p id="poweredby" class="conr"><?php printf($lang_common['Powered by'], '<a href="http://fluxbb.org/">FluxBB</a>'.(($pun_config['o_show_version'] == '1') ? ' '.$pun_config['o_cur_version'] : '')) ?></p>
+			<div class="clearer"></div>
+		</div>
+	</div>
+</div>
 <?php
 
 // Display debug info (if enabled/defined)
 if (defined('PUN_DEBUG'))
 {
 	// Calculate script generation time
-	list($usec, $sec) = explode(' ', microtime());
-	$time_diff = sprintf('%.3f', ((float)$usec + (float)$sec) - $pun_start);
-	echo "\t\t\t".'<p class="conr">[ '.sprintf($lang_common['Querytime'], $time_diff, $db->get_num_queries()).' ]</p>'."\n";
+	$time_diff = sprintf('%.3f', get_microtime() - $pun_start);
+	echo '<p id="debugtime">[ '.sprintf($lang_common['Querytime'], $time_diff, $db->get_num_queries()).' - Memory usage: '.
+		 file_size(memory_get_usage()).', Peak: '.file_size(memory_get_peak_usage()).' ]</p>'."\n";
 }
-
-?>
-			<div class="clearer"></div>
-		</div>
-	</div>
-</div>
-<?php
 
 
 // End the transaction

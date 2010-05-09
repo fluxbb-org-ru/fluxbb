@@ -1,26 +1,20 @@
 <?php
-/***********************************************************************
 
-  Copyright (C) 2002-2005  Rickard Andersson (rickard@punbb.org)
+/**
+ * Copyright (C) 2008-2010 FluxBB
+ * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
+ * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
+ */
 
-  This file is part of PunBB.
 
-  PunBB is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published
-  by the Free Software Foundation; either version 2 of the License,
-  or (at your option) any later version.
-
-  PunBB is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-  MA  02111-1307  USA
-
-************************************************************************/
+//
+// Return current timestamp (with microseconds) as a float
+//
+function get_microtime()
+{
+	list($usec, $sec) = explode(' ', microtime());
+	return ((float)$usec + (float)$sec);
+}
 
 //
 // Cookie stuff!
@@ -30,14 +24,13 @@ function check_cookie(&$pun_user)
 	global $db, $db_type, $pun_config, $cookie_name, $cookie_seed;
 
 	$now = time();
-	$expire = $now + 31536000;	// The cookie expires after a year
 
 	// We assume it's a guest
 	$cookie = array('user_id' => 1, 'password_hash' => 'Guest');
 
 	// If a cookie is set, we get the user_id and password hash from it
 	if (isset($_COOKIE[$cookie_name]))
-		list($cookie['user_id'], $cookie['password_hash']) = @unserialize($_COOKIE[$cookie_name]);
+		list($cookie['user_id'], $cookie['password_hash'], $cookie['expiration_time']) = @unserialize($_COOKIE[$cookie_name]);
 
 	if ($cookie['user_id'] > 1)
 	{
@@ -48,18 +41,23 @@ function check_cookie(&$pun_user)
 		// If user authorisation failed
 		if (!isset($pun_user['id']) || md5($cookie_seed.$pun_user['password']) !== $cookie['password_hash'])
 		{
+			$expire = $now + 31536000; // The cookie expires after a year
 			pun_setcookie(1, md5(uniqid(rand(), true)), $expire);
 			set_default_user();
 
 			return;
 		}
 
+		// Send a new, updated cookie with a new expiration timestamp
+		$expire = (intval($cookie['expiration_time']) > $now + $pun_config['o_timeout_visit']) ? $now + 1209600 : $now + $pun_config['o_timeout_visit'];
+		pun_setcookie($pun_user['id'], $pun_user['password'], $expire);
+
 		// Set a default language if the user selected language no longer exists
-		if (!@file_exists(PUN_ROOT.'lang/'.$pun_user['language']))
+		if (!file_exists(PUN_ROOT.'lang/'.$pun_user['language']))
 			$pun_user['language'] = $pun_config['o_default_lang'];
 
 		// Set a default style if the user selected style no longer exists
-		if (!@file_exists(PUN_ROOT.'style/'.$pun_user['style'].'.css'))
+		if (!file_exists(PUN_ROOT.'style/'.$pun_user['style'].'.css'))
 			$pun_user['style'] = $pun_config['o_default_style'];
 
 		if (!$pun_user['disp_topics'])
@@ -75,18 +73,19 @@ function check_cookie(&$pun_user)
 			{
 				$pun_user['logged'] = $now;
 
-				// With MySQL/MySQLi, REPLACE INTO avoids a user having two rows in the online table
+				// With MySQL/MySQLi/SQLite, REPLACE INTO avoids a user having two rows in the online table
 				switch ($db_type)
 				{
 					case 'mysql':
 					case 'mysqli':
 					case 'mysql_innodb':
 					case 'mysqli_innodb':
+					case 'sqlite':
 						$db->query('REPLACE INTO '.$db->prefix.'online (user_id, ident, logged) VALUES('.$pun_user['id'].', \''.$db->escape($pun_user['username']).'\', '.$pun_user['logged'].')') or error('Unable to insert into online list', __FILE__, __LINE__, $db->error());
 						break;
 
 					default:
-						$db->query('INSERT INTO '.$db->prefix.'online (user_id, ident, logged) VALUES('.$pun_user['id'].', \''.$db->escape($pun_user['username']).'\', '.$pun_user['logged'].')') or error('Unable to insert into online list', __FILE__, __LINE__, $db->error());
+						$db->query('INSERT INTO '.$db->prefix.'online (user_id, ident, logged) SELECT '.$pun_user['id'].', \''.$db->escape($pun_user['username']).'\', '.$pun_user['logged'].' WHERE NOT EXISTS (SELECT 1 FROM '.$db->prefix.'online WHERE user_id='.$pun_user['id'].')') or error('Unable to insert into online list', __FILE__, __LINE__, $db->error());
 						break;
 				}
 
@@ -156,8 +155,6 @@ function authenticate_user($user, $password, $password_is_hash = false)
 //
 function get_current_url($max_length = 0)
 {
-	global $base_url;
-
 	$protocol = (!isset($_SERVER['HTTPS']) || strtolower($_SERVER['HTTPS']) == 'off') ? 'http://' : 'https://';
 	$port = (isset($_SERVER['SERVER_PORT']) && (($_SERVER['SERVER_PORT'] != '80' && $protocol == 'http://') || ($_SERVER['SERVER_PORT'] != '443' && $protocol == 'https://')) && strpos($_SERVER['HTTP_HOST'], ':') === false) ? ':'.$_SERVER['SERVER_PORT'] : '';
 
@@ -192,18 +189,19 @@ function set_default_user()
 	{
 		$pun_user['logged'] = time();
 
-		// With MySQL/MySQLi, REPLACE INTO avoids a user having two rows in the online table
+		// With MySQL/MySQLi/SQLite, REPLACE INTO avoids a user having two rows in the online table
 		switch ($db_type)
 		{
 			case 'mysql':
 			case 'mysqli':
 			case 'mysql_innodb':
 			case 'mysqli_innodb':
+			case 'sqlite':
 				$db->query('REPLACE INTO '.$db->prefix.'online (user_id, ident, logged) VALUES(1, \''.$db->escape($remote_addr).'\', '.$pun_user['logged'].')') or error('Unable to insert into online list', __FILE__, __LINE__, $db->error());
 				break;
 
 			default:
-				$db->query('INSERT INTO '.$db->prefix.'online (user_id, ident, logged) VALUES(1, \''.$db->escape($remote_addr).'\', '.$pun_user['logged'].')') or error('Unable to insert into online list', __FILE__, __LINE__, $db->error());
+				$db->query('INSERT INTO '.$db->prefix.'online (user_id, ident, logged) SELECT 1, \''.$db->escape($remote_addr).'\', '.$pun_user['logged'].' WHERE NOT EXISTS (SELECT 1 FROM '.$db->prefix.'online WHERE ident=\''.$db->escape($remote_addr).'\')') or error('Unable to insert into online list', __FILE__, __LINE__, $db->error());
 				break;
 		}
 	}
@@ -229,7 +227,7 @@ function pun_setcookie($user_id, $password_hash, $expire)
 {
 	global $cookie_name, $cookie_seed;
 
-	forum_setcookie($cookie_name, serialize(array($user_id, md5($cookie_seed.$password_hash))), $expire);
+	forum_setcookie($cookie_name, serialize(array($user_id, md5($cookie_seed.$password_hash), $expire)), $expire);
 }
 
 
@@ -241,7 +239,7 @@ function forum_setcookie($name, $value, $expire)
 	global $cookie_path, $cookie_domain, $cookie_secure;
 
 	// Enable sending of a P3P header
-	@header('P3P: CP="CUR ADM"');
+	header('P3P: CP="CUR ADM"');
 
 	if (version_compare(PHP_VERSION, '5.2.0', '>='))
 		setcookie($name, $value, $expire, $cookie_path, $cookie_domain, $cookie_secure, true);
@@ -322,16 +320,67 @@ function check_bans()
 
 
 //
+// Check username
+//
+function check_username($username, $exclude_id = null)
+{
+	global $db, $pun_config, $errors, $lang_prof_reg, $lang_register, $lang_common, $pun_bans;
+
+	// Convert multiple whitespace characters into one (to prevent people from registering with indistinguishable usernames)
+	$username = preg_replace('#\s+#s', ' ', $username);
+
+	// Validate username
+	if (pun_strlen($username) < 2)
+		$errors[] = $lang_prof_reg['Username too short'];
+	else if (pun_strlen($username) > 25) // This usually doesn't happen since the form element only accepts 25 characters
+		$errors[] = $lang_prof_reg['Username too long'];
+	else if (!strcasecmp($username, 'Guest') || !strcasecmp($username, $lang_common['Guest']))
+		$errors[] = $lang_prof_reg['Username guest'];
+	else if (preg_match('/[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/', $username) || preg_match('/((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(([0-9A-Fa-f]{1,4}:){0,5}:((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(::([0-9A-Fa-f]{1,4}:){0,5}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))/', $username))
+		$errors[] = $lang_prof_reg['Username IP'];
+	else if ((strpos($username, '[') !== false || strpos($username, ']') !== false) && strpos($username, '\'') !== false && strpos($username, '"') !== false)
+		$errors[] = $lang_prof_reg['Username reserved chars'];
+	else if (preg_match('/(?:\[\/?(?:b|u|i|h|colou?r|quote|code|img|url|email|list|\*)\]|\[(?:img|url|quote|list)=)/i', $username))
+		$errors[] = $lang_prof_reg['Username BBCode'];
+
+	// Check username for any censored words
+	if ($pun_config['o_censoring'] == '1' && censor_words($username) != $username)
+		$errors[] = $lang_register['Username censor'];
+
+	// Check that the username (or a too similar username) is not already registered
+	$query = ($exclude_id) ? ' AND id!='.$exclude_id : '';
+
+	$result = $db->query('SELECT username FROM '.$db->prefix.'users WHERE (UPPER(username)=UPPER(\''.$db->escape($username).'\') OR UPPER(username)=UPPER(\''.$db->escape(preg_replace('/[^\w]/', '', $username)).'\')) AND id>1'.$query) or error('Unable to fetch user info', __FILE__, __LINE__, $db->error());
+
+	if ($db->num_rows($result))
+	{
+		$busy = $db->result($result);
+		$errors[] = $lang_register['Username dupe 1'].' '.pun_htmlspecialchars($busy).'. '.$lang_register['Username dupe 2'];
+	}
+
+	// Check username for any banned usernames
+	foreach ($pun_bans as $cur_ban)
+	{
+		if ($cur_ban['username'] != '' && utf8_strtolower($username) == utf8_strtolower($cur_ban['username']))
+		{
+			$errors[] = $lang_prof_reg['Banned username'];
+			break;
+		}
+	}
+}
+
+
+//
 // Update "Users online"
 //
 function update_users_online()
 {
-	global $db, $pun_config, $pun_user;
+	global $db, $pun_config;
 
 	$now = time();
 
 	// Fetch all online list entries that are older than "o_timeout_online"
-	$result = $db->query('SELECT * FROM '.$db->prefix.'online WHERE logged<'.($now-$pun_config['o_timeout_online'])) or error('Unable to fetch old entries from online list', __FILE__, __LINE__, $db->error());
+	$result = $db->query('SELECT user_id, ident, logged, idle FROM '.$db->prefix.'online WHERE logged<'.($now-$pun_config['o_timeout_online'])) or error('Unable to fetch old entries from online list', __FILE__, __LINE__, $db->error());
 	while ($cur_user = $db->fetch_assoc($result))
 	{
 		// If the entry is a guest, delete it
@@ -360,24 +409,21 @@ function generate_navlinks()
 	global $pun_config, $lang_common, $pun_user;
 
 	// Index and Userlist should always be displayed
-	$links[] = '<li id="navindex"><a href="index.php">'.$lang_common['Index'].'</a>';
+	$links[] = '<li id="navindex"'.((PUN_ACTIVE_PAGE == 'index') ? ' class="isactive"' : '').'><a href="index.php">'.$lang_common['Index'].'</a></li>';
 
 	if ($pun_user['g_read_board'] == '1' && $pun_user['g_view_users'] == '1')
-		$links[] = '<li id="navuserlist"><a href="userlist.php">'.$lang_common['User list'].'</a>';
+		$links[] = '<li id="navuserlist"'.((PUN_ACTIVE_PAGE == 'userlist') ? ' class="isactive"' : '').'><a href="userlist.php">'.$lang_common['User list'].'</a></li>';
 
 	if ($pun_config['o_rules'] == '1' && (!$pun_user['is_guest'] || $pun_user['g_read_board'] == '1' || $pun_config['o_regs_allow'] == '1'))
-		$links[] = '<li id="navrules"><a href="misc.php?action=rules">'.$lang_common['Rules'].'</a>';
+		$links[] = '<li id="navrules"'.((PUN_ACTIVE_PAGE == 'rules') ? ' class="isactive"' : '').'><a href="misc.php?action=rules">'.$lang_common['Rules'].'</a></li>';
 
 	if ($pun_user['is_guest'])
 	{
 		if ($pun_user['g_read_board'] == '1' && $pun_user['g_search'] == '1')
-		{
-			$links[] = '<li id="navsearch"><a href="search.php">'.$lang_common['Search'].'</a>';
-			$links[] = '<li id="navfile"><a href="file.php?action=browse&amp;user_id='.$pun_user['id'].'">'.$lang_common['Files'].'</a>';
-		}
+			$links[] = '<li id="navsearch"'.((PUN_ACTIVE_PAGE == 'search') ? ' class="isactive"' : '').'><a href="search.php">'.$lang_common['Search'].'</a></li>';
 
-		$links[] = '<li id="navregister"><a href="register.php">'.$lang_common['Register'].'</a>';
-		$links[] = '<li id="navlogin"><a href="login.php">'.$lang_common['Login'].'</a>';
+		$links[] = '<li id="navregister"'.((PUN_ACTIVE_PAGE == 'register') ? ' class="isactive"' : '').'><a href="register.php">'.$lang_common['Register'].'</a></li>';
+		$links[] = '<li id="navlogin"'.((PUN_ACTIVE_PAGE == 'login') ? ' class="isactive"' : '').'><a href="login.php">'.$lang_common['Login'].'</a></li>';
 
 		$info = $lang_common['Not logged in'];
 	}
@@ -386,21 +432,17 @@ function generate_navlinks()
 		if (!$pun_user['is_admmod'])
 		{
 			if ($pun_user['g_read_board'] == '1' && $pun_user['g_search'] == '1')
-			{
-				$links[] = '<li id="navsearch"><a href="search.php">'.$lang_common['Search'].'</a>';
-				$links[] = '<li id="navfile"><a href="file.php?action=browse&amp;user_id='.$pun_user['id'].'">'.$lang_common['Files'].'</a>';
-			}
+				$links[] = '<li id="navsearch"'.((PUN_ACTIVE_PAGE == 'search') ? ' class="isactive"' : '').'><a href="search.php">'.$lang_common['Search'].'</a></li>';
 
-			$links[] = '<li id="navprofile"><a href="profile.php?id='.$pun_user['id'].'">'.$lang_common['Profile'].'</a>';
-			$links[] = '<li id="navlogout"><a href="login.php?action=out&amp;id='.$pun_user['id'].'&amp;csrf_token='.pun_hash($pun_user['id'].pun_hash(get_remote_address())).'">'.$lang_common['Logout'].'</a>';
+			$links[] = '<li id="navprofile"'.((PUN_ACTIVE_PAGE == 'profile') ? ' class="isactive"' : '').'><a href="profile.php?id='.$pun_user['id'].'">'.$lang_common['Profile'].'</a></li>';
+			$links[] = '<li id="navlogout"><a href="login.php?action=out&amp;id='.$pun_user['id'].'&amp;csrf_token='.pun_hash($pun_user['id'].pun_hash(get_remote_address())).'">'.$lang_common['Logout'].'</a></li>';
 		}
 		else
 		{
-			$links[] = '<li id="navsearch"><a href="search.php">'.$lang_common['Search'].'</a>';
-			$links[] = '<li id="navfile"><a href="file.php?action=browse&amp;user_id='.$pun_user['id'].'">'.$lang_common['Files'].'</a>';
-			$links[] = '<li id="navprofile"><a href="profile.php?id='.$pun_user['id'].'">'.$lang_common['Profile'].'</a>';
-			$links[] = '<li id="navadmin"><a href="admin_index.php">'.$lang_common['Admin'].'</a>';
-			$links[] = '<li id="navlogout"><a href="login.php?action=out&amp;id='.$pun_user['id'].'&amp;csrf_token='.pun_hash($pun_user['id'].pun_hash(get_remote_address())).'">'.$lang_common['Logout'].'</a>';
+			$links[] = '<li id="navsearch"'.((PUN_ACTIVE_PAGE == 'search') ? ' class="isactive"' : '').'><a href="search.php">'.$lang_common['Search'].'</a></li>';
+			$links[] = '<li id="navprofile"'.((PUN_ACTIVE_PAGE == 'profile') ? ' class="isactive"' : '').'><a href="profile.php?id='.$pun_user['id'].'">'.$lang_common['Profile'].'</a></li>';
+			$links[] = '<li id="navadmin"'.((PUN_ACTIVE_PAGE == 'admin') ? ' class="isactive"' : '').'><a href="admin_index.php">'.$lang_common['Admin'].'</a></li>';
+			$links[] = '<li id="navlogout"><a href="login.php?action=out&amp;id='.$pun_user['id'].'&amp;csrf_token='.pun_hash($pun_user['id'].pun_hash(get_remote_address())).'">'.$lang_common['Logout'].'</a></li>';
 		}
 	}
 
@@ -412,11 +454,11 @@ function generate_navlinks()
 			// Insert any additional links into the $links array (at the correct index)
 			$num_links = count($extra_links[1]);
 			for ($i = 0; $i < $num_links; ++$i)
-				array_splice($links, $extra_links[1][$i], 0, array('<li id="navextra'.($i + 1).'">'.$extra_links[2][$i]));
+				array_splice($links, $extra_links[1][$i], 0, array('<li id="navextra'.($i + 1).'">'.$extra_links[2][$i].'</li>'));
 		}
 	}
 
-	return '<ul>'."\n\t\t\t\t".implode($lang_common['Link separator'].'</li>'."\n\t\t\t\t", $links).'</li>'."\n\t\t\t".'</ul>';
+	return '<ul>'."\n\t\t\t\t".implode("\n\t\t\t\t", $links)."\n\t\t\t".'</ul>';
 }
 
 
@@ -464,7 +506,7 @@ function generate_avatar_markup($user_id)
 	{
 		$path = $pun_config['o_avatars_dir'].'/'.$user_id.'.'.$cur_type;
 
-		if (file_exists(PUN_ROOT.$path) && $img_size = @getimagesize(PUN_ROOT.$path))
+		if (file_exists(PUN_ROOT.$path) && $img_size = getimagesize(PUN_ROOT.$path))
 		{
 			$avatar_markup = '<img src="'.$pun_config['o_base_url'].'/'.$path.'?m='.filemtime(PUN_ROOT.$path).'" '.$img_size[3].' alt="" />';
 			break;
@@ -472,6 +514,24 @@ function generate_avatar_markup($user_id)
 	}
 
 	return $avatar_markup;
+}
+
+
+//
+// Generate browser's title
+//
+function generate_page_title($page_title, $p = null)
+{
+	global $pun_config, $lang_common;
+
+	$page_title = array_reverse($page_title);
+
+	if ($p != null)
+		$page_title[0] .= ' ('.sprintf($lang_common['Page'], forum_number_format($p)).')';
+
+	$crumbs = implode($lang_common['Title separator'], $page_title);
+
+	return $crumbs;
 }
 
 
@@ -504,7 +564,7 @@ function set_tracked_topics($tracked_topics)
 	}
 
 	forum_setcookie($cookie_name.'_track', $cookie_data, time() + $pun_config['o_timeout_visit']);
-	$_COOKIE[$cookie_name.'_track'] = $cookie_data;	// Set it directly in $_COOKIE as well
+	$_COOKIE[$cookie_name.'_track'] = $cookie_data; // Set it directly in $_COOKIE as well
 }
 
 
@@ -529,7 +589,7 @@ function get_tracked_topics()
 	{
 		$type = substr($t, 0, 1) == 'f' ? 'forums' : 'topics';
 		$id = intval(substr($t, 1));
-		$timestamp = intval(@substr($t, strpos($t, '=') + 1));
+		$timestamp = intval(substr($t, strpos($t, '=') + 1));
 		if ($id > 0 && $timestamp > 0)
 			$tracked_topics[$type][$id] = $timestamp;
 	}
@@ -548,16 +608,16 @@ function update_forum($forum_id)
 	$result = $db->query('SELECT COUNT(id), SUM(num_replies) FROM '.$db->prefix.'topics WHERE forum_id='.$forum_id) or error('Unable to fetch forum topic count', __FILE__, __LINE__, $db->error());
 	list($num_topics, $num_posts) = $db->fetch_row($result);
 
-	$num_posts = $num_posts + $num_topics;		// $num_posts is only the sum of all replies (we have to add the topic posts)
+	$num_posts = $num_posts + $num_topics; // $num_posts is only the sum of all replies (we have to add the topic posts)
 
 	$result = $db->query('SELECT last_post, last_post_id, last_poster FROM '.$db->prefix.'topics WHERE forum_id='.$forum_id.' AND moved_to IS NULL ORDER BY last_post DESC LIMIT 1') or error('Unable to fetch last_post/last_post_id/last_poster', __FILE__, __LINE__, $db->error());
-	if ($db->num_rows($result))		// There are topics in the forum
+	if ($db->num_rows($result)) // There are topics in the forum
 	{
 		list($last_post, $last_post_id, $last_poster) = $db->fetch_row($result);
 
 		$db->query('UPDATE '.$db->prefix.'forums SET num_topics='.$num_topics.', num_posts='.$num_posts.', last_post='.$last_post.', last_post_id='.$last_post_id.', last_poster=\''.$db->escape($last_poster).'\' WHERE id='.$forum_id) or error('Unable to update last_post/last_post_id/last_poster', __FILE__, __LINE__, $db->error());
 	}
-	else	// There are no topics
+	else // There are no topics
 		$db->query('UPDATE '.$db->prefix.'forums SET num_topics='.$num_topics.', num_posts='.$num_posts.', last_post=NULL, last_post_id=NULL, last_poster=NULL WHERE id='.$forum_id) or error('Unable to update last_post/last_post_id/last_poster', __FILE__, __LINE__, $db->error());
 }
 
@@ -590,17 +650,16 @@ function delete_topic($topic_id)
 	// Delete the topic and any redirect topics
 	$db->query('DELETE FROM '.$db->prefix.'topics WHERE id='.$topic_id.' OR moved_to='.$topic_id) or error('Unable to delete topic', __FILE__, __LINE__, $db->error());
 
-	// Create a list of the post ID's in this topic
+	// Create a list of the post IDs in this topic
 	$post_ids = '';
 	$result = $db->query('SELECT id FROM '.$db->prefix.'posts WHERE topic_id='.$topic_id) or error('Unable to fetch posts', __FILE__, __LINE__, $db->error());
 	while ($row = $db->fetch_row($result))
 		$post_ids .= ($post_ids != '') ? ','.$row[0] : $row[0];
 
-	// Make sure we have a list of post ID's
+	// Make sure we have a list of post IDs
 	if ($post_ids != '')
 	{
 		strip_search_index($post_ids);
-		delete_post_files($post_ids);
 
 		// Delete posts in topic
 		$db->query('DELETE FROM '.$db->prefix.'posts WHERE topic_id='.$topic_id) or error('Unable to delete posts', __FILE__, __LINE__, $db->error());
@@ -626,7 +685,6 @@ function delete_post($post_id, $topic_id)
 	$db->query('DELETE FROM '.$db->prefix.'posts WHERE id='.$post_id) or error('Unable to delete post', __FILE__, __LINE__, $db->error());
 
 	strip_search_index($post_id);
-	delete_post_files($post_id);
 
 	// Count number of replies in the topic
 	$result = $db->query('SELECT COUNT(id) FROM '.$db->prefix.'posts WHERE topic_id='.$topic_id) or error('Unable to fetch post count for topic', __FILE__, __LINE__, $db->error());
@@ -743,8 +801,7 @@ function get_title($user)
 		// Are there any ranks?
 		if ($pun_config['o_ranks'] == '1' && !empty($pun_ranks))
 		{
-			@reset($pun_ranks);
-			while (list(, $cur_rank) = @each($pun_ranks))
+			foreach ($pun_ranks as $cur_rank)
 			{
 				if (intval($user['num_posts']) >= $cur_rank['min_posts'])
 					$user_title = pun_htmlspecialchars($cur_rank['rank']);
@@ -832,7 +889,8 @@ function message($message, $no_back_link = false)
 	{
 		global $pun_user;
 
-		$page_title = pun_htmlspecialchars($pun_config['o_board_title']).' / '.$lang_common['Info'];
+		$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_common['Info']);
+		define('PUN_ACTIVE_PAGE', 'index');
 		require PUN_ROOT.'header.php';
 	}
 
@@ -842,8 +900,8 @@ function message($message, $no_back_link = false)
 	<h2><span><?php echo $lang_common['Info'] ?></span></h2>
 	<div class="box">
 		<div class="inbox">
-		<p><?php echo $message ?></p>
-<?php if (!$no_back_link): ?>		<p><a href="javascript: history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
+			<p><?php echo $message ?></p>
+<?php if (!$no_back_link): ?>			<p><a href="javascript: history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
 <?php endif; ?>		</div>
 	</div>
 </div>
@@ -854,7 +912,7 @@ function message($message, $no_back_link = false)
 
 
 //
-// Format a time string according to $time_format and timezones
+// Format a time string according to $time_format and time zones
 //
 function format_time($timestamp, $date_only = false, $date_format = null, $time_format = null, $time_only = false, $no_text = false)
 {
@@ -901,7 +959,7 @@ function forum_number_format($number, $decimals = 0)
 {
 	global $lang_common;
 
-	return number_format($number, $decimals, $lang_common['lang_decimal_point'], $lang_common['lang_thousands_sep']);
+	return is_numeric($number) ? number_format($number, $decimals, $lang_common['lang_decimal_point'], $lang_common['lang_thousands_sep']) : $number;
 }
 
 
@@ -975,16 +1033,10 @@ function random_pass($len)
 
 //
 // Compute a hash of $str
-// Uses sha1() if available. If not, SHA1 through mhash() if available. If not, fall back on md5().
 //
 function pun_hash($str)
 {
-	if (function_exists('sha1'))	// Only in PHP 4.3.0+
-		return sha1($str);
-	else if (function_exists('mhash'))	// Only if Mhash library is loaded
-		return bin2hex(mhash(MHASH_SHA1, $str));
-	else
-		return md5($str);
+	return sha1($str);
 }
 
 
@@ -1032,6 +1084,39 @@ function pun_trim($str)
 	return utf8_trim($str);
 }
 
+//
+// Checks if a string is in all uppercase
+//
+function is_all_uppercase($string)
+{
+	return utf8_strtoupper($string) == $string && utf8_strtolower($string) != $string;
+}
+
+
+//
+// Inserts $element into $input at $offset
+// $offset can be either a numerical offset to insert at (eg: 0 inserts at the beginning of the array)
+// or a string, which is the key that the new element should be inserted before
+// $key is optional: it's used when inserting a new key/value pair into an associative array
+//
+function array_insert(&$input, $offset, $element, $key = null)
+{
+	if ($key == null)
+		$key = $offset;
+
+	// Determine the proper offset if we're using a string
+	if (!is_int($offset))
+		$offset = array_search($offset, array_keys($input), true);
+
+	// Out of bounds checks
+	if ($offset > count($input))
+		$offset = count($input);
+	else if ($offset < 0)
+		$offset = 0;
+
+	$input = array_merge(array_slice($input, 0, $offset), array($key => $element), array_slice($input, $offset));
+}
+
 
 //
 // Display a message when board is in maintenance mode
@@ -1046,23 +1131,41 @@ function maintenance_message()
 	$message = str_replace($pattern, $replace, $pun_config['o_maintenance_message']);
 
 
-	// Load the maintenance template
-	$tpl_maint = trim(file_get_contents(PUN_ROOT.'include/template/maintenance.tpl'));
+	if (file_exists(PUN_ROOT.'style/'.$pun_user['style'].'/maintenance.tpl'))
+	{
+		$tpl_file = PUN_ROOT.'style/'.$pun_user['style'].'/maintenance.tpl';
+		$tpl_inc_dir = PUN_ROOT.'style/'.$pun_user['style'].'/';
+	}
+	else
+	{
+		$tpl_file = PUN_ROOT.'include/template/maintenance.tpl';
+		$tpl_inc_dir = PUN_ROOT.'include/user/';
+	}
 
+	$tpl_maint = file_get_contents($tpl_file);
 
 	// START SUBST - <pun_include "*">
-	while (preg_match('#<pun_include "([^/\\\\]*?)\.(php[45]?|inc|html?|txt)">#', $tpl_maint, $cur_include))
+	preg_match_all('#<pun_include "([^/\\\\]*?)\.(php[45]?|inc|html?|txt)">#', $tpl_maint, $pun_includes, PREG_SET_ORDER);
+
+	foreach ($pun_includes as $cur_include)
 	{
-		if (!file_exists(PUN_ROOT.'include/user/'.$cur_include[1].'.'.$cur_include[2]))
-			error('Unable to process user include '.htmlspecialchars($cur_include[0]).' from template maintenance.tpl. There is no such file in folder /include/user/');
+		if (!file_exists($tpl_inc_dir.$cur_include[1].'.'.$cur_include[2]))
+			error(sprintf($lang_common['Pun include error'], htmlspecialchars($cur_include[0]), basename($tpl_file), $tpl_inc_dir));
 
 		ob_start();
-		include PUN_ROOT.'include/user/'.$cur_include[1].'.'.$cur_include[2];
+
+		require $tpl_inc_dir.$cur_include[1].'.'.$cur_include[2];
+
 		$tpl_temp = ob_get_contents();
 		$tpl_maint = str_replace($cur_include[0], $tpl_temp, $tpl_maint);
-	    ob_end_clean();
+		ob_end_clean();
 	}
 	// END SUBST - <pun_include "*">
+
+
+	// START SUBST - <pun_language>
+	$tpl_maint = str_replace('<pun_language>', $lang_common['lang_identifier'], $tpl_maint);
+	// END SUBST - <pun_language>
 
 
 	// START SUBST - <pun_content_direction>
@@ -1073,8 +1176,10 @@ function maintenance_message()
 	// START SUBST - <pun_head>
 	ob_start();
 
+	$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_common['Maintenance']);
+
 ?>
-<title><?php echo pun_htmlspecialchars($pun_config['o_board_title']).' / '.$lang_common['Maintenance'] ?></title>
+<title><?php echo generate_page_title($page_title) ?></title>
 <link rel="stylesheet" type="text/css" href="style/<?php echo $pun_user['style'].'.css' ?>" />
 <?php
 
@@ -1084,14 +1189,24 @@ function maintenance_message()
 	// END SUBST - <pun_head>
 
 
-	// START SUBST - <pun_maint_heading>
-	$tpl_maint = str_replace('<pun_maint_heading>', $lang_common['Maintenance'], $tpl_maint);
-	// END SUBST - <pun_maint_heading>
+	// START SUBST - <pun_maint_main>
+	ob_start();
 
+?>
+<div class="block">
+	<h2><?php echo $lang_common['Maintenance'] ?></h2>
+	<div class="box">
+		<div class="inbox">
+			<p><?php echo $message ?></p>
+		</div>
+	</div>
+</div>
+<?php
 
-	// START SUBST - <pun_maint_message>
-	$tpl_maint = str_replace('<pun_maint_message>', $message, $tpl_maint);
-	// END SUBST - <pun_maint_message>
+	$tpl_temp = trim(ob_get_contents());
+	$tpl_redir = str_replace('<pun_maint_main>', $tpl_temp, $tpl_main);
+	ob_end_clean();
+	// END SUBST - <pun_maint_main>
 
 
 	// End the transaction
@@ -1117,30 +1232,48 @@ function redirect($destination_url, $message)
 		$destination_url = $pun_config['o_base_url'].'/'.$destination_url;
 
 	// Do a little spring cleaning
-	$destination_url = preg_replace('/([\r\n])|(%0[ad])|(;[\s]*data[\s]*:)/i', '', $destination_url);
+	$destination_url = preg_replace('/([\r\n])|(%0[ad])|(;\s*data\s*:)/i', '', $destination_url);
 
 	// If the delay is 0 seconds, we might as well skip the redirect all together
 	if ($pun_config['o_redirect_delay'] == '0')
 		header('Location: '.str_replace('&amp;', '&', $destination_url));
 
 
-	// Load the redirect template
-	$tpl_redir = trim(file_get_contents(PUN_ROOT.'include/template/redirect.tpl'));
+	if (file_exists(PUN_ROOT.'style/'.$pun_user['style'].'/redirect.tpl'))
+	{
+		$tpl_file = PUN_ROOT.'style/'.$pun_user['style'].'/redirect.tpl';
+		$tpl_inc_dir = PUN_ROOT.'style/'.$pun_user['style'].'/';
+	}
+	else
+	{
+		$tpl_file = PUN_ROOT.'include/template/redirect.tpl';
+		$tpl_inc_dir = PUN_ROOT.'include/user/';
+	}
 
+	$tpl_redir = file_get_contents($tpl_file);
 
 	// START SUBST - <pun_include "*">
-	while (preg_match('#<pun_include "([^/\\\\]*?)\.(php[45]?|inc|html?|txt)">#', $tpl_redir, $cur_include))
+	preg_match_all('#<pun_include "([^/\\\\]*?)\.(php[45]?|inc|html?|txt)">#', $tpl_redir, $pun_includes, PREG_SET_ORDER);
+
+	foreach ($pun_includes as $cur_include)
 	{
-		if (!file_exists(PUN_ROOT.'include/user/'.$cur_include[1].'.'.$cur_include[2]))
-			error('Unable to process user include '.htmlspecialchars($cur_include[0]).' from template redirect.tpl. There is no such file in folder /include/user/');
+		if (!file_exists($tpl_inc_dir.$cur_include[1].'.'.$cur_include[2]))
+			error(sprintf($lang_common['Pun include error'], htmlspecialchars($cur_include[0]), basename($tpl_file), $tpl_inc_dir));
 
 		ob_start();
-		include PUN_ROOT.'include/user/'.$cur_include[1].'.'.$cur_include[2];
+
+		require $tpl_inc_dir.$cur_include[1].'.'.$cur_include[2];
+
 		$tpl_temp = ob_get_contents();
 		$tpl_redir = str_replace($cur_include[0], $tpl_temp, $tpl_redir);
-	    ob_end_clean();
+		ob_end_clean();
 	}
 	// END SUBST - <pun_include "*">
+
+
+	// START SUBST - <pun_language>
+	$tpl_redir = str_replace('<pun_language>', $lang_common['lang_identifier'], $tpl_redir);
+	// END SUBST - <pun_language>
 
 
 	// START SUBST - <pun_content_direction>
@@ -1151,9 +1284,11 @@ function redirect($destination_url, $message)
 	// START SUBST - <pun_head>
 	ob_start();
 
+	$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_common['Redirecting']);
+
 ?>
 <meta http-equiv="refresh" content="<?php echo $pun_config['o_redirect_delay'] ?>;URL=<?php echo str_replace(array('<', '>', '"'), array('&lt;', '&gt;', '&quot;'), $destination_url) ?>" />
-<title><?php echo pun_htmlspecialchars($pun_config['o_board_title']).' / '.$lang_common['Redirecting'] ?></title>
+<title><?php echo generate_page_title($page_title) ?></title>
 <link rel="stylesheet" type="text/css" href="style/<?php echo $pun_user['style'].'.css' ?>" />
 <?php
 
@@ -1163,15 +1298,24 @@ function redirect($destination_url, $message)
 	// END SUBST - <pun_head>
 
 
-	// START SUBST - <pun_redir_heading>
-	$tpl_redir = str_replace('<pun_redir_heading>', $lang_common['Redirecting'], $tpl_redir);
-	// END SUBST - <pun_redir_heading>
+	// START SUBST - <pun_redir_main>
+	ob_start();
 
+?>
+<div class="block">
+	<h2><?php echo $lang_common['Redirecting'] ?></h2>
+	<div class="box">
+		<div class="inbox">
+			<p><?php echo $message.'<br /><br /><a href="'.$destination_url.'">'.$lang_common['Click redirect'].'</a>' ?></p>
+		</div>
+	</div>
+</div>
+<?php
 
-	// START SUBST - <pun_redir_text>
-	$tpl_temp = $message.'<br /><br />'.'<a href="'.$destination_url.'">'.$lang_common['Click redirect'].'</a>';
-	$tpl_redir = str_replace('<pun_redir_text>', $tpl_temp, $tpl_redir);
-	// END SUBST - <pun_redir_text>
+	$tpl_temp = trim(ob_get_contents());
+	$tpl_redir = str_replace('<pun_redir_main>', $tpl_temp, $tpl_redir);
+	ob_end_clean();
+	// END SUBST - <pun_redir_main>
 
 
 	// START SUBST - <pun_footer>
@@ -1200,15 +1344,26 @@ function redirect($destination_url, $message)
 //
 // Display a simple error message
 //
-function error($message, $file, $line, $db_error = false)
+function error($message, $file = null, $line = null, $db_error = false)
 {
-	global $pun_config;
+	global $pun_config, $lang_common;
 
 	// Set some default settings if the script failed before $pun_config could be populated
 	if (empty($pun_config))
 	{
-		$pun_config['o_board_title'] = 'FluxBB';
-		$pun_config['o_gzip'] = '0';
+		$pun_config = array(
+			'o_board_title'	=> 'FluxBB',
+			'o_gzip'		=> '0'
+		);
+	}
+
+	// Set some default translations if the script failed before $lang_common could be populated
+	if (empty($lang_common))
+	{
+		$lang_common = array(
+			'Title separator'	=> ' / ',
+			'Page'				=> 'Page %s'
+		);
 	}
 
 	// Empty all output buffers and stop buffering
@@ -1223,7 +1378,8 @@ function error($message, $file, $line, $db_error = false)
 <html xmlns="http://www.w3.org/1999/xhtml" dir="ltr">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title><?php echo pun_htmlspecialchars($pun_config['o_board_title']) ?> / Error</title>
+<?php $page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), 'Error') ?>
+<title><?php echo generate_page_title($page_title) ?></title>
 <style type="text/css">
 <!--
 BODY {MARGIN: 10% 20% auto 20%; font: 10px Verdana, Arial, Helvetica, sans-serif}
@@ -1240,7 +1396,7 @@ H2 {MARGIN: 0; COLOR: #FFFFFF; BACKGROUND-COLOR: #B84623; FONT-SIZE: 1.1em; PADD
 	<div>
 <?php
 
-	if (defined('PUN_DEBUG'))
+	if (defined('PUN_DEBUG') && $file !== null && $line !== null)
 	{
 		echo "\t\t".'<strong>File:</strong> '.$file.'<br />'."\n\t\t".'<strong>Line:</strong> '.$line.'<br /><br />'."\n\t\t".'<strong>FluxBB reported</strong>: '.$message."\n";
 
@@ -1276,7 +1432,7 @@ H2 {MARGIN: 0; COLOR: #FFFFFF; BACKGROUND-COLOR: #B84623; FONT-SIZE: 1.1em; PADD
 //
 function forum_unregister_globals()
 {
-	$register_globals = @ini_get('register_globals');
+	$register_globals = ini_get('register_globals');
 	if ($register_globals === "" || $register_globals === "0" || strtolower($register_globals) === "off")
 		return;
 
@@ -1294,7 +1450,7 @@ function forum_unregister_globals()
 		if (!in_array($k, $no_unset) && isset($GLOBALS[$k]))
 		{
 			unset($GLOBALS[$k]);
-			unset($GLOBALS[$k]);	// Double unset to circumvent the zend_hash_del_key_or_index hole in PHP <4.4.3 and <5.1.4
+			unset($GLOBALS[$k]); // Double unset to circumvent the zend_hash_del_key_or_index hole in PHP <4.4.3 and <5.1.4
 		}
 	}
 }
@@ -1305,20 +1461,93 @@ function forum_unregister_globals()
 //
 function forum_remove_bad_characters()
 {
-	global $bad_utf8_chars;
+	$_GET = remove_bad_characters($_GET);
+	$_POST = remove_bad_characters($_POST);
+	$_COOKIE = remove_bad_characters($_COOKIE);
+	$_REQUEST = remove_bad_characters($_REQUEST);
+}
 
-	$bad_utf8_chars = array("\0", "\xc2\xad", "\xcc\xb7", "\xcc\xb8", "\xe1\x85\x9F", "\xe1\x85\xA0", "\xe2\x80\x80", "\xe2\x80\x81", "\xe2\x80\x82", "\xe2\x80\x83", "\xe2\x80\x84", "\xe2\x80\x85", "\xe2\x80\x86", "\xe2\x80\x87", "\xe2\x80\x88", "\xe2\x80\x89", "\xe2\x80\x8a", "\xe2\x80\x8b", "\xe2\x80\x8e", "\xe2\x80\x8f", "\xe2\x80\xaa", "\xe2\x80\xab", "\xe2\x80\xac", "\xe2\x80\xad", "\xe2\x80\xae", "\xe2\x80\xaf", "\xe2\x81\x9f", "\xe3\x80\x80", "\xe3\x85\xa4", "\xef\xbb\xbf", "\xef\xbe\xa0", "\xef\xbf\xb9", "\xef\xbf\xba", "\xef\xbf\xbb", "\xE2\x80\x8D");
+//
+// Removes any "bad" characters (characters which mess with the display of a page, are invisible, etc) from the given string
+// See: http://kb.mozillazine.org/Network.IDN.blacklist_chars
+//
+function remove_bad_characters($array)
+{
+	static $bad_utf8_chars;
 
-	function _forum_remove_bad_characters($array)
+	if (!isset($bad_utf8_chars))
 	{
-		global $bad_utf8_chars;
-		return is_array($array) ? array_map('_forum_remove_bad_characters', $array) : str_replace($bad_utf8_chars, '', $array);
+		$bad_utf8_chars = array(
+			"\0"			=> '',		// NULL									0000	*
+			"\xcc\xb7"		=> '',		// COMBINING SHORT SOLIDUS OVERLAY		0337	*
+			"\xcc\xb8"		=> '',		// COMBINING LONG SOLIDUS OVERLAY		0338	*
+			"\xe1\x85\x9F"	=> '',		// HANGUL CHOSEONG FILLER				115F	*
+			"\xe1\x85\xA0"	=> '',		// HANGUL JUNGSEONG FILLER				1160	*
+			"\xe2\x80\x8b"	=> '',		// ZERO WIDTH SPACE						200B	*
+			"\xe2\x80\x8c"	=> '',		// ZERO WIDTH NON-JOINER				200C
+			"\xe2\x80\x8d"	=> '',		// ZERO WIDTH JOINER					200D
+			"\xe2\x80\x8e"	=> '',		// LEFT-TO-RIGHT MARK					200E
+			"\xe2\x80\x8f"	=> '',		// RIGHT-TO-LEFT MARK					200F
+			"\xe2\x80\xaa"	=> '',		// LEFT-TO-RIGHT EMBEDDING				202A
+			"\xe2\x80\xab"	=> '',		// RIGHT-TO-LEFT EMBEDDING				202B
+			"\xe2\x80\xac"	=> '', 		// POP DIRECTIONAL FORMATTING			202C
+			"\xe2\x80\xad"	=> '',		// LEFT-TO-RIGHT OVERRIDE				202D
+			"\xe2\x80\xae"	=> '',		// RIGHT-TO-LEFT OVERRIDE				202E
+			"\xe2\x80\xaf"	=> '',		// NARROW NO-BREAK SPACE				202F	*
+			"\xe2\x81\x9f"	=> '',		// MEDIUM MATHEMATICAL SPACE			205F	*
+			"\xe2\x81\xa0"	=> '',		// WORD JOINER							2060
+			"\xe3\x85\xa4"	=> '',		// HANGUL FILLER						3164	*
+			"\xef\xbb\xbf"	=> '',		// ZERO WIDTH NO-BREAK SPACE			FEFF
+			"\xef\xbe\xa0"	=> '',		// HALFWIDTH HANGUL FILLER				FFA0	*
+			"\xef\xbf\xb9"	=> '',		// INTERLINEAR ANNOTATION ANCHOR		FFF9	*
+			"\xef\xbf\xba"	=> '',		// INTERLINEAR ANNOTATION SEPARATOR		FFFA	*
+			"\xef\xbf\xbb"	=> '',		// INTERLINEAR ANNOTATION TERMINATOR	FFFB	*
+			"\xef\xbf\xbc"	=> '',		// OBJECT REPLACEMENT CHARACTER			FFFC	*
+			"\xef\xbf\xbd"	=> '',		// REPLACEMENT CHARACTER				FFFD	*
+			"\xc2\xad"		=> '-',		// SOFT HYPHEN							00AD
+			"\xE2\x80\x9C"	=> '"',		// LEFT DOUBLE QUOTATION MARK			201C
+			"\xE2\x80\x9D"	=> '"',		// RIGHT DOUBLE QUOTATION MARK			201D
+			"\xE2\x80\x98"	=> '\'',	// LEFT SINGLE QUOTATION MARK			2018
+			"\xE2\x80\x99"	=> '\'',	// RIGHT SINGLE QUOTATION MARK			2019
+			"\xe2\x80\x80"	=> ' ',		// EN QUAD								2000	*
+			"\xe2\x80\x81"	=> ' ',		// EM QUAD								2001	*
+			"\xe2\x80\x82"	=> ' ',		// EN SPACE								2002	*
+			"\xe2\x80\x83"	=> ' ',		// EM SPACE								2003	*
+			"\xe2\x80\x84"	=> ' ',		// THREE-PER-EM SPACE					2004	*
+			"\xe2\x80\x85"	=> ' ',		// FOUR-PER-EM SPACE					2005	*
+			"\xe2\x80\x86"	=> ' ',		// SIX-PER-EM SPACE						2006	*
+			"\xe2\x80\x87"	=> ' ',		// FIGURE SPACE							2007	*
+			"\xe2\x80\x88"	=> ' ',		// PUNCTUATION SPACE					2008	*
+			"\xe2\x80\x89"	=> ' ',		// THIN SPACE							2009	*
+			"\xe2\x80\x8a"	=> ' ',		// HAIR SPACE							200A	*
+			"\xE3\x80\x80"	=> ' ',		// IDEOGRAPHIC SPACE					3000	*
+		);
 	}
 
-	$_GET = _forum_remove_bad_characters($_GET);
-	$_POST = _forum_remove_bad_characters($_POST);
-	$_COOKIE = _forum_remove_bad_characters($_COOKIE);
-	$_REQUEST = _forum_remove_bad_characters($_REQUEST);
+	if (is_array($array))
+		return array_map('remove_bad_characters', $array);
+
+	// Strip out any invalid characters
+	$array = utf8_bad_strip($array);
+
+	// Replace some "bad" characters
+	$array = str_replace(array_keys($bad_utf8_chars), array_values($bad_utf8_chars), $array);
+
+	return $array;
+}
+
+
+//
+// Converts the file size in bytes to a human readable file size
+//
+function file_size($size)
+{
+	$units = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB');
+
+	for ($i = 0; $size > 1024; $i++)
+		$size /= 1024;
+
+	return round($size, 2).' '.$units[$i];
 }
 
 
@@ -1351,7 +1580,7 @@ function display_saved_queries()
 <?php
 
 	$query_time_total = 0.0;
-	while (list(, $cur_query) = @each($saved_queries))
+	foreach ($saved_queries as $cur_query)
 	{
 		$query_time_total += $cur_query[1];
 

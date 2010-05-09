@@ -1,49 +1,46 @@
 <?php
-/***********************************************************************
 
-  Copyright (C) 2002-2005  Rickard Andersson (rickard@punbb.org)
-
-  This file is part of PunBB.
-
-  PunBB is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published
-  by the Free Software Foundation; either version 2 of the License,
-  or (at your option) any later version.
-
-  PunBB is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-  MA  02111-1307  USA
-
-************************************************************************/
-
+/**
+ * Copyright (C) 2008-2010 FluxBB
+ * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
+ * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
+ */
 
 // The FluxBB version this script installs
-define('FORUM_VERSION', '1.4');
-define('FORUM_DB_REVISION', 2);
+define('FORUM_VERSION', '1.4-rc3');
+define('FORUM_DB_REVISION', 5);
+
+define('MIN_PHP_VERSION', '4.3.0');
+define('MIN_MYSQL_VERSION', '4.1.2');
+define('MIN_PGSQL_VERSION', '7.0.0');
+define('PUN_SEARCH_MIN_WORD', 3);
+define('PUN_SEARCH_MAX_WORD', 20);
 
 
 define('PUN_ROOT', './');
+
 if (file_exists(PUN_ROOT.'config.php'))
-	exit('The file \'config.php\' already exists which would mean that FluxBB is already installed. You should go <a href="index.php">here</a> instead.');
+{
+	// Check to see whether FluxBB is already installed
+	include PUN_ROOT.'config.php';
 
+	// If we have the 1.3-legacy constant defined, define the proper 1.4 constant so we don't get an incorrect "need to install" message
+	if (defined('FORUM'))
+		define('PUN', FORUM);
 
-// Make sure we are running at least PHP 4.1.0
-if (intval(str_replace('.', '', phpversion())) < 410)
-	exit('You are running PHP version '.PHP_VERSION.'. FluxBB requires at least PHP 4.1.0 to run properly. You must upgrade your PHP installation before you can continue.');
+	// If PUN is defined, config.php is probably valid and thus the software is installed
+	if (defined('PUN'))
+		exit('It seems like FluxBB is already installed. You should go <a href="index.php">here</a> instead.');
+}
 
-// Disable error reporting for uninitialized variables
-error_reporting(E_ALL);
+// Define PUN because email.php requires it
+define('PUN', 1);
 
-// Turn off PHP time limit
-@set_time_limit(0);
+// Make sure we are running at least MIN_PHP_VERSION
+if (!function_exists('version_compare') || version_compare(PHP_VERSION, MIN_PHP_VERSION, '<'))
+	exit('You are running PHP version '.PHP_VERSION.'. FluxBB '.FORUM_VERSION.' requires at least PHP '.MIN_PHP_VERSION.' to run properly. You must upgrade your PHP installation before you can continue.');
 
-// We need some stuff from functions.php
+// Load the functions script
 require PUN_ROOT.'include/functions.php';
 
 // Load UTF-8 functions
@@ -51,6 +48,36 @@ require PUN_ROOT.'include/utf8/utf8.php';
 
 // Strip out "bad" UTF-8 characters
 forum_remove_bad_characters();
+
+// Reverse the effect of register_globals
+forum_unregister_globals();
+
+// Disable error reporting for uninitialized variables
+error_reporting(E_ALL);
+
+// Force POSIX locale (to prevent functions such as strtolower() from messing up UTF-8 strings)
+setlocale(LC_CTYPE, 'C');
+
+// Turn off magic_quotes_runtime
+if (get_magic_quotes_runtime())
+	set_magic_quotes_runtime(0);
+
+// Strip slashes from GET/POST/COOKIE (if magic_quotes_gpc is enabled)
+if (get_magic_quotes_gpc())
+{
+	function stripslashes_array($array)
+	{
+		return is_array($array) ? array_map('stripslashes_array', $array) : stripslashes($array);
+	}
+
+	$_GET = stripslashes_array($_GET);
+	$_POST = stripslashes_array($_POST);
+	$_COOKIE = stripslashes_array($_COOKIE);
+	$_REQUEST = stripslashes_array($_REQUEST);
+}
+
+// Turn off PHP time limit
+@set_time_limit(0);
 
 //
 // Generate output to be used for config.php
@@ -111,6 +138,19 @@ if (!isset($_POST['form_sent']))
 	if (empty($db_extensions))
 		exit('This PHP environment does not have support for any of the databases that FluxBB supports. PHP needs to have support for either MySQL, PostgreSQL or SQLite in order for FluxBB to be installed.');
 
+	// Make an educated guess regarding base_url
+	$base_url  = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https://' : 'http://';	// protocol
+	$base_url .= preg_replace('/:(80|443)$/', '', $_SERVER['HTTP_HOST']);							// host[:port]
+	$base_url .= str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));							// path
+
+	if (substr($base_url, -1) == '/')
+		$base_url = substr($base_url, 0, -1);
+
+	$title = 'My FluxBB forum';
+	$description = '<p><span>Unfortunately no one can be told what FluxBB is - you have to see it for yourself.</span></p>';
+	$default_lang = 'English';
+	$default_style = 'Air';
+
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
@@ -118,9 +158,8 @@ if (!isset($_POST['form_sent']))
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>FluxBB Installation</title>
-<link rel="stylesheet" type="text/css" href="style/Oxygen.css" />
+<link rel="stylesheet" type="text/css" href="style/<?php echo $default_style ?>.css" />
 <script type="text/javascript">
-<!--
 function process_form(the_form)
 {
 	var element_names = new Object()
@@ -131,12 +170,12 @@ function process_form(the_form)
 	element_names["req_username"] = "Administrator username"
 	element_names["req_password1"] = "Administrator password 1"
 	element_names["req_password2"] = "Administrator password 2"
-	element_names["req_email"] = "Administrator's e-mail"
+	element_names["req_email"] = "Administrator's email"
 	element_names["req_base_url"] = "Base URL"
 
 	if (document.all || document.getElementById)
 	{
-		for (i = 0; i < the_form.length; ++i)
+		for (var i = 0; i < the_form.length; ++i)
 		{
 			var elem = the_form.elements[i]
 			if (elem.name && elem.name.substring(0, 4) == "req_")
@@ -153,23 +192,32 @@ function process_form(the_form)
 
 	return true
 }
-// -->
 </script>
+<style type="text/css">
+<!--
+#punwrap {
+	margin: 20px 10%;
+	}
+-->
+</style>
 </head>
 <body onload="document.getElementById('install').req_db_type.focus()">
 
-<div id="puninstall" style="margin: auto 10% auto 10%">
-<div class="pun">
+<div id="punwrap">
+<div id="puninstall" class="pun">
 
-<div class="block">
-	<h2><span>FluxBB Installation</span></h2>
+<div class="top-box"><div><!-- Top Corners --></div></div>
+
+<div id="brdheader" class="block">
 	<div class="box">
-		<div class="inbox">
-			<p>Welcome to FluxBB installation! You are about to install FluxBB. In order to install FluxBB you must complete the form set out below. If you encounter any difficulties with the installation, please refer to the documentation.</p>
+		<div id="brdtitle" class="inbox">
+			<h1><span>FluxBB Installation</span></h1>
+			<div id="brddesc"><p>Welcome to FluxBB installation. You are about to install FluxBB. In order to install FluxBB, you must complete the form set out below. If you encounter any difficulties with the installation, please refer to the documentation.</p></div>
 		</div>
 	</div>
 </div>
 
+<div id="brdmain">
 <div class="blockform">
 	<h2><span>Install FluxBB 1.4</span></h2>
 	<div class="box">
@@ -185,8 +233,8 @@ function process_form(the_form)
 					<div class="infldset">
 						<p>FluxBB currently supports MySQL, PostgreSQL and SQLite. If your database of choice is missing from the drop-down menu below, it means this PHP environment does not have support for that particular database. More information regarding support for particular versions of each database can be found in the FAQ.</p>
 <?php if ($dual_mysql): ?>						<p>FluxBB has detected that your PHP environment supports two different ways of communicating with MySQL. The two options are called standard and improved. If you are uncertain which one to use, start by trying improved and if that fails, try standard.</p>
-<?php endif; ?><?php if ($mysql_innodb): ?>					<p>FluxBB has detected that your MySQL server might support <a href="http://dev.mysql.com/doc/refman/5.0/en/innodb-overview.html">InnoDB</a>. This would be a good choice if you are planning to run a large forum. If you are uncertain, it is recommended to not use InnoDB.</p>
-<?php endif; ?>						<label><strong>Database type</strong>
+<?php endif; ?><?php if ($mysql_innodb): ?>						<p>FluxBB has detected that your MySQL server might support <a href="http://dev.mysql.com/doc/refman/5.0/en/innodb.html">InnoDB</a>. This would be a good choice if you are planning to run a large forum. If you are uncertain, it is recommended that you do not use InnoDB.</p>
+<?php endif; ?>						<label class="required"><strong>Database type <span>(Required)</span></strong>
 						<br /><select name="req_db_type">
 <?php
 
@@ -204,16 +252,16 @@ function process_form(the_form)
 					<legend>Enter your database server hostname</legend>
 					<div class="infldset">
 						<p>The address of the database server (example: localhost, db.myhost.com or 192.168.0.15). You can specify a custom port number if your database doesn't run on the default port (example: localhost:3580). For SQLite support, just enter anything or leave it at 'localhost'.</p>
-						<label><strong>Database server hostname</strong><br /><input type="text" name="req_db_host" value="localhost" size="50" maxlength="100" /><br /></label>
+						<label class="required"><strong>Database server hostname <span>(Required)</span></strong><br /><input type="text" name="req_db_host" value="localhost" size="50" maxlength="100" /><br /></label>
 					</div>
 				</fieldset>
 			</div>
 			<div class="inform">
 				<fieldset>
-					<legend>Enter then name of your database</legend>
+					<legend>Enter the name of your database</legend>
 					<div class="infldset">
 						<p>The name of the database that FluxBB will be installed into. The database must exist. For SQLite, this is the relative path to the database file. If the SQLite database file does not exist, FluxBB will attempt to create it.</p>
-						<label for="req_db_name"><strong>Database name</strong><br /><input id="req_db_name" type="text" name="req_db_name" size="30" maxlength="50" /><br /></label>
+						<label class="required"><strong>Database name <span>(Required)</span></strong><br /><input id="req_db_name" type="text" name="req_db_name" size="30" maxlength="50" /><br /></label>
 					</div>
 				</fieldset>
 			</div>
@@ -232,7 +280,7 @@ function process_form(the_form)
 				<fieldset>
 					<legend>Enter database table prefix</legend>
 					<div class="infldset">
-						<p>If you like you can specify a table prefix. This way you can run multiple copies of FluxBB in the same database (example: foo_).</p>
+						<p>If you like, you can specify a table prefix. This way you can run multiple copies of FluxBB in the same database (example: foo_).</p>
 						<label>Table prefix<br /><input id="db_prefix" type="text" name="db_prefix" size="20" maxlength="30" /><br /></label>
 					</div>
 				</fieldset>
@@ -240,33 +288,55 @@ function process_form(the_form)
 			<div class="inform">
 				<div class="forminfo">
 					<h3>Administration setup</h3>
-					<p>Please enter the requested information in order to setup an administrator for your FluxBB installation</p>
+					<p>Please enter the requested information in order to setup an administrator for your FluxBB installation.</p>
 				</div>
 				<fieldset>
-					<legend>Enter Administrators username</legend>
+					<legend>Enter Administrator's username</legend>
 					<div class="infldset">
 						<p>The username of the forum administrator. You can later create more administrators and moderators. Usernames can be between 2 and 25 characters long.</p>
-						<label><strong>Administrator username</strong><br /><input type="text" name="req_username" size="25" maxlength="25" /><br /></label>
+						<label class="required"><strong>Administrator's username <span>(Required)</span></strong><br /><input type="text" name="req_username" size="25" maxlength="25" /><br /></label>
 					</div>
 				</fieldset>
 			</div>
 			<div class="inform">
 				<fieldset>
-					<legend>Enter and confirm Administrator password</legend>
+					<legend>Enter and confirm Administrator's password</legend>
 					<div class="infldset">
-					<p>Passwords can be between 4 and 16 characters long. Passwords are case sensitive.</p>
-						<label class="conl"><strong>Password</strong><br /><input id="req_password1" type="password" name="req_password1" size="16" maxlength="16" /><br /></label>
-						<label class="conl"><strong>Confirm password</strong><br /><input type="password" name="req_password2" size="16" maxlength="16" /><br /></label>
+					<p>Passwords must be at least 4 characters long. Passwords are case sensitive.</p>
+						<label class="conl required"><strong>Password <span>(Required)</span></strong><br /><input id="req_password1" type="password" name="req_password1" size="16" /><br /></label>
+						<label class="conl required"><strong>Confirm password <span>(Required)</span></strong><br /><input type="password" name="req_password2" size="16" /><br /></label>
 						<div class="clearer"></div>
 					</div>
 				</fieldset>
 			</div>
 			<div class="inform">
 				<fieldset>
-					<legend>Enter Administrator's e-mail</legend>
+					<legend>Enter Administrator's email</legend>
 					<div class="infldset">
-						<p>The e-mail address of the forum administrator.</p>
-						<label for="req_email"><strong>Administrator's e-mail</strong><br /><input id="req_email" type="text" name="req_email" size="50" maxlength="50" /><br /></label>
+						<p>The email address of the forum administrator.</p>
+						<label class="required"><strong>Administrator's email <span>(Required)</span></strong><br /><input id="req_email" type="text" name="req_email" size="50" maxlength="80" /><br /></label>
+					</div>
+				</fieldset>
+			</div>
+			<div class="inform">
+				<div class="forminfo">
+					<h3>Board setup</h3>
+					<p>Please enter the requested information in order to setup your FluxBB board.</p>
+				</div>
+				<fieldset>
+					<legend>Enter your board's title</legend>
+					<div class="infldset">
+						<p>The title of this bulletin board (shown at the top of every page).</p>
+						<label class="required"><strong>Board title <span>(Required)</span></strong><br /><input id="req_title" type="text" name="req_title" value="<?php echo pun_htmlspecialchars($title) ?>" size="60" maxlength="255" /><br /></label>
+					</div>
+				</fieldset>
+			</div>
+			<div class="inform">
+				<fieldset>
+					<legend>Enter your board's description</legend>
+					<div class="infldset">
+						<p>A short description of this bulletin board (shown at the top of every page). This field may contain HTML.</p>
+						<label><strong>Board description</strong><br /><input id="desc" type="text" name="desc" value="<?php echo pun_htmlspecialchars($description) ?>" size="60" maxlength="255" /><br /></label>
 					</div>
 				</fieldset>
 			</div>
@@ -274,15 +344,82 @@ function process_form(the_form)
 				<fieldset>
 					<legend>Enter the Base URL of your FluxBB installation</legend>
 					<div class="infldset">
-						<p>The URL (without trailing slash) of your FluxBB forum (example: http://forum.myhost.com or http://myhost.com/~myuser). This <strong>must</strong> be correct or administrators and moderators will not be able to submit any forms. Please note that the preset value below is just an educated guess by FluxBB.</p>
-						<label><strong>Base URL</strong><br /><input type="text" name="req_base_url" value="http://<?php echo $_SERVER['SERVER_NAME'].str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])) ?>" size="60" maxlength="100" /><br /></label>
+						<p>The URL (without trailing slash) of your FluxBB forum (example: http://forum.myhost.com or http://myhost.com/~myuser). This <strong>must</strong> be correct, otherwise, administrators and moderators will not be able to submit any forms. Please note that the preset value below is just an educated guess by FluxBB.</p>
+						<label class="required"><strong>Base URL <span>(Required)</span></strong><br /><input id="req_base_url" type="text" name="req_base_url" value="<?php echo pun_htmlspecialchars($base_url) ?>" size="60" maxlength="100" /><br /></label>
 					</div>
 				</fieldset>
 			</div>
-			<p><input type="submit" name="start" value="Start install" /></p>
+			<div class="inform">
+				<fieldset>
+					<legend>Choose the default language</legend>
+					<div class="infldset">
+						<p>The default language used for guests and users who haven't changed from the default in their profile.</p>
+						<label class="required"><strong>Default language <span>(Required)</span></strong><br /><select id="req_default_lang" name="req_default_lang">
+<?php
+
+		$languages = array();
+		$d = dir(PUN_ROOT.'lang');
+		while (($entry = $d->read()) !== false)
+		{
+			if ($entry{0} != '.' && is_dir(PUN_ROOT.'lang/'.$entry) && file_exists(PUN_ROOT.'lang/'.$entry.'/common.php'))
+				$languages[] = $entry;
+		}
+		$d->close();
+
+		@natsort($languages);
+
+		foreach ($languages as $temp)
+		{
+			if ($temp == $default_lang)
+				echo "\t\t\t\t\t\t\t\t\t\t\t".'<option value="'.$temp.'" selected="selected">'.$temp.'</option>'."\n";
+			else
+				echo "\t\t\t\t\t\t\t\t\t\t\t".'<option value="'.$temp.'">'.$temp.'</option>'."\n";
+		}
+
+?>
+						</select><br /></label>
+					</div>
+				</fieldset>
+			</div>
+			<div class="inform">
+				<fieldset>
+					<legend>Choose the default style</legend>
+					<div class="infldset">
+						<p>The default style used for guests and users who haven't changed from the default in their profile.</p>
+						<label class="required"><strong>Default style <span>(Required)</span></strong><br /><select id="req_default_style" name="req_default_style">
+<?php
+
+		$styles = array();
+		$d = dir(PUN_ROOT.'style');
+		while (($entry = $d->read()) !== false)
+		{
+			if (substr($entry, strlen($entry)-4) == '.css')
+				$styles[] = substr($entry, 0, strlen($entry)-4);
+		}
+		$d->close();
+
+		@natsort($styles);
+
+		foreach ($styles as $temp)
+		{
+			if ($temp == $default_style)
+				echo "\t\t\t\t\t\t\t\t\t".'<option value="'.$temp.'" selected="selected">'.str_replace('_', ' ', $temp).'</option>'."\n";
+			else
+				echo "\t\t\t\t\t\t\t\t\t".'<option value="'.$temp.'">'.str_replace('_', ' ', $temp).'</option>'."\n";
+		}
+
+?>
+						</select><br /></label>
+					</div>
+				</fieldset>
+			</div>
+			<p class="buttons"><input type="submit" name="start" value="Start install" /></p>
 		</form>
 	</div>
 </div>
+</div>
+
+<div class="end-box"><div><!-- Bottom Corners --></div></div>
 
 </div>
 </div>
@@ -294,50 +431,61 @@ function process_form(the_form)
 }
 else
 {
-	//
-	// Strip slashes only if magic_quotes_gpc is on.
-	//
-	function unescape($str)
-	{
-		return (get_magic_quotes_gpc() == 1) ? stripslashes($str) : $str;
-	}
-
 	$db_type = $_POST['req_db_type'];
-	$db_host = trim($_POST['req_db_host']);
-	$db_name = trim($_POST['req_db_name']);
-	$db_username = unescape(trim($_POST['db_username']));
-	$db_password = unescape(trim($_POST['db_password']));
-	$db_prefix = trim($_POST['db_prefix']);
-	$username = unescape(trim($_POST['req_username']));
-	$email = strtolower(trim($_POST['req_email']));
-	$password1 = unescape(trim($_POST['req_password1']));
-	$password2 = unescape(trim($_POST['req_password2']));
-
+	$db_host = pun_trim($_POST['req_db_host']);
+	$db_name = pun_trim($_POST['req_db_name']);
+	$db_username = pun_trim($_POST['db_username']);
+	$db_password = pun_trim($_POST['db_password']);
+	$db_prefix = pun_trim($_POST['db_prefix']);
+	$username = pun_trim($_POST['req_username']);
+	$email = strtolower(pun_trim($_POST['req_email']));
+	$password1 = pun_trim($_POST['req_password1']);
+	$password2 = pun_trim($_POST['req_password2']);
+	$title = pun_trim($_POST['req_title']);
+	$description = pun_trim($_POST['desc']);
+	$base_url = pun_trim($_POST['req_base_url']);
+	$default_lang = pun_trim($_POST['req_default_lang']);
+	$default_style = pun_trim($_POST['req_default_style']);
 
 	// Make sure base_url doesn't end with a slash
-	if (substr($_POST['req_base_url'], -1) == '/')
-		$base_url = substr($_POST['req_base_url'], 0, -1);
-	else
-		$base_url = $_POST['req_base_url'];
-
+	if (substr($base_url, -1) == '/')
+		$base_url = substr($base_url, 0, -1);
 
 	// Validate username and passwords
-	if (strlen($username) < 2)
-		error('Usernames must be at least 2 characters long. Please go back and correct.');
-	if (strlen($password1) < 4)
-		error('Passwords must be at least 4 characters long. Please go back and correct.');
-	if ($password1 != $password2)
-		error('Passwords do not match. Please go back and correct.');
-	if (!strcasecmp($username, 'Guest'))
-		error('The username guest is reserved. Please go back and correct.');
-	if (preg_match('/[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/', $username) || preg_match('/((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(([0-9A-Fa-f]{1,4}:){0,5}:((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(::([0-9A-Fa-f]{1,4}:){0,5}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))/', $username))
-		error('Usernames may not be in the form of an IP address. Please go back and correct.');
-	if (preg_match('#\[b\]|\[/b\]|\[u\]|\[/u\]|\[i\]|\[/i\]|\[color|\[/color\]|\[quote\]|\[/quote\]|\[code\]|\[/code\]|\[img\]|\[/img\]|\[url|\[/url\]|\[email|\[/email\]#i', $username))
-		error('Usernames may not contain any of the text formatting tags (BBCode) that the forum uses. Please go back and correct.');
+	if (pun_strlen($username) < 2)
+		error('Usernames must be at least 2 characters long. Please go back and correct');
+	else if (pun_strlen($username) > 25) // This usually doesn't happen since the form element only accepts 25 characters
+		error('Usernames must not be more than 25 characters long. Please go back and correct');
+	else if (!strcasecmp($username, 'Guest'))
+		error('The username guest is reserved. Please go back and correct');
+	else if (preg_match('/[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/', $username) || preg_match('/((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(([0-9A-Fa-f]{1,4}:){0,5}:((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(::([0-9A-Fa-f]{1,4}:){0,5}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))/', $username))
+		error('Usernames may not be in the form of an IP address. Please go back and correct');
+	else if ((strpos($username, '[') !== false || strpos($username, ']') !== false) && strpos($username, '\'') !== false && strpos($username, '"') !== false)
+		error('Usernames may not contain all the characters \', " and [ or ] at once. Please choose another username');
+	else if (preg_match('/(?:\[\/?(?:b|u|i|h|colou?r|quote|code|img|url|email|list)\]|\[(?:code|quote|list)=)/i', $username))
+		error('Usernames may not contain any of the text formatting tags (BBCode) that the forum uses. Please go back and correct');
 
-	if (strlen($email) > 80 || !preg_match('/^(([^<>()[\]\\.,;:\s@"\']+(\.[^<>()[\]\\.,;:\s@"\']+)*)|("[^"\']+"))@((\[\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\])|(([a-zA-Z\d\-]+\.)+[a-zA-Z]{2,}))$/', $email))
-		error('The administrator e-mail address you entered is invalid. Please go back and correct.');
+	if (pun_strlen($password1) < 4)
+		error('Passwords must be at least 4 characters long. Please go back and correct');
+	else if ($password1 != $password2)
+		error('Passwords do not match. Please go back and correct');
 
+	// Validate email
+	require PUN_ROOT.'include/email.php';
+
+	if (!is_valid_email($email))
+		error('The administrator email address you entered is invalid. Please go back and correct');
+
+	if ($title == '')
+		error('You must enter a board title.');
+
+	$default_lang = preg_replace('#[\.\\\/]#', '', $default_lang);
+	if (!file_exists(PUN_ROOT.'lang/'.$default_lang.'/common.php'))
+		error('The default language chosen doesn\'t seem to exist. Please go back and correct');
+
+	$default_style = preg_replace('#[\.\\\/]#', '', $default_style);
+	if (!file_exists(PUN_ROOT.'style/'.$default_style.'.css'))
+		error('The default style chosen doesn\'t seem to exist. Please go back and correct');
 
 	// Load the appropriate DB layer class
 	switch ($db_type)
@@ -367,12 +515,15 @@ else
 			break;
 
 		default:
-			error('\''.pun_htmlspecialchars($db_type).'\' is not a valid database type.');
+			error('\''.pun_htmlspecialchars($db_type).'\' is not a valid database type');
 	}
 
 	// Create the database object (and connect/select db)
 	$db = new DBLayer($db_host, $db_username, $db_password, $db_name, $db_prefix, false);
 
+	// Validate prefix
+	if (strlen($db_prefix) > 0 && (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $db_prefix) || strlen($db_prefix) > 40))
+		error('The table prefix \''.$db->prefix.'\' contains illegal characters or is too long. The prefix may contain the letters a to z, any numbers and the underscore character. They must however not start with a number. The maximum length is 40 characters. Please choose a different prefix');
 
 	// Do some DB type specific checks
 	switch ($db_type)
@@ -381,17 +532,20 @@ else
 		case 'mysqli':
 		case 'mysql_innodb':
 		case 'mysqli_innodb':
+			$mysql_info = $db->get_version();
+			if (version_compare($mysql_info['version'], MIN_MYSQL_VERSION, '<'))
+				error('You are running MySQL version '.$mysql_version.'. FluxBB '.FORUM_VERSION.' requires at least MySQL '.MIN_MYSQL_VERSION.' to run properly. You must upgrade your MySQL installation before you can continue');
 			break;
 
 		case 'pgsql':
-			// Make sure we are running at least PHP 4.3.0 (needed only for PostgreSQL)
-			if (version_compare(PHP_VERSION, '4.3.0', '<'))
-				error('You are running PHP version '.PHP_VERSION.'. FluxBB requires at least PHP 4.3.0 to run properly when using PostgreSQL. You must upgrade your PHP installation or use a different database before you can continue.');
+			$pgsql_info = $db->get_version();
+			if (version_compare($pgsql_info['version'], MIN_PGSQL_VERSION, '<'))
+				error('You are running PostgreSQL version '.$pgsql_info.'. FluxBB '.FORUM_VERSION.' requires at least PostgreSQL '.MIN_PGSQL_VERSION.' to run properly. You must upgrade your PostgreSQL installation before you can continue');
 			break;
 
 		case 'sqlite':
 			if (strtolower($db_prefix) == 'sqlite_')
-				error('The table prefix \'sqlite_\' is reserved for use by the SQLite engine. Please choose a different prefix.');
+				error('The table prefix \'sqlite_\' is reserved for use by the SQLite engine. Please choose a different prefix');
 			break;
 	}
 
@@ -399,16 +553,16 @@ else
 	// Make sure FluxBB isn't already installed
 	$result = $db->query('SELECT 1 FROM '.$db_prefix.'users WHERE id=1');
 	if ($db->num_rows($result))
-		error('A table called "'.$db_prefix.'users" is already present in the database "'.$db_name.'". This could mean that FluxBB is already installed or that another piece of software is installed and is occupying one or more of the table names FluxBB requires. If you want to install multiple copies of FluxBB in the same database, you must choose a different table prefix.');
+		error('A table called "'.$db_prefix.'users" is already present in the database "'.$db_name.'". This could mean that FluxBB is already installed or that another piece of software is installed and is occupying one or more of the table names FluxBB requires. If you want to install multiple copies of FluxBB in the same database, you must choose a different table prefix');
 
 	// Check if InnoDB is available
- 	if ($db_type == 'mysql_innodb' || $db_type == 'mysqli_innodb')
- 	{
+	if ($db_type == 'mysql_innodb' || $db_type == 'mysqli_innodb')
+	{
 		$result = $db->query('SHOW VARIABLES LIKE \'have_innodb\'');
 		list (, $result) = $db->fetch_row($result);
 		if ((strtoupper($result) != 'YES'))
-			error('InnoDB does not seem to be enabled. Please choose a database layer that does not have InnoDB support, or enable InnoDB on your MySQL server.');
- 	}
+			error('InnoDB does not seem to be enabled. Please choose a database layer that does not have InnoDB support, or enable InnoDB on your MySQL server');
+	}
 
 
 	// Start a transaction
@@ -448,10 +602,16 @@ else
 				'default'		=> '0'
 			)
 		),
-		'PRIMARY KEY'	=> array('id')
+		'PRIMARY KEY'	=> array('id'),
+		'INDEXES'		=> array(
+			'username_idx'	=> array('username')
+		)
 	);
 
-	$db->create_table('bans', $schema);
+	if ($db_type == 'mysql' || $db_type == 'mysqli' || $db_type == 'mysql_innodb' || $db_type == 'mysqli_innodb')
+		$schema['INDEXES']['username_idx'] = array('username(25)');
+
+	$db->create_table('bans', $schema) or error('Unable to create bans table', __FILE__, __LINE__, $db->error());
 
 
 	$schema = array(
@@ -474,7 +634,7 @@ else
 		'PRIMARY KEY'	=> array('id')
 	);
 
-	$db->create_table('categories', $schema);
+	$db->create_table('categories', $schema) or error('Unable to create categories table', __FILE__, __LINE__, $db->error());
 
 
 	$schema = array(
@@ -497,7 +657,7 @@ else
 		'PRIMARY KEY'	=> array('id')
 	);
 
-	$db->create_table('censoring', $schema);
+	$db->create_table('censoring', $schema) or error('Unable to create censoring table', __FILE__, __LINE__, $db->error());
 
 
 	$schema = array(
@@ -515,7 +675,7 @@ else
 		'PRIMARY KEY'	=> array('conf_name')
 	);
 
-	$db->create_table('config', $schema);
+	$db->create_table('config', $schema) or error('Unable to create config table', __FILE__, __LINE__, $db->error());
 
 
 	$schema = array(
@@ -544,22 +704,12 @@ else
 				'datatype'		=> 'TINYINT(1)',
 				'allow_null'	=> false,
 				'default'		=> '1'
-			),
-			'download'		=> array(
-				'datatype'		=> 'TINYINT(1)',
-				'allow_null'	=> false,
-				'default'		=> '0',
-			),
-			'upload'		=> array(
-				'datatype'		=> 'TINYINT(1)',
-				'allow_null'	=> false,
-				'default'		=> '0',
 			)
 		),
 		'PRIMARY KEY'	=> array('group_id', 'forum_id')
 	);
 
-	$db->create_table('forum_perms', $schema);
+	$db->create_table('forum_perms', $schema) or error('Unable to create forum_perms table', __FILE__, __LINE__, $db->error());
 
 
 	$schema = array(
@@ -626,7 +776,7 @@ else
 		'PRIMARY KEY'	=> array('id')
 	);
 
-	$db->create_table('forums', $schema);
+	$db->create_table('forums', $schema) or error('Unable to create forums table', __FILE__, __LINE__, $db->error());
 
 
 	$schema = array(
@@ -724,16 +874,6 @@ else
 				'allow_null'	=> false,
 				'default'		=> '1'
 			),
-			'g_download'				=> array(
-				'datatype'		=> 'TINYINT(1)',
-				'allow_null'	=> false,
-				'default'		=> '0'
-			),
-			'g_upload'				=> array(
-				'datatype'		=> 'TINYINT(1)',
-				'allow_null'	=> false,
-				'default'		=> '0'
-			),
 			'g_post_flood'				=> array(
 				'datatype'		=> 'SMALLINT(6)',
 				'allow_null'	=> false,
@@ -753,7 +893,7 @@ else
 		'PRIMARY KEY'	=> array('g_id')
 	);
 
-	$db->create_table('groups', $schema);
+	$db->create_table('groups', $schema) or error('Unable to create groups table', __FILE__, __LINE__, $db->error());
 
 
 	$schema = array(
@@ -806,7 +946,7 @@ else
 	if ($db_type == 'mysql_innodb' || $db_type == 'mysqli_innodb')
 		$schema['ENGINE'] = 'InnoDB';
 
-	$db->create_table('online', $schema);
+	$db->create_table('online', $schema) or error('Unable to create online table', __FILE__, __LINE__, $db->error());
 
 
 	$schema = array(
@@ -868,88 +1008,7 @@ else
 		)
 	);
 
-	$db->create_table('posts', $schema);
-
-
-	$schema = array(
-		'FIELDS'		=> array(
-			'id'			=> array(
-				'datatype'		=> 'SERIAL',
-				'allow_null'	=> false
-			),
-			'poster'		=> array(
-				'datatype'		=> 'VARCHAR(25)',
-				'allow_null'	=> false,
-				'default'		=> '\'\''
-			),
-			'poster_id'		=> array(
-				'datatype'		=> 'INT(10) UNSIGNED',
-				'allow_null'	=> false,
-				'default'		=> '1'
-			),
-			'poster_ip'		=> array(
-				'datatype'		=> 'VARCHAR(39)',
-				'allow_null'	=> true
-			),
-			'title'		=> array(
-				'datatype'		=> 'VARCHAR(70)',
-				'allow_null'	=> false,
-				'default'		=> '\'\''
-			),
-			'posted'		=> array(
-				'datatype'		=> 'INT(10) UNSIGNED',
-				'allow_null'	=> false,
-				'default'		=> '0'
-			),
-			'post_id'		=> array(
-				'datatype'		=> 'INT(10) UNSIGNED',
-				'allow_null'	=> false,
-				'default'		=> '0'
-			),
-			'filename'		=> array(
-				'datatype'		=> 'VARCHAR(70)',
-				'allow_null'	=> false,
-				'default'		=> '\'\''
-			),
-			'filesize'		=> array(
-				'datatype'		=> 'MEDIUMINT(8) UNSIGNED',
-				'allow_null'	=> false,
-				'default'		=> '0'
-			),
-			'mime'		=> array(
-				'datatype'		=> 'VARCHAR(70)',
-				'allow_null'	=> false,
-				'default'		=> '\'\''
-			),
-			'location'		=> array(
-				'datatype'		=> 'VARCHAR(70)',
-				'allow_null'	=> false,
-				'default'		=> '\'\''
-			),
-			'width'		=> array(
-				'datatype'		=> 'MEDIUMINT(8) UNSIGNED',
-				'allow_null'	=> false,
-				'default'		=> '0'
-			),
-			'height'		=> array(
-				'datatype'		=> 'MEDIUMINT(8) UNSIGNED',
-				'allow_null'	=> false,
-				'default'		=> '0'
-			),
-			'downloads'		=> array(
-				'datatype'		=> 'MEDIUMINT(8) UNSIGNED',
-				'allow_null'	=> false,
-				'default'		=> '0'
-			)
-		),
-		'PRIMARY KEY'	=> array('id'),
-		'INDEXES'		=> array(
-			'poster_id_idx'	=> array('poster_id'),
-			'post_id_idx'	=> array('post_id')
-		)
-	);
-
-	$db->create_table('files', $schema);
+	$db->create_table('posts', $schema) or error('Unable to create posts table', __FILE__, __LINE__, $db->error());
 
 
 	$schema = array(
@@ -972,7 +1031,7 @@ else
 		'PRIMARY KEY'	=> array('id')
 	);
 
-	$db->create_table('ranks', $schema);
+	$db->create_table('ranks', $schema) or error('Unable to create ranks table', __FILE__, __LINE__, $db->error());
 
 
 	$schema = array(
@@ -1025,7 +1084,7 @@ else
 		)
 	);
 
-	$db->create_table('reports', $schema);
+	$db->create_table('reports', $schema) or error('Unable to create reports table', __FILE__, __LINE__, $db->error());
 
 
 	$schema = array(
@@ -1041,7 +1100,7 @@ else
 				'default'		=> '\'\''
 			),
 			'search_data'	=> array(
-				'datatype'		=> 'TEXT',
+				'datatype'		=> 'MEDIUMTEXT',
 				'allow_null'	=> true
 			)
 		),
@@ -1054,7 +1113,7 @@ else
 	if ($db_type == 'mysql' || $db_type == 'mysqli' || $db_type == 'mysql_innodb' || $db_type == 'mysqli_innodb')
 		$schema['INDEXES']['ident_idx'] = array('ident(8)');
 
-	$db->create_table('search_cache', $schema);
+	$db->create_table('search_cache', $schema) or error('Unable to create search_cache table', __FILE__, __LINE__, $db->error());
 
 
 	$schema = array(
@@ -1081,7 +1140,7 @@ else
 		)
 	);
 
-	$db->create_table('search_matches', $schema);
+	$db->create_table('search_matches', $schema) or error('Unable to create search_matches table', __FILE__, __LINE__, $db->error());
 
 
 	$schema = array(
@@ -1109,7 +1168,7 @@ else
 		$schema['UNIQUE KEYS'] = array('word_idx'	=> array('word'));
 	}
 
-	$db->create_table('search_words', $schema);
+	$db->create_table('search_words', $schema) or error('Unable to create search_words table', __FILE__, __LINE__, $db->error());
 
 
 	$schema = array(
@@ -1128,7 +1187,7 @@ else
 		'PRIMARY KEY'	=> array('user_id', 'topic_id')
 	);
 
-	$db->create_table('subscriptions', $schema);
+	$db->create_table('subscriptions', $schema) or error('Unable to create subscriptions table', __FILE__, __LINE__, $db->error());
 
 
 	$schema = array(
@@ -1210,7 +1269,7 @@ else
 		)
 	);
 
-	$db->create_table('topics', $schema);
+	$db->create_table('topics', $schema) or error('Unable to create topics table', __FILE__, __LINE__, $db->error());
 
 
 	$schema = array(
@@ -1338,12 +1397,12 @@ else
 				'default'		=> '0'
 			),
 			'time_format'		=> array(
-				'datatype'		=> 'INT(10) UNSIGNED',
+				'datatype'		=> 'TINYINT(1)',
 				'allow_null'	=> false,
 				'default'		=> '0'
 			),
 			'date_format'		=> array(
-				'datatype'		=> 'INT(10) UNSIGNED',
+				'datatype'		=> 'TINYINT(1)',
 				'allow_null'	=> false,
 				'default'		=> '0'
 			),
@@ -1355,7 +1414,7 @@ else
 			'style'				=> array(
 				'datatype'		=> 'VARCHAR(25)',
 				'allow_null'	=> false,
-				'default'		=> '\'Oxygen\''
+				'default'		=> '\''.$db->escape($default_style).'\''
 			),
 			'num_posts'			=> array(
 				'datatype'		=> 'INT(10) UNSIGNED',
@@ -1403,56 +1462,47 @@ else
 			),
 		),
 		'PRIMARY KEY'	=> array('id'),
-		'INDEXES'		=> array(
-			'registered_idx'	=> array('registered'),
+		'UNIQUE KEYS'	=> array(
 			'username_idx'		=> array('username')
+		),
+		'INDEXES'		=> array(
+			'registered_idx'	=> array('registered')
 		)
 	);
 
 	if ($db_type == 'mysql' || $db_type == 'mysqli' || $db_type == 'mysql_innodb' || $db_type == 'mysqli_innodb')
-		$schema['INDEXES']['username_idx'] = array('username(8)');
+		$schema['UNIQUE KEYS']['username_idx'] = array('username(25)');
 
-	$db->create_table('users', $schema);
+	$db->create_table('users', $schema) or error('Unable to create users table', __FILE__, __LINE__, $db->error());
 
 
 	$now = time();
 
 	// Insert the four preset groups
-	$db->query('INSERT INTO '.$db->prefix."groups (g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_download, g_upload, g_post_flood, g_search_flood, g_email_flood) VALUES('Administrators', 'Administrator', 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0)") or error('Unable to add group', __FILE__, __LINE__, $db->error());
+	$db->query('INSERT INTO '.$db->prefix.'groups ('.($db_type != 'pgsql' ? 'g_id, ' : '').'g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_post_flood, g_search_flood, g_email_flood) VALUES('.($db_type != 'pgsql' ? '1, ' : '')."'Administrators', 'Administrator', 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0)") or error('Unable to add group', __FILE__, __LINE__, $db->error());
 
-	$db->query('INSERT INTO '.$db->prefix."groups (g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_download, g_upload, g_post_flood, g_search_flood, g_email_flood) VALUES('Moderators', 'Moderator', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0)") or error('Unable to add group', __FILE__, __LINE__, $db->error());
+	$db->query('INSERT INTO '.$db->prefix.'groups ('.($db_type != 'pgsql' ? 'g_id, ' : '').'g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_post_flood, g_search_flood, g_email_flood) VALUES('.($db_type != 'pgsql' ? '2, ' : '')."'Moderators', 'Moderator', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0)") or error('Unable to add group', __FILE__, __LINE__, $db->error());
 
-	$db->query('INSERT INTO '.$db->prefix."groups (g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_download, g_upload, g_post_flood, g_search_flood, g_email_flood) VALUES('Guest', NULL, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 60, 30, 0)") or error('Unable to add group', __FILE__, __LINE__, $db->error());
+	$db->query('INSERT INTO '.$db->prefix.'groups ('.($db_type != 'pgsql' ? 'g_id, ' : '').'g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_post_flood, g_search_flood, g_email_flood) VALUES('.($db_type != 'pgsql' ? '3, ' : '')."'Guest', NULL, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 60, 30, 0)") or error('Unable to add group', __FILE__, __LINE__, $db->error());
 
-	$db->query('INSERT INTO '.$db->prefix."groups (g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_download, g_upload, g_post_flood, g_search_flood, g_email_flood) VALUES('Members', NULL, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 60, 30, 60)") or error('Unable to add group', __FILE__, __LINE__, $db->error());
+	$db->query('INSERT INTO '.$db->prefix.'groups ('.($db_type != 'pgsql' ? 'g_id, ' : '').'g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_post_flood, g_search_flood, g_email_flood) VALUES('.($db_type != 'pgsql' ? '4, ' : '')."'Members', NULL, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 60, 30, 60)") or error('Unable to add group', __FILE__, __LINE__, $db->error());
 
 	// Insert guest and first admin user
 	$db->query('INSERT INTO '.$db_prefix."users (group_id, username, password, email) VALUES(3, 'Guest', 'Guest', 'Guest')")
-		or error('Unable to add guest user. Please check your configuration and try again.');
+		or error('Unable to add guest user. Please check your configuration and try again', __FILE__, __LINE__, $db->error());
 
 	$db->query('INSERT INTO '.$db_prefix."users (group_id, username, password, email, num_posts, last_post, registered, registration_ip, last_visit) VALUES(1, '".$db->escape($username)."', '".pun_hash($password1)."', '$email', 1, ".$now.", ".$now.", '127.0.0.1', ".$now.')')
-		or error('Unable to add administrator user. Please check your configuration and try again.');
+		or error('Unable to add administrator user. Please check your configuration and try again', __FILE__, __LINE__, $db->error());
 
 	// Enable/disable avatars depending on file_uploads setting in PHP configuration
 	$avatars = in_array(strtolower(@ini_get('file_uploads')), array('on', 'true', '1')) ? 1 : 0;
-
-
-	// Predefined list of image previews (width, height, do cut)
-	$previews = array(
-		'square'	=>	array(75, 75, true),
-		'thumbnail'	=>	array(100, 100, false),
-		'small'		=>	array(240, 240, false),
-		'medium'	=>	array(500, 500, false),
-		'large'		=>	array(1024, 1024, false)
-	);
-
 
 	// Insert config data
 	$config = array(
 		'o_cur_version'				=> "'".FORUM_VERSION."'",
 		'o_database_revision'		=> "'".FORUM_DB_REVISION."'",
-		'o_board_title'				=> "'My FluxBB forum'",
-		'o_board_desc'				=> "'Unfortunately no one can be told what FluxBB is - you have to see it for yourself.'",
+		'o_board_title'				=> "'".$db->escape($title)."'",
+		'o_board_desc'				=> "'".$db->escape($description)."'",
 		'o_default_timezone'		=> "'0'",
 		'o_time_format'				=> "'H:i:s'",
 		'o_date_format'				=> "'Y-m-d'",
@@ -1466,8 +1516,8 @@ else
 		'o_smilies'					=> "'1'",
 		'o_smilies_sig'				=> "'1'",
 		'o_make_links'				=> "'1'",
-		'o_default_lang'			=> "'English'",
-		'o_default_style'			=> "'Oxygen'",
+		'o_default_lang'			=> "'".$db->escape($default_lang)."'",
+		'o_default_style'			=> "'".$db->escape($default_style)."'",
 		'o_default_user_group'		=> "'4'",
 		'o_topic_review'			=> "'15'",
 		'o_disp_topics_default'		=> "'30'",
@@ -1486,16 +1536,16 @@ else
 		'o_report_method'			=> "'0'",
 		'o_regs_report'				=> "'0'",
 		'o_default_email_setting'	=> "'1'",
-		'o_mailing_list'			=> "'$email'",
-		'o_avatars'					=> "'$avatars'",
+		'o_mailing_list'			=> "'".$email."'",
+		'o_avatars'					=> "'".$avatars."'",
 		'o_avatars_dir'				=> "'img/avatars'",
 		'o_avatars_width'			=> "'60'",
 		'o_avatars_height'			=> "'60'",
 		'o_avatars_size'			=> "'10240'",
 		'o_search_all_forums'		=> "'1'",
-		'o_base_url'				=> "'$base_url'",
-		'o_admin_email'				=> "'$email'",
-		'o_webmaster_email'			=> "'$email'",
+		'o_base_url'				=> "'".$db->escape($base_url)."'",
+		'o_admin_email'				=> "'".$email."'",
+		'o_webmaster_email'			=> "'".$email."'",
 		'o_subscriptions'			=> "'1'",
 		'o_smtp_host'				=> "NULL",
 		'o_smtp_user'				=> "NULL",
@@ -1510,6 +1560,7 @@ else
 		'o_maintenance'				=> "'0'",
 		'o_maintenance_message'		=> "'The forums are temporarily down for maintenance. Please try again in a few minutes.<br />\\n<br />\\n/Administrator'",
 		'o_default_dst'				=> "'0'",
+		'o_feed_type'				=> "'2'",
 		'p_message_bbcode'			=> "'1'",
 		'p_message_img_tag'			=> "'1'",
 		'p_message_all_caps'		=> "'1'",
@@ -1521,68 +1572,62 @@ else
 		'p_sig_lines'				=> "'4'",
 		'p_allow_banned_email'		=> "'1'",
 		'p_allow_dupe_email'		=> "'0'",
-		'p_force_guest_email'		=> "'1'",
-		'f_previews'				=> "'".serialize($previews)."'"
+		'p_force_guest_email'		=> "'1'"
 	);
 
-	while (list($conf_name, $conf_value) = @each($config))
+	foreach ($config as $conf_name => $conf_value)
 	{
 		$db->query('INSERT INTO '.$db_prefix."config (conf_name, conf_value) VALUES('$conf_name', $conf_value)")
-			or error('Unable to insert into table '.$db_prefix.'config. Please check your configuration and try again.');
+			or error('Unable to insert into table '.$db_prefix.'config. Please check your configuration and try again', __FILE__, __LINE__, $db->error());
 	}
 
 	// Insert some other default data
-	$db->query('INSERT INTO '.$db_prefix."categories (cat_name, disp_position) VALUES('Test category', 1)")
-		or error('Unable to insert into table '.$db_prefix.'categories. Please check your configuration and try again.');
-
-	$db->query('INSERT INTO '.$db_prefix."forums (forum_name, forum_desc, num_topics, num_posts, last_post, last_post_id, last_poster, disp_position, cat_id) VALUES('Test forum', 'This is just a test forum', 1, 1, ".$now.", 1, '".$db->escape($username)."', 1, 1)")
-		or error('Unable to insert into table '.$db_prefix.'forums. Please check your configuration and try again.');
-
-	$db->query('INSERT INTO '.$db_prefix."topics (poster, subject, posted, first_post_id, last_post, last_post_id, last_poster, forum_id) VALUES('".$db->escape($username)."', 'Test post', ".$now.", 1, ".$now.", 1, '".$db->escape($username)."', 1)")
-		or error('Unable to insert into table '.$db_prefix.'topics. Please check your configuration and try again.');
-
-	$db->query('INSERT INTO '.$db_prefix."posts (poster, poster_id, poster_ip, message, posted, topic_id) VALUES('".$db->escape($username)."', 2, '127.0.0.1', 'If you are looking at this (which I guess you are), the install of FluxBB appears to have worked! Now log in and head over to the administration control panel to configure your forum.', ".$now.', 1)')
-		or error('Unable to insert into table '.$db_prefix.'posts. Please check your configuration and try again.');
+	$subject = 'Test post';
+	$message = 'If you are looking at this (which I guess you are), the install of FluxBB appears to have worked! Now log in and head over to the administration control panel to configure your forum.';
 
 	$db->query('INSERT INTO '.$db_prefix."ranks (rank, min_posts) VALUES('New member', 0)")
-		or error('Unable to insert into table '.$db_prefix.'ranks. Please check your configuration and try again.');
+		or error('Unable to insert into table '.$db_prefix.'ranks. Please check your configuration and try again', __FILE__, __LINE__, $db->error());
 
 	$db->query('INSERT INTO '.$db_prefix."ranks (rank, min_posts) VALUES('Member', 10)")
-		or error('Unable to insert into table '.$db_prefix.'ranks. Please check your configuration and try again.');
+		or error('Unable to insert into table '.$db_prefix.'ranks. Please check your configuration and try again', __FILE__, __LINE__, $db->error());
 
+	$db->query('INSERT INTO '.$db_prefix."categories (cat_name, disp_position) VALUES('Test category', 1)")
+		or error('Unable to insert into table '.$db_prefix.'categories. Please check your configuration and try again', __FILE__, __LINE__, $db->error());
+
+	$db->query('INSERT INTO '.$db_prefix."forums (forum_name, forum_desc, num_topics, num_posts, last_post, last_post_id, last_poster, disp_position, cat_id) VALUES('Test forum', 'This is just a test forum', 1, 1, ".$now.", 1, '".$db->escape($username)."', 1, 1)")
+		or error('Unable to insert into table '.$db_prefix.'forums. Please check your configuration and try again', __FILE__, __LINE__, $db->error());
+
+	$db->query('INSERT INTO '.$db_prefix."topics (poster, subject, posted, first_post_id, last_post, last_post_id, last_poster, forum_id) VALUES('".$db->escape($username)."', '".$db->escape($subject)."', ".$now.", 1, ".$now.", 1, '".$db->escape($username)."', 1)")
+		or error('Unable to insert into table '.$db_prefix.'topics. Please check your configuration and try again', __FILE__, __LINE__, $db->error());
+
+	$db->query('INSERT INTO '.$db_prefix."posts (poster, poster_id, poster_ip, message, posted, topic_id) VALUES('".$db->escape($username)."', 2, '127.0.0.1', '".$db->escape($message)."', ".$now.', 1)')
+		or error('Unable to insert into table '.$db_prefix.'posts. Please check your configuration and try again', __FILE__, __LINE__, $db->error());
+
+	// Index the test post so searching for it works
+	require PUN_ROOT.'include/search_idx.php';
+	$pun_config['o_default_lang'] = $default_lang;
+	update_search_index('post', 1, $message, $subject);
 
 	$db->end_transaction();
 
 
-	$alerts = '';
+	$alerts = array();
 	// Check if the cache directory is writable
 	if (!@is_writable('./cache/'))
-		$alerts .= '<p style="font-size: 1.1em"><span style="color: #C03000"><strong>The cache directory is currently not writable!</strong></span> In order for FluxBB to function properly, the directory named <em>cache</em> must be writable by PHP. Use chmod to set the appropriate directory permissions. If in doubt, chmod to 0777.</p>';
-
-	// Check if the upload directory is writable
-	if (!@is_writable('./upload/'))
-		$alerts .= '<p style="font-size: 1.1em"><span style="color: #C03000"><strong>The upload directory is currently not writable!</strong></span> In order for FluxBB to function properly, the directory named <em>upload</em> must be writable by PHP. Use chmod to set the appropriate directory permissions. If in doubt, chmod to 0777.</p>';
-
-	// Check if the upload directory is writable
-	foreach (array('square', 'thumbnail', 'small', 'medium', 'large') as $subdir)
-		if (!@is_writable('./img/preview/'.$subdir))
-		{
-			$alerts .= '<p style="font-size: 1.1em"><span style="color: #C03000"><strong>The image preview sub-directories are currently not writable!</strong></span> In order for FluxBB to function properly, the directory named <em>upload</em> must be writable by PHP. Use chmod to set the appropriate directory permissions. If in doubt, chmod to 0777.</p>';
-			break;
-		}
+		$alerts[] = '<strong>The cache directory is currently not writable!</strong> In order for FluxBB to function properly, the directory named <em>cache</em> must be writable by PHP. Use chmod to set the appropriate directory permissions. If in doubt, chmod to 0777.';
 
 	// Check if default avatar directory is writable
 	if (!@is_writable('./img/avatars/'))
-		$alerts .= '<p style="font-size: 1.1em"><span style="color: #C03000"><strong>The avatar directory is currently not writable!</strong></span> If you want users to be able to upload their own avatar images you must see to it that the directory named <em>img/avatars</em> is writable by PHP. You can later choose to save avatar images in a different directory (see Admin/Options). Use chmod to set the appropriate directory permissions. If in doubt, chmod to 0777.</p>';
+		$alerts[] = '<strong>The avatar directory is currently not writable!</strong> If you want users to be able to upload their own avatar images you must see to it that the directory named <em>img/avatars</em> is writable by PHP. You can later choose to save avatar images in a different directory (see Admin/Options). Use chmod to set the appropriate directory permissions. If in doubt, chmod to 0777.';
 
 	// Check if we disabled uploading avatars because file_uploads was disabled
 	if ($avatars == '0')
-		$alerts .= '<p style="font-size: 1.1em"><span style="color: #C03000"><strong>File uploads appear to be disallowed on this server!</strong></span> If you want users to be able to upload their own avatar images you must enable the file_uploads configuration setting in PHP. Once file uploads have been enabled, avatar uploads can be enabled in Administration/Options/Features.</p>';
+		$alerts[] = '<strong>File uploads appear to be disallowed on this server!</strong> If you want users to be able to upload their own avatar images you must enable the file_uploads configuration setting in PHP. Once file uploads have been enabled, avatar uploads can be enabled in Administration/Options/Features.';
 
 	// Add some random bytes at the end of the cookie name to prevent collisions
 	$cookie_name = 'pun_cookie_'.random_key(6, false, true);
 
-	/// Generate the config.php file data
+	// Generate the config.php file data
 	$config = generate_config_file();
 
 	// Attempt to write config.php and serve it up for download if writing fails
@@ -1607,29 +1652,48 @@ else
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>FluxBB Installation</title>
-<link rel="stylesheet" type="text/css" href="style/Oxygen.css" />
+<link rel="stylesheet" type="text/css" href="style/<?php echo $default_style ?>.css" />
+<style type="text/css">
+<!--
+#punwrap {
+	margin: 20px 10%;
+	}
+-->
+</style>
 </head>
 <body>
 
-<div id="puninstall" style="margin: auto 10% auto 10%">
-<div class="pun">
+<div id="punwrap">
+<div id="puninstall" class="pun">
+
+<div class="top-box"><div><!-- Top Corners --></div></div>
+
+<div id="brdheader" class="block">
+	<div class="box">
+		<div id="brdtitle" class="inbox">
+			<h1><span>FluxBB Installation</span></h1>
+			<div id="brddesc"><p>FluxBB has been installed. To finalize the installation please follow the instructions below.</p></div>
+		</div>
+	</div>
+</div>
+
+<div id="brdmain">
 
 <div class="blockform">
-	<h2>Final instructions</h2>
+	<h2><span>Final instructions</span></h2>
 	<div class="box">
-		<div class="fakeform">
 <?php
 
 if (!$written)
 {
 
 ?>
+		<form method="post" action="install.php">
 			<div class="inform">
 				<div class="forminfo">
-					<p>Important! To finalize the installation, you need to click on the button below to download a file called config.php. You then need to upload this file to the root directory of your FluxBB installation.</p>
-<?php if ($alerts != ''): ?>					<?php echo $alerts."\n" ?>
-<?php endif; ?>				</div>
-				<form method="post" action="install.php">
+					<p>To finalize the installation, you need to click on the button below to download a file called config.php. You then need to upload this file to the root directory of your FluxBB installation.</p>
+					<p>Once you have uploaded config.php, FluxBB will be fully installed! At that point, you may <a href="index.php">go to the forum index</a>.</p>
+				</div>
 				<input type="hidden" name="generate_config" value="1" />
 				<input type="hidden" name="db_type" value="<?php echo $db_type; ?>" />
 				<input type="hidden" name="db_host" value="<?php echo $db_host; ?>" />
@@ -1639,14 +1703,19 @@ if (!$written)
 				<input type="hidden" name="db_prefix" value="<?php echo pun_htmlspecialchars($db_prefix); ?>" />
 				<input type="hidden" name="cookie_name" value="<?php echo pun_htmlspecialchars($cookie_name); ?>" />
 				<input type="hidden" name="cookie_seed" value="<?php echo pun_htmlspecialchars($cookie_seed); ?>" />
-				<p><input type="submit" value="Download config.php file" /></p>
-				</form>
-			</div>
-			<div class="inform">
-				<div class="forminfo">
-					<p>Once you have uploaded config.php, FluxBB will be fully installed! At that point, you may <a href="index.php">go to the forum index</a>.</p>
+
+<?php if (!empty($alerts)): ?>				<div class="forminfo error-info">
+					<ul class="error-list">
+<?php
+
+foreach ($alerts as $cur_alert)
+	echo "\t\t\t\t\t".'<li>'.$cur_alert.'</li>'."\n";
+?>
 				</div>
-			</div>
+<?php endif; ?>			</div>
+			<p class="buttons"><input type="submit" value="Download config.php file" /></p>
+		</form>
+
 <?php
 
 }
@@ -1654,19 +1723,24 @@ else
 {
 
 ?>
+		<div class="fakeform">
 			<div class="inform">
 				<div class="forminfo">
-					<p>FluxBB has been fully installed! You may now <a href="index.php">go to the forum index</a></p>
+					<p>FluxBB has been fully installed! You may now <a href="index.php">go to the forum index</a>.</p>
 				</div>
 			</div>
+		</div>
 <?php
 
 }
 
 ?>
-		</div>
 	</div>
 </div>
+
+</div>
+
+<div class="end-box"><div><!-- Bottom Corners --></div></div>
 
 </div>
 </div>

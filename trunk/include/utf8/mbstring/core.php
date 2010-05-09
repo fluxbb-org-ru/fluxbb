@@ -6,9 +6,7 @@
 * @subpackage strings
 */
 
-/**
-* Define UTF8_CORE as required
-*/
+// Define UTF8_CORE as required
 if (!defined('UTF8_CORE'))
 	define('UTF8_CORE', true);
 
@@ -40,6 +38,9 @@ function utf8_strlen($str)
 */
 function utf8_strpos($str, $search, $offset = false)
 {
+	// Strip unvalid characters
+	$str = utf8_bad_strip($str);
+
 	if ($offset === false)
 		return mb_strpos($str, $search);
 	else
@@ -59,7 +60,10 @@ function utf8_strpos($str, $search, $offset = false)
 */
 function utf8_strrpos($str, $search, $offset = false)
 {
-	if ($offset === false)
+	// Strip unvalid characters
+	$str = utf8_bad_strip($str);
+
+	if (!$offset)
 	{
 		// Emulate behaviour of strrpos rather than raising warning
 		if (empty($str))
@@ -77,7 +81,7 @@ function utf8_strrpos($str, $search, $offset = false)
 
 		$str = mb_substr($str, $offset);
 
-		if (false !== ($pos = mb_strrpos($str, $search)))
+		if (($pos = mb_strrpos($str, $search)) !== false)
 			return $pos + $offset;
 
 		return false;

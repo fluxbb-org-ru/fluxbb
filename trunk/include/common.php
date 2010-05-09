@@ -1,50 +1,17 @@
 <?php
-/***********************************************************************
 
-  Copyright (C) 2002-2005  Rickard Andersson (rickard@punbb.org)
-
-  This file is part of PunBB.
-
-  PunBB is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published
-  by the Free Software Foundation; either version 2 of the License,
-  or (at your option) any later version.
-
-  PunBB is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-  MA  02111-1307  USA
-
-************************************************************************/
+/**
+ * Copyright (C) 2008-2010 FluxBB
+ * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
+ * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
+ */
 
 if (!defined('PUN_ROOT'))
 	exit('The constant PUN_ROOT must be defined and point to a valid FluxBB installation root directory.');
 
-
 // Define the version and database revision that this code was written for
-define('FORUM_VERSION', '1.4');
-define('FORUM_DB_REVISION', 2);
-
-
-// Attempt to load the configuration file config.php
-if (file_exists(PUN_ROOT.'config.php'))
-	include PUN_ROOT.'config.php';
-
-// If PUN isn't defined, config.php is missing or corrupt
-if (!defined('PUN'))
-	exit('The file \'config.php\' doesn\'t exist or is corrupt. Please run <a href="install.php">install.php</a> to install FluxBB first.');
-
-
-// Load the functions script
-require PUN_ROOT.'include/functions.php';
-
-// Load UTF-8 functions
-require PUN_ROOT.'include/utf8/utf8.php';
+define('FORUM_VERSION', '1.4-rc3');
+define('FORUM_DB_REVISION', 5);
 
 // Block prefetch requests
 if (isset($_SERVER['HTTP_X_MOZ']) && $_SERVER['HTTP_X_MOZ'] == 'prefetch')
@@ -52,32 +19,50 @@ if (isset($_SERVER['HTTP_X_MOZ']) && $_SERVER['HTTP_X_MOZ'] == 'prefetch')
 	header('HTTP/1.1 403 Prefetching Forbidden');
 
 	// Send no-cache headers
-	header('Expires: Thu, 21 Jul 1977 07:30:00 GMT');	// When yours truly first set eyes on this world! :)
+	header('Expires: Thu, 21 Jul 1977 07:30:00 GMT'); // When yours truly first set eyes on this world! :)
 	header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
 	header('Cache-Control: post-check=0, pre-check=0', false);
-	header('Pragma: no-cache');		// For HTTP/1.0 compability
+	header('Pragma: no-cache'); // For HTTP/1.0 compatibility
 
 	exit;
 }
 
+// Attempt to load the configuration file config.php
+if (file_exists(PUN_ROOT.'config.php'))
+	require PUN_ROOT.'config.php';
+
+// If we have the 1.3-legacy constant defined, define the proper 1.4 constant so we don't get an incorrect "need to install" message
+if (defined('FORUM'))
+	define('PUN', FORUM);
+
+// If PUN isn't defined, config.php is missing or corrupt
+if (!defined('PUN'))
+	exit('The file \'config.php\' doesn\'t exist or is corrupt. Please run <a href="install.php">install.php</a> to install FluxBB first.');
+
+// Load the functions script
+require PUN_ROOT.'include/functions.php';
+
+// Load UTF-8 functions
+require PUN_ROOT.'include/utf8/utf8.php';
+
+// Strip out "bad" UTF-8 characters
+forum_remove_bad_characters();
+
 // Reverse the effect of register_globals
 forum_unregister_globals();
 
-
 // Record the start time (will be used to calculate the generation time for the page)
-list($usec, $sec) = explode(' ', microtime());
-$pun_start = ((float)$usec + (float)$sec);
+$pun_start = get_microtime();
 
-// Make sure PHP reports all errors except E_NOTICE. FluxBB supports E_ALL, but a lot of scripts it may interact with, do not.
-//error_reporting(E_ALL ^ E_NOTICE);
-error_reporting(E_ALL);
+// Make sure PHP reports all errors except E_NOTICE. FluxBB supports E_ALL, but a lot of scripts it may interact with, do not
+error_reporting(E_ALL ^ E_NOTICE);
+
+// Force POSIX locale (to prevent functions such as strtolower() from messing up UTF-8 strings)
+setlocale(LC_CTYPE, 'C');
 
 // Turn off magic_quotes_runtime
 if (get_magic_quotes_runtime())
 	set_magic_quotes_runtime(0);
-
-// Force POSIX locale (to prevent functions such as strtolower() from messing up UTF-8 strings)
-setlocale(LC_CTYPE, 'C');
 
 // Strip slashes from GET/POST/COOKIE (if magic_quotes_gpc is enabled)
 if (get_magic_quotes_gpc())
@@ -90,6 +75,7 @@ if (get_magic_quotes_gpc())
 	$_GET = stripslashes_array($_GET);
 	$_POST = stripslashes_array($_POST);
 	$_COOKIE = stripslashes_array($_COOKIE);
+	$_REQUEST = stripslashes_array($_REQUEST);
 }
 
 // If a cookie name is not specified in config.php, we use the default (pun_cookie)
@@ -106,7 +92,6 @@ define('PUN_ADMIN', 1);
 define('PUN_MOD', 2);
 define('PUN_GUEST', 3);
 define('PUN_MEMBER', 4);
-
 
 // Load DB abstraction layer and connect
 require PUN_ROOT.'include/dblayer/common_db.php';
@@ -153,7 +138,7 @@ check_cookie($pun_user);
 if (file_exists(PUN_ROOT.'lang/'.$pun_user['language'].'/common.php'))
 	include PUN_ROOT.'lang/'.$pun_user['language'].'/common.php';
 else
-	error('There is no valid language pack \''.pun_htmlspecialchars($pun_user['language']).'\' installed. Please reinstall a language of that name.');
+	error('There is no valid language pack \''.pun_htmlspecialchars($pun_user['language']).'\' installed. Please reinstall a language of that name');
 
 // Check if we are to display a maintenance message
 if ($pun_config['o_maintenance'] && $pun_user['g_id'] > PUN_ADMIN && !defined('PUN_TURN_OFF_MAINT'))
@@ -181,3 +166,11 @@ update_users_online();
 // Check to see if we logged in without a cookie being set
 if ($pun_user['is_guest'] && isset($_GET['login']))
 	message($lang_common['No cookie']);
+
+if (!defined('PUN_MAX_POSTSIZE'))
+	define('PUN_MAX_POSTSIZE', 65535);
+
+if (!defined('PUN_SEARCH_MIN_WORD'))
+	define('PUN_SEARCH_MIN_WORD', 3);
+if (!defined('PUN_SEARCH_MAX_WORD'))
+	define('PUN_SEARCH_MAX_WORD', 20);

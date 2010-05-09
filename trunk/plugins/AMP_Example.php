@@ -1,26 +1,10 @@
 <?php
-/***********************************************************************
 
-  Copyright (C) 2002-2005  Rickard Andersson (rickard@punbb.org)
-
-  This file is part of PunBB.
-
-  PunBB is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published
-  by the Free Software Foundation; either version 2 of the License,
-  or (at your option) any later version.
-
-  PunBB is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-  MA  02111-1307  USA
-
-************************************************************************/
+/**
+ * Copyright (C) 2008-2010 FluxBB
+ * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
+ * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
+ */
 
 ##
 ##
@@ -71,6 +55,9 @@
 if (!defined('PUN'))
 	exit;
 
+// Load the admin_bans.php language file
+require PUN_ROOT.'lang/'.$admin_language.'/admin_plugin_example.php';
+
 // Tell admin_loader.php that this is indeed a plugin and that it is loaded
 define('PUN_PLUGIN_LOADED', 1);
 
@@ -81,57 +68,57 @@ define('PUN_PLUGIN_LOADED', 1);
 // If the "Show text" button was clicked
 if (isset($_POST['show_text']))
 {
-	// Make sure something something was entered
+	// Make sure something was entered
 	if (trim($_POST['text_to_show']) == '')
-		message('You didn\'t enter anything!');
+		message($lang_admin_plugin_example['No text']);
 
 	// Display the admin navigation menu
 	generate_admin_menu($plugin);
 
 ?>
 	<div class="block">
-		<h2><span>Example plugin</span></h2>
+		<h2><span><?php echo $lang_admin_plugin_example['Example plugin title'] ?></span></h2>
 		<div class="box">
 			<div class="inbox">
-				<p>You said "<?php echo pun_htmlspecialchars($_POST['text_to_show']) ?>". Great stuff.</p>
-				<p><a href="javascript: history.go(-1)">Go back</a></p>
+				<p><?php printf($lang_admin_plugin_example['You said'], pun_htmlspecialchars($_POST['text_to_show'])) ?></p>
+				<p><a href="javascript: history.go(-1)"><?php echo $lang_admin_common['Go back'] ?></a></p>
 			</div>
 		</div>
 	</div>
 <?php
 
 }
-else	// If not, we show the "Show text" form
+else // If not, we show the "Show text" form
 {
 	// Display the admin navigation menu
 	generate_admin_menu($plugin);
 
 ?>
 	<div id="exampleplugin" class="blockform">
-		<h2><span>Example plugin</span></h2>
+		<h2><span><?php echo $lang_admin_plugin_example['Example plugin title'] ?></span></h2>
 		<div class="box">
 			<div class="inbox">
-				<p>This plugin doesn't do anything useful. Hence the name "Example".</p>
-				<p>This would be a good spot to talk a little about your plugin. Describe what it does and how it should be used. Be brief, but informative.</p>
+				<p><?php echo $lang_admin_plugin_example['Explanation 1'] ?></p>
+				<p><?php echo $lang_admin_plugin_example['Explanation 2'] ?></p>
 			</div>
 		</div>
 
-		<h2 class="block2"><span>An example form</span></h2>
+		<h2 class="block2"><span><?php echo $lang_admin_plugin_example['Example form title'] ?></span></h2>
 		<div class="box">
-			<form id="example" method="post" action="<?php echo $_SERVER['REQUEST_URI'] ?>&amp;foo=bar">
+			<form id="example" method="post" action="<?php echo pun_htmlspecialchars($_SERVER['REQUEST_URI']) ?>&amp;foo=bar">
 				<div class="inform">
 					<fieldset>
-						<legend>Enter a piece of text and hit "Show text"!</legend>
+						<legend><?php echo $lang_admin_plugin_example['Legend text'] ?></legend>
 						<div class="infldset">
-						<table class="aligntop" cellspacing="0">
-							<tr>
-								<th scope="row">Text to show<div><input type="submit" name="show_text" value="Show text" tabindex="2" /></div></th>
-								<td>
-									<input type="text" name="text_to_show" size="25" tabindex="1" />
-									<span>The text you want to display.</span>
-								</td>
-							</tr>
-						</table>
+							<table class="aligntop" cellspacing="0">
+								<tr>
+									<th scope="row"><?php echo $lang_admin_plugin_example['Text to show'] ?><div><input type="submit" name="show_text" value="<?php echo $lang_admin_plugin_example['Show text button'] ?>" tabindex="2" /></div></th>
+									<td>
+										<input type="text" name="text_to_show" size="25" tabindex="1" />
+										<span><?php echo $lang_admin_plugin_example['Input content'] ?></span>
+									</td>
+								</tr>
+							</table>
 						</div>
 					</fieldset>
 				</div>
@@ -142,4 +129,4 @@ else	// If not, we show the "Show text" form
 
 }
 
-// Note that the script just ends here. The footer will be included by admin_loader.php.
+// Note that the script just ends here. The footer will be included by admin_loader.php

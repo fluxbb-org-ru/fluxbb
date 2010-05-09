@@ -1,27 +1,10 @@
 <?php
-/***********************************************************************
 
-  Copyright (C) 2002-2005  Rickard Andersson (rickard@punbb.org)
-
-  This file is part of PunBB.
-
-  PunBB is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published
-  by the Free Software Foundation; either version 2 of the License,
-  or (at your option) any later version.
-
-  PunBB is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-  MA  02111-1307  USA
-
-************************************************************************/
-
+/**
+ * Copyright (C) 2008-2010 FluxBB
+ * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
+ * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
+ */
 
 define('PUN_ROOT', './');
 require PUN_ROOT.'include/common.php';
@@ -46,8 +29,14 @@ if (!$pun_user['is_guest'])
 	$tracked_topics = get_tracked_topics();
 }
 
-$page_title = pun_htmlspecialchars($pun_config['o_board_title']);
+if ($pun_config['o_feed_type'] == '1')
+	$page_head = array('feed' => '<link rel="alternate" type="application/rss+xml" href="extern.php?action=feed&amp;type=rss" title="'.$lang_common['RSS active topics feed'].'" />');
+else if ($pun_config['o_feed_type'] == '2')
+	$page_head = array('feed' => '<link rel="alternate" type="application/atom+xml" href="extern.php?action=feed&amp;type=atom" title="'.$lang_common['Atom active topics feed'].'" />');
+
+$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']));
 define('PUN_ALLOW_INDEX', 1);
+define('PUN_ACTIVE_PAGE', 'index');
 require PUN_ROOT.'header.php';
 
 // Print the categories and forums
@@ -55,16 +44,18 @@ $result = $db->query('SELECT c.id AS cid, c.cat_name, f.id AS fid, f.forum_name,
 
 $cur_category = 0;
 $cat_count = 0;
+$forum_count = 0;
 while ($cur_forum = $db->fetch_assoc($result))
 {
 	$moderators = '';
 
-	if ($cur_forum['cid'] != $cur_category)	// A new category since last iteration?
+	if ($cur_forum['cid'] != $cur_category) // A new category since last iteration?
 	{
 		if ($cur_category != 0)
 			echo "\t\t\t".'</tbody>'."\n\t\t\t".'</table>'."\n\t\t".'</div>'."\n\t".'</div>'."\n".'</div>'."\n\n";
 
 		++$cat_count;
+		$forum_count = 0;
 
 ?>
 <div id="idx<?php echo $cat_count ?>" class="blocktable">
@@ -86,8 +77,9 @@ while ($cur_forum = $db->fetch_assoc($result))
 		$cur_category = $cur_forum['cid'];
 	}
 
-	$item_status = '';
-	$icon_text = $lang_common['Normal icon'];
+	++$forum_count;
+	$item_status = ($forum_count % 2 == 0) ? 'roweven' : 'rowodd';
+	$forum_field_new = '';
 	$icon_type = 'icon';
 
 	// Are there new posts since our last visit?
@@ -98,9 +90,9 @@ while ($cur_forum = $db->fetch_assoc($result))
 		{
 			if ((empty($tracked_topics['topics'][$check_topic_id]) || $tracked_topics['topics'][$check_topic_id] < $check_last_post) && (empty($tracked_topics['forums'][$cur_forum['fid']]) || $tracked_topics['forums'][$cur_forum['fid']] < $check_last_post))
 			{
-				$item_status = 'inew';
-				$icon_text = $lang_common['New icon'];
-				$icon_type = 'icon inew';
+				$item_status .= ' inew';
+				$forum_field_new = '<span class="newtext">[ <a href="search.php?action=show_new&amp;fid='.$cur_forum['fid'].'">'.$lang_common['New posts'].'</a> ]</span>';
+				$icon_type = 'icon icon-new';
 
 				break;
 			}
@@ -110,35 +102,35 @@ while ($cur_forum = $db->fetch_assoc($result))
 	// Is this a redirect forum?
 	if ($cur_forum['redirect_url'] != '')
 	{
-		$forum_field = '<h3><a href="'.pun_htmlspecialchars($cur_forum['redirect_url']).'" title="'.$lang_index['Link to'].' '.pun_htmlspecialchars($cur_forum['redirect_url']).'">'.pun_htmlspecialchars($cur_forum['forum_name']).'</a></h3>';
-		$num_topics = $num_posts = '&nbsp;';
-		$item_status = 'iredirect';
-		$icon_text = $lang_common['Redirect icon'];
+		$forum_field = '<h3><span class="redirtext">'.$lang_index['Link to'].'</span> <a href="'.pun_htmlspecialchars($cur_forum['redirect_url']).'" title="'.$lang_index['Link to'].' '.pun_htmlspecialchars($cur_forum['redirect_url']).'">'.pun_htmlspecialchars($cur_forum['forum_name']).'</a></h3>';
+		$num_topics = $num_posts = '-';
+		$item_status .= ' iredirect';
 		$icon_type = 'icon';
 	}
 	else
 	{
-		$forum_field = '<h3><a href="viewforum.php?id='.$cur_forum['fid'].'">'.pun_htmlspecialchars($cur_forum['forum_name']).'</a></h3>';
+		$forum_field = '<h3><a href="viewforum.php?id='.$cur_forum['fid'].'">'.pun_htmlspecialchars($cur_forum['forum_name']).'</a>'.(!empty($forum_field_new) ? ' '.$forum_field_new : '').'</h3>';
 		$num_topics = $cur_forum['num_topics'];
 		$num_posts = $cur_forum['num_posts'];
 	}
 
 	if ($cur_forum['forum_desc'] != '')
-		$forum_field .= "\n\t\t\t\t\t\t\t\t".$cur_forum['forum_desc'];
+		$forum_field .= "\n\t\t\t\t\t\t\t\t".'<div class="forumdesc">'.$cur_forum['forum_desc'].'</div>';
 
-
-	// If there is a last_post/last_poster.
+	// If there is a last_post/last_poster
 	if ($cur_forum['last_post'] != '')
 		$last_post = '<a href="viewtopic.php?pid='.$cur_forum['last_post_id'].'#p'.$cur_forum['last_post_id'].'">'.format_time($cur_forum['last_post']).'</a> <span class="byuser">'.$lang_common['by'].' '.pun_htmlspecialchars($cur_forum['last_poster']).'</span>';
+	else if ($cur_forum['redirect_url'] != '')
+		$last_post = '- - -';
 	else
-		$last_post = '&nbsp;';
+		$last_post = $lang_common['Never'];
 
 	if ($cur_forum['moderators'] != '')
 	{
 		$mods_array = unserialize($cur_forum['moderators']);
 		$moderators = array();
 
-		while (list($mod_username, $mod_id) = @each($mods_array))
+		foreach ($mods_array as $mod_username => $mod_id)
 		{
 			if ($pun_user['g_view_users'] == '1')
 				$moderators[] = '<a href="profile.php?id='.$mod_id.'">'.pun_htmlspecialchars($mod_username).'</a>';
@@ -146,15 +138,15 @@ while ($cur_forum = $db->fetch_assoc($result))
 				$moderators[] = pun_htmlspecialchars($mod_username);
 		}
 
-		$moderators = "\t\t\t\t\t\t\t\t".'<p><em>('.$lang_common['Moderated by'].'</em> '.implode(', ', $moderators).')</p>'."\n";
+		$moderators = "\t\t\t\t\t\t\t\t".'<p class="modlist">(<em>'.$lang_common['Moderated by'].'</em> '.implode(', ', $moderators).')</p>'."\n";
 	}
 
 ?>
- 				<tr<?php if ($item_status != '') echo ' class="'.$item_status.'"'; ?>>
+				<tr class="<?php echo $item_status ?>">
 					<td class="tcl">
-						<div class="intd">
-							<div class="<?php echo $icon_type ?>"><div class="nosize"><?php echo $icon_text ?></div></div>
-							<div class="tclcon">
+						<div class="<?php echo $icon_type ?>"><div class="nosize"><?php echo forum_number_format($forum_count) ?></div></div>
+						<div class="tclcon">
+							<div>
 								<?php echo $forum_field."\n".$moderators ?>
 							</div>
 						</div>
@@ -196,13 +188,13 @@ else
 		<div class="inbox">
 			<dl class="conr">
 				<dt><strong><?php echo $lang_index['Board stats'] ?></strong></dt>
-				<dd><?php echo $lang_index['No of users'].': <strong>'.forum_number_format($stats['total_users']) ?></strong></dd>
-				<dd><?php echo $lang_index['No of topics'].': <strong>'.forum_number_format($stats['total_topics']) ?></strong></dd>
-				<dd><?php echo $lang_index['No of posts'].': <strong>'.forum_number_format($stats['total_posts']) ?></strong></dd>
+				<dd><?php printf($lang_index['No of users'], '<strong>'.forum_number_format($stats['total_users']).'</strong>') ?></dd>
+				<dd><?php printf($lang_index['No of topics'], '<strong>'.forum_number_format($stats['total_topics']).'</strong>') ?></dd>
+				<dd><?php printf($lang_index['No of posts'], '<strong>'.forum_number_format($stats['total_posts']).'</strong>') ?></dd>
 			</dl>
 			<dl class="conl">
 				<dt><strong><?php echo $lang_index['User info'] ?></strong></dt>
-				<dd><?php echo $lang_index['Newest user'] ?>: <?php echo $stats['newest_user'] ?></dd>
+				<dd><?php printf($lang_index['Newest user'], $stats['newest_user']) ?></dd>
 <?php
 
 if ($pun_config['o_users_online'] == '1')
@@ -226,17 +218,17 @@ if ($pun_config['o_users_online'] == '1')
 	}
 
 	$num_users = count($users);
-	echo "\t\t\t\t".'<dd>'. $lang_index['Users online'].': <strong>'.forum_number_format($num_users).'</strong></dd>'."\n\t\t\t\t".'<dd>'.$lang_index['Guests online'].': <strong>'.forum_number_format($num_guests).'</strong></dd>'."\n\t\t\t".'</dl>'."\n";
+	echo "\t\t\t\t".'<dd>'.sprintf($lang_index['Users online'], '<strong>'.forum_number_format($num_users).'</strong>').'</dd>'."\n\t\t\t\t".'<dd>'.sprintf($lang_index['Guests online'], '<strong>'.forum_number_format($num_guests).'</strong>').'</dd>'."\n\t\t\t".'</dl>'."\n";
 
 
 	if ($num_users > 0)
-		echo "\t\t\t".'<dl id="onlinelist" class= "clearb">'."\n\t\t\t\t".'<dt><strong>'.$lang_index['Online'].':&nbsp;</strong></dt>'."\t\t\t\t".implode(',</dd> ', $users).'</dd>'."\n\t\t\t".'</dl>'."\n";
+		echo "\t\t\t".'<dl id="onlinelist" class="clearb">'."\n\t\t\t\t".'<dt><strong>'.$lang_index['Online'].' </strong></dt>'."\t\t\t\t".implode(',</dd> ', $users).'</dd>'."\n\t\t\t".'</dl>'."\n";
 	else
 		echo "\t\t\t".'<div class="clearer"></div>'."\n";
 
 }
 else
-	echo "\t\t".'</dl>'."\n\t\t\t".'<div class="clearer"></div>'."\n";
+	echo "\t\t\t".'</dl>'."\n\t\t\t".'<div class="clearer"></div>'."\n";
 
 
 ?>

@@ -1,27 +1,10 @@
 <?php
-/***********************************************************************
 
-  Copyright (C) 2002-2005  Rickard Andersson (rickard@punbb.org)
-
-  This file is part of PunBB.
-
-  PunBB is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published
-  by the Free Software Foundation; either version 2 of the License,
-  or (at your option) any later version.
-
-  PunBB is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-  MA  02111-1307  USA
-
-************************************************************************/
-
+/**
+ * Copyright (C) 2008-2010 FluxBB
+ * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
+ * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
+ */
 
 define('PUN_ROOT', './');
 require PUN_ROOT.'include/common.php';
@@ -36,7 +19,7 @@ if ($id < 1)
 	message($lang_common['Bad request']);
 
 // Fetch some info about the post, the topic and the forum
-$result = $db->query('SELECT f.id AS fid, f.forum_name, f.moderators, f.redirect_url, fp.post_replies, fp.post_topics, fp.upload, t.id AS tid, t.subject, t.posted, t.first_post_id, t.closed, p.poster, p.poster_id, p.message, p.hide_smilies FROM '.$db->prefix.'posts AS p INNER JOIN '.$db->prefix.'topics AS t ON t.id=p.topic_id INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND p.id='.$id) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
+$result = $db->query('SELECT f.id AS fid, f.forum_name, f.moderators, f.redirect_url, fp.post_replies, fp.post_topics, t.id AS tid, t.subject, t.posted, t.first_post_id, t.closed, p.poster, p.poster_id, p.message, p.hide_smilies FROM '.$db->prefix.'posts AS p INNER JOIN '.$db->prefix.'topics AS t ON t.id=p.topic_id INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND p.id='.$id) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
 if (!$db->num_rows($result))
 	message($lang_common['Bad request']);
 
@@ -55,31 +38,8 @@ if (($pun_user['g_edit_posts'] == '0' ||
 	!$is_admmod)
 	message($lang_common['No permission']);
 
-// Do we have permission to upload file?
-if ($pun_user['is_guest'])
-	$can_upload = false;
-else if ($pun_user['g_id'] == PUN_ADMIN)
-	$can_upload = true;
-else
-	$can_upload = ($cur_post['upload'] == '' && $pun_user['g_upload'] == '1') || $cur_post['upload'] == '1';
-
 // Load the post.php/edit.php language file
 require PUN_ROOT.'lang/'.$pun_user['language'].'/post.php';
-
-// Preceed files if needed
-if ($can_upload)
-{
-	// Load the file-upload language file
-	require PUN_ROOT.'lang/'.$pun_user['language'].'/file.php';
-	// Include file & image support functions
-	require PUN_ROOT.'include/file_func.php';
-
-	// Fetch already attached files
-	$attachments = array();
-	$result = $db->query('SELECT a.* FROM '.$db->prefix.'files AS a WHERE a.post_id='.$id.' ORDER BY a.id') or error('Unable to fetch attachments', __FILE__, __LINE__, $db->error());
-	while ($attachment = $db->fetch_assoc($result))
-		$attachments[$attachment['id']] = $attachment;
-}
 
 // Start with a clean slate
 $errors = array();
@@ -90,47 +50,7 @@ if (isset($_POST['form_sent']))
 	if ($is_admmod)
 		confirm_referrer('edit.php');
 
-	if ($can_upload)
-	{
-		// Process new attachments if any
-		$attach_ids = array();
-		if (isset($_FILES['attach']))
-		{
-			foreach ($_FILES['attach']['error'] as $file_key => $file_error)
-			{
-				if ($file_error != UPLOAD_ERR_NO_FILE)
-				{
-					$file_item = file_item('attach', $file_key);
-					$result = upload_file($file_item, '');
-					if (is_array($result))
-						$errors = array_merge($errors, $result);
-					else
-					{
-						$attach_ids[] = $result;
-						// Add just uploaded file to list
-						$attachment = array(
-							'id'		=> $result,
-							'title'		=> '',
-							'post_id'	=> $id,
-							'filename'	=> $file_item['name'],
-							'mime'		=> $file_item['type']);
-						$attachments[$result] = $attachment;
-					}
-				}
-			}
-		}
-
-		// Delete marked files
-		if (isset($_POST['del_attach_id']))
-		{
-			delete_files($_POST['del_attach_id']);
-			// Do not show just deleted files
-			foreach ($_POST['del_attach_id'] as $result)
-				unset($attachments[$result]);
-		}
-	}
-
-	// If it is a topic it must contain a subject
+	// If it's a topic it must contain a subject
 	if ($can_edit_subject)
 	{
 		$subject = pun_trim($_POST['req_subject']);
@@ -139,36 +59,29 @@ if (isset($_POST['form_sent']))
 			$errors[] = $lang_post['No subject'];
 		else if (pun_strlen($subject) > 70)
 			$errors[] = $lang_post['Too long subject'];
-		else if ($pun_config['p_subject_all_caps'] == '0' && strtoupper($subject) == $subject && !$pun_user['is_admmod'])
-			$subject = ucwords(strtolower($subject));
+		else if ($pun_config['p_subject_all_caps'] == '0' && is_all_uppercase($subject) && !$pun_user['is_admmod'])
+			$errors[] = $lang_post['All caps subject'];
 	}
 
 	// Clean up message from POST
 	$message = pun_linebreaks(pun_trim($_POST['req_message']));
 
-	if ($message == '')
-		$errors[] = $lang_post['No message'];
-	else if (strlen($message) > 65535)
+	if (pun_strlen($message) > PUN_MAX_POSTSIZE)
 		$errors[] = $lang_post['Too long message'];
-	else if ($pun_config['p_message_all_caps'] == '0' && strtoupper($message) == $message && !$pun_user['is_admmod'])
-		$message = ucwords(strtolower($message));
+	else if ($pun_config['p_message_all_caps'] == '0' && is_all_uppercase($message) && !$pun_user['is_admmod'])
+		$errors[] = $lang_post['All caps message'];
 
 	// Validate BBCode syntax
-	if ($pun_config['p_message_bbcode'] == '1' || $pun_config['o_make_links'] == '1')
+	if ($pun_config['p_message_bbcode'] == '1')
 	{
 		require PUN_ROOT.'include/parser.php';
 		$message = preparse_bbcode($message, $errors);
 	}
 
+	if ($message == '')
+		$errors[] = $lang_post['No message'];
 
 	$hide_smilies = isset($_POST['hide_smilies']) ? '1' : '0';
-
-	// Attach files uploaded into post
-	if ($can_upload && !empty($attach_ids))
-	{
-		// Just in case: verify poster and attach info
-		$db->query('UPDATE '.$db->prefix.'files SET post_id='.$id.' WHERE poster_id='.$pun_user['id'].' AND post_id=0 AND id IN('.implode(',', $attach_ids).')' ) or error('Unable to update files post_id', __FILE__, __LINE__, $db->error());
-	}
 
 	// Did everything go according to plan?
 	if (empty($errors) && !isset($_POST['preview']))
@@ -197,9 +110,10 @@ if (isset($_POST['form_sent']))
 
 
 
-$page_title = pun_htmlspecialchars($pun_config['o_board_title']).' / '.$lang_post['Edit post'];
+$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_post['Edit post']);
 $required_fields = array('req_subject' => $lang_common['Subject'], 'req_message' => $lang_common['Message']);
 $focus_element = array('edit', 'req_message');
+define('PUN_ACTIVE_PAGE', 'index');
 require PUN_ROOT.'header.php';
 
 $cur_index = 1;
@@ -207,7 +121,12 @@ $cur_index = 1;
 ?>
 <div class="linkst">
 	<div class="inbox">
-		<ul><li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li><li>&nbsp;&raquo;&nbsp;<a href="viewforum.php?id=<?php echo $cur_post['fid'] ?>"><?php echo pun_htmlspecialchars($cur_post['forum_name']) ?></a></li><li>&nbsp;&raquo;&nbsp;<?php echo pun_htmlspecialchars($cur_post['subject']) ?></li></ul>
+		<ul class="crumbs">
+			<li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li>
+			<li><span>&raquo;&#160;</span><a href="viewforum.php?id=<?php echo $cur_post['fid'] ?>"><?php echo pun_htmlspecialchars($cur_post['forum_name']) ?></a></li>
+			<li><span>&raquo;&#160;</span><a href="viewtopic.php?id=<?php echo $cur_post['tid'] ?>"><?php echo pun_htmlspecialchars($cur_post['subject']) ?></a></li>
+			<li><span>&raquo;&#160;</span><strong><?php echo $lang_post['Edit post'] ?></strong></li>
+		</ul>
 	</div>
 </div>
 
@@ -221,12 +140,12 @@ if (!empty($errors))
 <div id="posterror" class="block">
 	<h2><span><?php echo $lang_post['Post errors'] ?></span></h2>
 	<div class="box">
-		<div class="inbox">
+		<div class="inbox error-info">
 			<p><?php echo $lang_post['Post errors info'] ?></p>
-			<ul>
+			<ul class="error-list">
 <?php
 
-	while (list(, $cur_error) = each($errors))
+	foreach ($errors as $cur_error)
 		echo "\t\t\t\t".'<li><strong>'.$cur_error.'</strong></li>'."\n";
 ?>
 			</ul>
@@ -247,9 +166,11 @@ else if (isset($_POST['preview']))
 	<h2><span><?php echo $lang_post['Post preview'] ?></span></h2>
 	<div class="box">
 		<div class="inbox">
-			<div class="postright">
-				<div class="postmsg">
-					<?php echo $preview_message."\n" ?>
+			<div class="postbody">
+				<div class="postright">
+					<div class="postmsg">
+						<?php echo $preview_message."\n" ?>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -264,44 +185,40 @@ else if (isset($_POST['preview']))
 <div class="blockform">
 	<h2><span><?php echo $lang_post['Edit post'] ?></span></h2>
 	<div class="box">
-		<form id="edit" method="post" action="edit.php?id=<?php echo $id ?>&amp;action=edit" onsubmit="return process_form(this)" enctype="multipart/form-data">
+		<form id="edit" method="post" action="edit.php?id=<?php echo $id ?>&amp;action=edit" onsubmit="return process_form(this)">
 			<div class="inform">
 				<fieldset>
 					<legend><?php echo $lang_post['Edit post legend'] ?></legend>
 					<input type="hidden" name="form_sent" value="1" />
 					<div class="infldset txtarea">
-<?php if ($can_edit_subject): ?>						<label><?php echo $lang_common['Subject'] ?><br />
+<?php if ($can_edit_subject): ?>						<label class="required"><strong><?php echo $lang_common['Subject'] ?> <span><?php echo $lang_common['Required'] ?></span></strong><br />
 						<input class="longinput" type="text" name="req_subject" size="80" maxlength="70" tabindex="<?php echo $cur_index++ ?>" value="<?php echo pun_htmlspecialchars(isset($_POST['req_subject']) ? $_POST['req_subject'] : $cur_post['subject']) ?>" /><br /></label>
-<?php endif; ?>						<label><?php echo $lang_common['Message'] ?><br />
+<?php endif; ?>						<label class="required"><strong><?php echo $lang_common['Message'] ?> <span><?php echo $lang_common['Required'] ?></span></strong><br />
 						<textarea name="req_message" rows="20" cols="95" tabindex="<?php echo $cur_index++ ?>"><?php echo pun_htmlspecialchars(isset($_POST['req_message']) ? $message : $cur_post['message']) ?></textarea><br /></label>
 						<ul class="bblinks">
-							<li><a href="help.php#bbcode" onclick="window.open(this.href); return false;"><?php echo $lang_common['BBCode'] ?></a>: <?php echo ($pun_config['p_message_bbcode'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
-							<li><a href="help.php#img" onclick="window.open(this.href); return false;"><?php echo $lang_common['img tag'] ?></a>: <?php echo ($pun_config['p_message_img_tag'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
-							<li><a href="help.php#smilies" onclick="window.open(this.href); return false;"><?php echo $lang_common['Smilies'] ?></a>: <?php echo ($pun_config['o_smilies'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
+							<li><a href="help.php#bbcode" onclick="window.open(this.href); return false;"><?php echo $lang_common['BBCode'] ?></a> <?php echo ($pun_config['p_message_bbcode'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
+							<li><a href="help.php#img" onclick="window.open(this.href); return false;"><?php echo $lang_common['img tag'] ?></a> <?php echo ($pun_config['p_message_img_tag'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
+							<li><a href="help.php#smilies" onclick="window.open(this.href); return false;"><?php echo $lang_common['Smilies'] ?></a> <?php echo ($pun_config['o_smilies'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
 						</ul>
 					</div>
 				</fieldset>
 <?php
 
-// Include file input field(s) if possible
-if ($can_upload)
-	include PUN_ROOT.'include/template/post/attach_input.php';
-
 $checkboxes = array();
 if ($pun_config['o_smilies'] == '1')
 {
 	if (isset($_POST['hide_smilies']) || $cur_post['hide_smilies'] == '1')
-		$checkboxes[] = '<label><input type="checkbox" name="hide_smilies" value="1" checked="checked" tabindex="'.($cur_index++).'" />&nbsp;'.$lang_post['Hide smilies'];
+		$checkboxes[] = '<label><input type="checkbox" name="hide_smilies" value="1" checked="checked" tabindex="'.($cur_index++).'" />'.$lang_post['Hide smilies'].'<br /></label>';
 	else
-		$checkboxes[] = '<label><input type="checkbox" name="hide_smilies" value="1" tabindex="'.($cur_index++).'" />&nbsp;'.$lang_post['Hide smilies'];
+		$checkboxes[] = '<label><input type="checkbox" name="hide_smilies" value="1" tabindex="'.($cur_index++).'" />'.$lang_post['Hide smilies'].'<br /></label>';
 }
 
 if ($is_admmod)
 {
 	if ((isset($_POST['form_sent']) && isset($_POST['silent'])) || !isset($_POST['form_sent']))
-		$checkboxes[] = '<label><input type="checkbox" name="silent" value="1" tabindex="'.($cur_index++).'" checked="checked" />&nbsp;'.$lang_post['Silent edit'];
+		$checkboxes[] = '<label><input type="checkbox" name="silent" value="1" tabindex="'.($cur_index++).'" checked="checked" />'.$lang_post['Silent edit'].'<br /></label>';
 	else
-		$checkboxes[] = '<label><input type="checkbox" name="silent" value="1" tabindex="'.($cur_index++).'" />&nbsp;'.$lang_post['Silent edit'];
+		$checkboxes[] = '<label><input type="checkbox" name="silent" value="1" tabindex="'.($cur_index++).'" />'.$lang_post['Silent edit'].'<br /></label>';
 }
 
 if (!empty($checkboxes))
@@ -314,7 +231,7 @@ if (!empty($checkboxes))
 					<legend><?php echo $lang_common['Options'] ?></legend>
 					<div class="infldset">
 						<div class="rbox">
-							<?php echo implode('</label>'."\n\t\t\t\t\t\t\t", $checkboxes).'</label>'."\n" ?>
+							<?php echo implode("\n\t\t\t\t\t\t\t", $checkboxes)."\n" ?>
 						</div>
 					</div>
 				</fieldset>
@@ -324,7 +241,7 @@ if (!empty($checkboxes))
 
 ?>
 			</div>
-			<p><input type="submit" name="submit" value="<?php echo $lang_common['Submit'] ?>" tabindex="<?php echo $cur_index++ ?>" accesskey="s" /><input type="submit" name="preview" value="<?php echo $lang_post['Preview'] ?>" tabindex="<?php echo $cur_index++ ?>" accesskey="p" /><a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
+			<p class="buttons"><input type="submit" name="submit" value="<?php echo $lang_common['Submit'] ?>" tabindex="<?php echo $cur_index++ ?>" accesskey="s" /> <input type="submit" name="preview" value="<?php echo $lang_post['Preview'] ?>" tabindex="<?php echo $cur_index++ ?>" accesskey="p" /> <a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
 		</form>
 	</div>
 </div>

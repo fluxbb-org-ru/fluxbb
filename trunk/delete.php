@@ -1,27 +1,10 @@
 <?php
-/***********************************************************************
 
-  Copyright (C) 2002-2005  Rickard Andersson (rickard@punbb.org)
-
-  This file is part of PunBB.
-
-  PunBB is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published
-  by the Free Software Foundation; either version 2 of the License,
-  or (at your option) any later version.
-
-  PunBB is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-  MA  02111-1307  USA
-
-************************************************************************/
-
+/**
+ * Copyright (C) 2008-2010 FluxBB
+ * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
+ * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
+ */
 
 define('PUN_ROOT', './');
 require PUN_ROOT.'include/common.php';
@@ -66,7 +49,6 @@ if (isset($_POST['delete']))
 		confirm_referrer('delete.php');
 
 	require PUN_ROOT.'include/search_idx.php';
-	require PUN_ROOT.'include/file_func.php';
 
 	if ($is_topic_post)
 	{
@@ -87,7 +69,8 @@ if (isset($_POST['delete']))
 }
 
 
-$page_title = pun_htmlspecialchars($pun_config['o_board_title']).' / '.$lang_delete['Delete post'];
+$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_delete['Delete post']);
+define ('PUN_ACTIVE_PAGE', 'index');
 require PUN_ROOT.'header.php';
 
 require PUN_ROOT.'include/parser.php';
@@ -96,7 +79,12 @@ $cur_post['message'] = parse_message($cur_post['message'], $cur_post['hide_smili
 ?>
 <div class="linkst">
 	<div class="inbox">
-		<ul><li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li><li>&nbsp;&raquo;&nbsp;<a href="viewforum.php?id=<?php echo $cur_post['fid'] ?>"><?php echo pun_htmlspecialchars($cur_post['forum_name']) ?></a></li><li>&nbsp;&raquo;&nbsp;<?php echo pun_htmlspecialchars($cur_post['subject']) ?></li></ul>
+		<ul class="crumbs">
+			<li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li>
+			<li><span>&raquo;&#160;</span><a href="viewforum.php?id=<?php echo $cur_post['fid'] ?>"><?php echo pun_htmlspecialchars($cur_post['forum_name']) ?></a></li>
+			<li><span>&raquo;&#160;</span><a href="viewtopic.php?pid=<?php echo $id ?>#p<?php echo $id ?>"><?php echo pun_htmlspecialchars($cur_post['subject']) ?></a></li>
+			<li><span>&raquo;&#160;</span><strong><?php echo $lang_delete['Delete post'] ?></strong></li>
+		</ul>
 	</div>
 </div>
 
@@ -105,17 +93,16 @@ $cur_post['message'] = parse_message($cur_post['message'], $cur_post['hide_smili
 	<div class="box">
 		<form method="post" action="delete.php?id=<?php echo $id ?>">
 			<div class="inform">
-				<fieldset>
-					<legend class="warntext"><?php echo $lang_delete['Warning'] ?></legend>
-					<div class="infldset">
-						<div class="postmsg">
-							<p><?php echo $lang_common['Author'] ?>: <strong><?php echo pun_htmlspecialchars($cur_post['poster']) ?></strong></p>
-							<?php echo $cur_post['message'] ?>
-						</div>
+				<p><strong><?php echo $lang_delete['Warning'] ?></strong></p>
+				<p><strong><?php printf($lang_delete['Author'], '</strong>'.pun_htmlspecialchars($cur_post['poster'])) ?></p>
+				<p><strong><?php echo $lang_common['Message'] ?></strong></p>
+				<div class="deletemsg">
+					<div class="postmsg">
+						<?php echo $cur_post['message']."\n" ?>
 					</div>
-				</fieldset>
+				</div>
 			</div>
-			<p><input type="submit" name="delete" value="<?php echo $lang_delete['Delete'] ?>" /><a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
+			<p class="buttons"><input type="submit" name="delete" value="<?php echo $lang_delete['Delete'] ?>" /> <a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
 		</form>
 	</div>
 </div>

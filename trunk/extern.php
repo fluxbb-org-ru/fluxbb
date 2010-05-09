@@ -1,16 +1,12 @@
 <?php
+
 /**
- * External syndication script
- *
- * Allows forum content to be syndicated outside of the site in various formats
- * (ie: RSS, Atom, XML, HTML).
- *
- * @copyright Copyright (C) 2008 FluxBB.org, based on code copyright (C) 2002-2008 PunBB.org
- * @license http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
- * @package FluxBB
+ * Copyright (C) 2008-2010 FluxBB
+ * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
+ * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
  */
 
-/***********************************************************************
+/*-----------------------------------------------------------------------------
 
   INSTRUCTIONS
 
@@ -24,8 +20,8 @@
 
   The scripts behaviour is controlled via variables supplied in the
   URL to the script. The different variables are: action (what to
-  do), show (how many items to display), fid (the ID or ID's of
-  the forum(s) to poll for topics), nfid (the ID or ID's of forums
+  do), show (how many items to display), fid (the ID or IDs of
+  the forum(s) to poll for topics), nfid (the ID or IDs of forums
   that should be excluded), tid (the ID of the topic from which to
   display posts) and type (output as HTML or RSS). The only
   mandatory variable is action. Possible/default values are:
@@ -40,10 +36,10 @@
             xml - output as XML
             html - output as HTML (<li>'s)
 
-    fid:    One or more forum ID's (comma-separated). If ignored,
+    fid:    One or more forum IDs (comma-separated). If ignored,
             topics from all readable forums will be pulled.
 
-    nfid:   One or more forum ID's (comma-separated) that are to be
+    nfid:   One or more forum IDs (comma-separated) that are to be
             excluded. E.g. the ID of a a test forum.
 
     tid:    A topic ID from which to show posts. If a tid is supplied,
@@ -56,8 +52,7 @@
             posted - show topics ordered by when they were first
                      posted, giving information about the original post.
 
-
-/***********************************************************************/
+-----------------------------------------------------------------------------*/
 
 define('PUN_QUIET_VISIT', 1);
 
@@ -67,7 +62,7 @@ require PUN_ROOT.'include/common.php';
 
 // The length at which topic subjects will be truncated (for HTML output)
 if (!defined('FORUM_EXTERN_MAX_SUBJECT_LENGTH'))
-    define('FORUM_EXTERN_MAX_SUBJECT_LENGTH', 30);
+	define('FORUM_EXTERN_MAX_SUBJECT_LENGTH', 30);
 
 // If we're a guest and we've sent a username/pass, we can try to authenticate using those details
 if ($pun_user['is_guest'] && isset($_SERVER['PHP_AUTH_USER']))
@@ -159,6 +154,7 @@ function output_atom($feed)
 
 	echo "\t".'<title type="html"><![CDATA['.escape_cdata($feed['title']).']]></title>'."\n";
 	echo "\t".'<link rel="self" href="'.pun_htmlspecialchars(get_current_url()).'"/>'."\n";
+	echo "\t".'<link href="'.$feed['link'].'"/>'."\n";
 	echo "\t".'<updated>'.gmdate('Y-m-d\TH:i:s\Z', count($feed['items']) ? $feed['items'][0]['pubdate'] : time()).'</updated>'."\n";
 
 	if ($pun_config['o_show_version'] == '1')
@@ -172,24 +168,24 @@ function output_atom($feed)
 
 	foreach ($feed['items'] as $item)
 	{
-		echo "\t\t".'<entry>'."\n";
-		echo "\t\t\t".'<title type="html"><![CDATA['.escape_cdata($item['title']).']]></title>'."\n";
-		echo "\t\t\t".'<link rel="alternate" href="'.$item['link'].'"/>'."\n";
-		echo "\t\t\t".'<'.$content_tag.' type="html"><![CDATA['.escape_cdata($item['description']).']]></'.$content_tag.'>'."\n";
-		echo "\t\t\t".'<author>'."\n";
-		echo "\t\t\t\t".'<name><![CDATA['.escape_cdata($item['author']['name']).']]></name>'."\n";
+		echo "\t".'<entry>'."\n";
+		echo "\t\t".'<title type="html"><![CDATA['.escape_cdata($item['title']).']]></title>'."\n";
+		echo "\t\t".'<link rel="alternate" href="'.$item['link'].'"/>'."\n";
+		echo "\t\t".'<'.$content_tag.' type="html"><![CDATA['.escape_cdata($item['description']).']]></'.$content_tag.'>'."\n";
+		echo "\t\t".'<author>'."\n";
+		echo "\t\t\t".'<name><![CDATA['.escape_cdata($item['author']['name']).']]></name>'."\n";
 
 		if (isset($item['author']['email']))
-			echo "\t\t\t\t".'<email><![CDATA['.escape_cdata($item['author']['email']).']]></email>'."\n";
+			echo "\t\t\t".'<email><![CDATA['.escape_cdata($item['author']['email']).']]></email>'."\n";
 
 		if (isset($item['author']['uri']))
-			echo "\t\t\t\t".'<uri>'.$item['author']['uri'].'</uri>'."\n";
+			echo "\t\t\t".'<uri>'.$item['author']['uri'].'</uri>'."\n";
 
-		echo "\t\t\t".'</author>'."\n";
-		echo "\t\t\t".'<updated>'.gmdate('Y-m-d\TH:i:s\Z', $item['pubdate']).'</updated>'."\n";
+		echo "\t\t".'</author>'."\n";
+		echo "\t\t".'<updated>'.gmdate('Y-m-d\TH:i:s\Z', $item['pubdate']).'</updated>'."\n";
 
-		echo "\t\t\t".'<id>'.$item['link'].'</id>'."\n";
-		echo "\t\t".'</entry>'."\n";
+		echo "\t\t".'<id>'.$item['link'].'</id>'."\n";
+		echo "\t".'</entry>'."\n";
 	}
 
 	echo '</feed>'."\n";
@@ -267,6 +263,8 @@ function output_html($feed)
 // Show recent discussions
 if ($action == 'feed')
 {
+	require PUN_ROOT.'include/parser.php';
+
 	// Determine what type of feed to output
 	$type = isset($_GET['type']) && in_array($_GET['type'], array('html', 'rss', 'atom', 'xml')) ? $_GET['type'] : 'html';
 
@@ -294,7 +292,7 @@ if ($action == 'feed')
 
 		// Setup the feed
 		$feed = array(
-			'title' 		=>	$pun_config['o_board_title'].'-'.$cur_topic['subject'],
+			'title' 		=>	$pun_config['o_board_title'].$lang_common['Title separator'].$cur_topic['subject'],
 			'link'			=>	$pun_config['o_base_url'].'/viewtopic.php?id='.$tid,
 			'description'		=>	sprintf($lang_common['RSS description topic'], $cur_topic['subject']),
 			'items'			=>	array(),
@@ -302,11 +300,10 @@ if ($action == 'feed')
 		);
 
 		// Fetch $show posts
-		$result = $db->query('SELECT p.id, p.poster, p.message, p.posted, p.poster_id, u.email_setting, u.email, p.poster_email FROM '.$db->prefix.'posts AS p INNER JOIN '.$db->prefix.'users AS u ON u.id=p.poster_id WHERE p.topic_id='.$tid.' ORDER BY p.posted DESC LIMIT '.$show) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
+		$result = $db->query('SELECT p.id, p.poster, p.message, p.hide_smilies, p.posted, p.poster_id, u.email_setting, u.email, p.poster_email FROM '.$db->prefix.'posts AS p INNER JOIN '.$db->prefix.'users AS u ON u.id=p.poster_id WHERE p.topic_id='.$tid.' ORDER BY p.posted DESC LIMIT '.$show) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
 		while ($cur_post = $db->fetch_assoc($result))
 		{
-			if ($pun_config['o_censoring'] == '1')
-				$cur_post['message'] = censor_words($cur_post['message']);
+			$cur_post['message'] = parse_message($cur_post['message'], $cur_post['hide_smilies']);
 
 			$item = array(
 				'id'			=>	$cur_post['id'],
@@ -340,8 +337,8 @@ if ($action == 'feed')
 		$order_posted = isset($_GET['order']) && $_GET['order'] == 'posted';
 		$forum_name = '';
 		$forum_sql = '';
-		
-		// Were any forum ID's supplied?
+
+		// Were any forum IDs supplied?
 		if (isset($_GET['fid']) && is_scalar($_GET['fid']) && $_GET['fid'] != '')
 		{
 			$fids = explode(',', pun_trim($_GET['fid']));
@@ -352,14 +349,14 @@ if ($action == 'feed')
 
 			if (count($fids) == 1)
 			{
-			// Fetch forum name
-			$result = $db->query('SELECT f.forum_name FROM '.$db->prefix.'forums AS f LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND f.id='.$fids[0]) or error('Unable to fetch forum name', __FILE__, __LINE__, $db->error());
-			if ($db->num_rows($result))
-				$forum_name = $lang_common['Title separator'].$db->result($result);
+				// Fetch forum name
+				$result = $db->query('SELECT f.forum_name FROM '.$db->prefix.'forums AS f LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND f.id='.$fids[0]) or error('Unable to fetch forum name', __FILE__, __LINE__, $db->error());
+				if ($db->num_rows($result))
+					$forum_name = $lang_common['Title separator'].$db->result($result);
 			}
 		}
 
-		// Any forum ID's to exclude?
+		// Any forum IDs to exclude?
 		if (isset($_GET['nfid']) && is_scalar($_GET['nfid']) && $_GET['nfid'] != '')
 		{
 			$nfids = explode(',', pun_trim($_GET['nfid']));
@@ -373,26 +370,25 @@ if ($action == 'feed')
 		$feed = array(
 			'title' 		=>	$pun_config['o_board_title'].$forum_name,
 			'link'			=>	$pun_config['o_base_url'].'/index.php',
-			'description'		=>	sprintf($lang_common['RSS description'], $pun_config['o_board_title']),
+			'description'	=>	sprintf($lang_common['RSS description'], $pun_config['o_board_title']),
 			'items'			=>	array(),
 			'type'			=>	'topics'
 		);
 
 		// Fetch $show topics
-		$result = $db->query('SELECT t.id, t.poster, t.subject, t.posted, t.last_post, t.last_poster, p.message, u.email_setting, u.email, p.poster_id, p.poster_email FROM '.$db->prefix.'topics AS t INNER JOIN '.$db->prefix.'posts AS p ON p.id='.($order_posted ? 't.first_post_id' : 't.last_post_id').' INNER JOIN '.$db->prefix.'users AS u ON u.id=p.poster_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=t.forum_id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND t.moved_to IS NULL'.$forum_sql.' ORDER BY '.($order_posted ? 't.posted' : 't.last_post').' DESC LIMIT '.$show) or error('Unable to fetch topic info', __FILE__, __LINE__, $db->error());
+		$result = $db->query('SELECT t.id, t.poster, t.subject, t.posted, t.last_post, t.last_poster, p.message, p.hide_smilies, u.email_setting, u.email, p.poster_id, p.poster_email FROM '.$db->prefix.'topics AS t INNER JOIN '.$db->prefix.'posts AS p ON p.id='.($order_posted ? 't.first_post_id' : 't.last_post_id').' INNER JOIN '.$db->prefix.'users AS u ON u.id=p.poster_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=t.forum_id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND t.moved_to IS NULL'.$forum_sql.' ORDER BY '.($order_posted ? 't.posted' : 't.last_post').' DESC LIMIT '.$show) or error('Unable to fetch topic info', __FILE__, __LINE__, $db->error());
 		while ($cur_topic = $db->fetch_assoc($result))
 		{
 			if ($pun_config['o_censoring'] == '1')
-			{
 				$cur_topic['subject'] = censor_words($cur_topic['subject']);
-				$cur_topic['message'] = censor_words($cur_topic['message']);
-			}
+
+			$cur_topic['message'] = parse_message($cur_topic['message'], $cur_topic['hide_smilies']);
 
 			$item = array(
 				'id'			=>	$cur_topic['id'],
 				'title'			=>	$cur_topic['subject'],
 				'link'			=>	$pun_config['o_base_url'].($order_posted ? '/viewtopic.php?id='.$cur_topic['id'] : '/viewtopic.php?id='.$cur_topic['id'].'&amp;action=new'),
-				'description'		=>	$cur_topic['message'],
+				'description'	=>	$cur_topic['message'],
 				'author'		=>	array(
 					'name'	=> $order_posted ? $cur_topic['poster'] : $cur_topic['last_poster']
 				),
@@ -430,7 +426,7 @@ else if ($action == 'online' || $action == 'online_full')
 	$users = array();
 
 	$result = $db->query('SELECT user_id, ident FROM '.$db->prefix.'online WHERE idle=0 ORDER BY ident', true) or error('Unable to fetch online list', __FILE__, __LINE__, $db->error());
-	
+
 	while ($pun_user_online = $db->fetch_assoc($result))
 	{
 		if ($pun_user_online['user_id'] > 1)
@@ -447,7 +443,7 @@ else if ($action == 'online' || $action == 'online_full')
 	header('Expires: '.gmdate('D, d M Y H:i:s').' GMT');
 	header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
 	header('Pragma: public');
-	
+
 	echo $lang_index['Guests online'].': '.forum_number_format($num_guests).'<br />'."\n";
 
 	if ($action == 'online_full' && !empty($users))
@@ -465,15 +461,15 @@ else if ($action == 'stats')
 	require PUN_ROOT.'lang/'.$pun_config['o_default_lang'].'/index.php';
 
 	// Collect some statistics from the database
-	$result = $db->query('SELECT COUNT(id)-1 FROM '.$db->prefix.'users') or error('Unable to fetch total user count', __FILE__, __LINE__, $db->error());
+	$result = $db->query('SELECT COUNT(id)-1 FROM '.$db->prefix.'users WHERE group_id!='.PUN_UNVERIFIED) or error('Unable to fetch total user count', __FILE__, __LINE__, $db->error());
 	$stats['total_users'] = $db->result($result);
 
-	$result = $db->query('SELECT id, username FROM '.$db->prefix.'users ORDER BY registered DESC LIMIT 1') or error('Unable to fetch newest registered user', __FILE__, __LINE__, $db->error());
+	$result = $db->query('SELECT id, username FROM '.$db->prefix.'users WHERE group_id!='.PUN_UNVERIFIED.' ORDER BY registered DESC LIMIT 1') or error('Unable to fetch newest registered user', __FILE__, __LINE__, $db->error());
 	$stats['last_user'] = $db->fetch_assoc($result);
 
 	$result = $db->query('SELECT SUM(num_topics), SUM(num_posts) FROM '.$db->prefix.'forums') or error('Unable to fetch topic/post count', __FILE__, __LINE__, $db->error());
 	list($stats['total_topics'], $stats['total_posts']) = $db->fetch_row($result);
-	
+
 	// Send the Content-type header in case the web server is setup to send something else
 	header('Content-type: text/html; charset=utf-8');
 	header('Expires: '.gmdate('D, d M Y H:i:s').' GMT');
@@ -484,7 +480,7 @@ else if ($action == 'stats')
 	echo $lang_index['Newest user'].': '.(($pun_user['g_view_users'] == '1') ? '<a href="'.$pun_config['o_base_url'].'/profile.php?id='.$stats['last_user']['id'].'">'.pun_htmlspecialchars($stats['last_user']['username']).'</a>' : pun_htmlspecialchars($stats['last_user']['username'])).'<br />'."\n";
 	echo $lang_index['No of topics'].': '.forum_number_format($stats['total_topics']).'<br />'."\n";
 	echo $lang_index['No of posts'].': '.forum_number_format($stats['total_posts']).'<br />'."\n";
-	
+
 	exit;
 }
 

@@ -1,27 +1,10 @@
 <?php
-/***********************************************************************
 
-  Copyright (C) 2002-2005  Rickard Andersson (rickard@punbb.org)
-
-  This file is part of PunBB.
-
-  PunBB is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published
-  by the Free Software Foundation; either version 2 of the License,
-  or (at your option) any later version.
-
-  PunBB is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-  MA  02111-1307  USA
-
-************************************************************************/
-
+/**
+ * Copyright (C) 2008-2010 FluxBB
+ * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
+ * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
+ */
 
 // Make sure no one attempts to run this script "directly"
 if (!defined('PUN'))
@@ -29,14 +12,14 @@ if (!defined('PUN'))
 
 
 //
-// Validate an e-mail address
+// Validate an email address
 //
 function is_valid_email($email)
 {
 	if (strlen($email) > 80)
 		return false;
 
-	return preg_match('/^(([^<>()[\]\\.,;:\s@"\']+(\.[^<>()[\]\\.,;:\s@"\']+)*)|("[^"\']+"))@((\[\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\])|(([a-zA-Z\d\-]+\.)+[a-zA-Z]{2,}))$/', $email);
+	return preg_match('/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|("[^"]+"))@((\[\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\])|(([a-zA-Z\d\-]+\.)+[a-zA-Z]{2,}))$/', $email);
 }
 
 
@@ -111,8 +94,8 @@ function pun_mail($to, $subject, $message, $reply_to_email = '', $reply_to_name 
 
 
 //
-// This function was originally a part of the phpBB Group forum software phpBB2 (http://www.phpbb.com).
-// They deserve all the credit for writing it. I made small modifications for it to suit PunBB and it's coding standards.
+// This function was originally a part of the phpBB Group forum software phpBB2 (http://www.phpbb.com)
+// They deserve all the credit for writing it. I made small modifications for it to suit PunBB and it's coding standards
 //
 function server_parse($socket, $expected_response)
 {
@@ -124,12 +107,12 @@ function server_parse($socket, $expected_response)
 	}
 
 	if (!(substr($server_response, 0, 3) == $expected_response))
-		error('Unable to send e-mail. Please contact the forum administrator with the following error message reported by the SMTP server: "'.$server_response.'"', __FILE__, __LINE__);
+		error('Unable to send email. Please contact the forum administrator with the following error message reported by the SMTP server: "'.$server_response.'"', __FILE__, __LINE__);
 }
 
 
 //
-// This function was originally a part of the phpBB Group forum software phpBB2 (http://www.phpbb.com).
+// This function was originally a part of the phpBB Group forum software phpBB2 (http://www.phpbb.com)
 // They deserve all the credit for writing it. I made small modifications for it to suit PunBB and it's coding standards.
 //
 function smtp_mail($to, $subject, $message, $headers = '')
@@ -182,7 +165,7 @@ function smtp_mail($to, $subject, $message, $headers = '')
 	fwrite($socket, 'MAIL FROM: <'.$pun_config['o_webmaster_email'].'>'."\r\n");
 	server_parse($socket, '250');
 
-	while (list(, $email) = @each($recipients))
+	foreach ($recipients as $email)
 	{
 		fwrite($socket, 'RCPT TO: <'.$email.'>'."\r\n");
 		server_parse($socket, '250');

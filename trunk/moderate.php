@@ -1,34 +1,17 @@
 <?php
-/***********************************************************************
 
-  Copyright (C) 2002-2005  Rickard Andersson (rickard@punbb.org)
-
-  This file is part of PunBB.
-
-  PunBB is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published
-  by the Free Software Foundation; either version 2 of the License,
-  or (at your option) any later version.
-
-  PunBB is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-  MA  02111-1307  USA
-
-************************************************************************/
-
+/**
+ * Copyright (C) 2008-2010 FluxBB
+ * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
+ * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
+ */
 
 define('PUN_ROOT', './');
 require PUN_ROOT.'include/common.php';
 
 
 // This particular function doesn't require forum-based moderator access. It can be used
-// by all moderators and admins.
+// by all moderators and admins
 if (isset($_GET['get_host']))
 {
 	if (!$pun_user['is_admmod'])
@@ -50,7 +33,10 @@ if (isset($_GET['get_host']))
 		$ip = $db->result($result);
 	}
 
-	message('The IP address is: '.$ip.'<br />The host name is: '.@gethostbyaddr($ip).'<br /><br /><a href="admin_users.php?show_users='.$ip.'">Show more users for this IP</a>');
+	// Load the misc.php language file
+	require PUN_ROOT.'lang/'.$pun_user['language'].'/misc.php';
+
+	message(sprintf($lang_misc['Host info 1'], $ip).'<br />'.sprintf($lang_misc['Host info 2'], @gethostbyaddr($ip)).'<br /><br /><a href="admin_users.php?show_users='.$ip.'">'.$lang_misc['Show more users'].'</a>');
 }
 
 
@@ -75,7 +61,7 @@ if (!$pun_user['is_guest'])
 require PUN_ROOT.'lang/'.$pun_user['language'].'/misc.php';
 
 
-// All other topic moderation features require a topic id in GET
+// All other topic moderation features require a topic ID in GET
 if (isset($_GET['tid']))
 {
 	$tid = intval($_GET['tid']);
@@ -83,7 +69,7 @@ if (isset($_GET['tid']))
 		message($lang_common['Bad request']);
 
 	// Fetch some info about the topic
-	$result = $db->query('SELECT t.subject, t.num_replies, f.id AS forum_id, forum_name FROM '.$db->prefix.'topics AS t INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'subscriptions AS s ON (t.id=s.topic_id AND s.user_id='.$pun_user['id'].') LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND f.id='.$fid.' AND t.id='.$tid.' AND t.moved_to IS NULL') or error('Unable to fetch topic info', __FILE__, __LINE__, $db->error());
+	$result = $db->query('SELECT t.subject, t.num_replies, t.first_post_id, f.id AS forum_id, forum_name FROM '.$db->prefix.'topics AS t INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'subscriptions AS s ON (t.id=s.topic_id AND s.user_id='.$pun_user['id'].') LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND f.id='.$fid.' AND t.id='.$tid.' AND t.moved_to IS NULL') or error('Unable to fetch topic info', __FILE__, __LINE__, $db->error());
 	if (!$db->num_rows($result))
 		message($lang_common['Bad request']);
 
@@ -115,10 +101,6 @@ if (isset($_GET['tid']))
 			require PUN_ROOT.'include/search_idx.php';
 			strip_search_index($posts);
 
-			// Delete attached files
-			require PUN_ROOT.'include/file_func.php';
-			delete_post_files($posts);
-
 			// Get last_post, last_post_id, and last_poster for the topic after deletion
 			$result = $db->query('SELECT id, poster, posted FROM '.$db->prefix.'posts WHERE topic_id='.$tid.' ORDER BY id DESC LIMIT 1') or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
 			$last_post = $db->fetch_assoc($result);
@@ -135,7 +117,8 @@ if (isset($_GET['tid']))
 		}
 
 
-		$page_title = pun_htmlspecialchars($pun_config['o_board_title']).' / '.$lang_misc['Moderate'];
+		$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_misc['Moderate']);
+		define('PUN_ACTIVE_PAGE', 'index');
 		require PUN_ROOT.'header.php';
 
 ?>
@@ -152,7 +135,7 @@ if (isset($_GET['tid']))
 					</div>
 				</fieldset>
 			</div>
-			<p><input type="submit" name="delete_posts_comply" value="<?php echo $lang_misc['Delete'] ?>" /><a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
+			<p class="buttons"><input type="submit" name="delete_posts_comply" value="<?php echo $lang_misc['Delete'] ?>" /> <a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
 		</form>
 	</div>
 </div>
@@ -219,8 +202,9 @@ if (isset($_GET['tid']))
 			redirect('viewtopic.php?id='.$new_tid, $lang_misc['Split posts redirect']);
 		}
 
-		$page_title = pun_htmlspecialchars($pun_config['o_board_title']).' / '.$lang_misc['Moderate'];
+		$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_misc['Moderate']);
 		$focus_element = array('subject','new_subject');
+		define('PUN_ACTIVE_PAGE', 'index');
 		require PUN_ROOT.'header.php';
 
 ?>
@@ -233,12 +217,12 @@ if (isset($_GET['tid']))
 					<legend><?php echo $lang_misc['Confirm split legend'] ?></legend>
 					<div class="infldset">
 						<input type="hidden" name="posts" value="<?php echo implode(',', array_map('intval', array_keys($posts))) ?>" />
-						<label><strong><?php echo $lang_misc['New subject'] ?></strong><br /><input type="text" name="new_subject" size="80" maxlength="70" /><br /></label>
+						<label class="required"><strong><?php echo $lang_misc['New subject'] ?> <span><?php echo $lang_common['Required'] ?></span></strong><br /><input type="text" name="new_subject" size="80" maxlength="70" /><br /></label>
 						<p><?php echo $lang_misc['Split posts comply'] ?></p>
 					</div>
 				</fieldset>
 			</div>
-			<p><input type="submit" name="split_posts_comply" value="<?php echo $lang_misc['Split'] ?>" /><a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
+			<p class="buttons"><input type="submit" name="split_posts_comply" value="<?php echo $lang_misc['Split'] ?>" /> <a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
 		</form>
 	</div>
 </div>
@@ -264,21 +248,27 @@ if (isset($_GET['tid']))
 	$start_from = $pun_user['disp_posts'] * ($p - 1);
 
 	// Generate paging links
-	$paging_links = $lang_common['Pages'].': '.paginate($num_pages, $p, 'moderate.php?fid='.$fid.'&amp;tid='.$tid);
+	$paging_links = '<span class="pages-label">'.$lang_common['Pages'].' </span>'.paginate($num_pages, $p, 'moderate.php?fid='.$fid.'&amp;tid='.$tid);
 
 
 	if ($pun_config['o_censoring'] == '1')
 		$cur_topic['subject'] = censor_words($cur_topic['subject']);
 
 
-	$page_title = pun_htmlspecialchars($pun_config['o_board_title']).' / '.$cur_topic['subject'];
+	$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), pun_htmlspecialchars($cur_topic['forum_name']), pun_htmlspecialchars($cur_topic['subject']));
+	define('PUN_ACTIVE_PAGE', 'index');
 	require PUN_ROOT.'header.php';
 
 ?>
 <div class="linkst">
-	<div class="inbox">
+	<div class="inbox crumbsplus">
+		<ul class="crumbs">
+			<li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li>
+			<li><span>&raquo;&#160;</span><a href="viewforum.php?id=<?php echo $fid ?>"><?php echo pun_htmlspecialchars($cur_topic['forum_name']) ?></a></li>
+			<li><span>&raquo;&#160;</span><a href="viewtopic.php?id=<?php echo $tid ?>"><?php echo pun_htmlspecialchars($cur_topic['subject']) ?></a></li>
+			<li><span>&raquo;&#160;</span><strong><?php echo $lang_misc['Moderate'] ?></strong></li>
+		</ul>
 		<p class="pagelink conl"><?php echo $paging_links ?></p>
-		<ul><li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li><li>&nbsp;&raquo;&nbsp;<a href="viewforum.php?id=<?php echo $fid ?>"><?php echo pun_htmlspecialchars($cur_topic['forum_name']) ?></a></li><li>&nbsp;&raquo;&nbsp;<?php echo pun_htmlspecialchars($cur_topic['subject']) ?></li></ul>
 		<div class="clearer"></div>
 	</div>
 </div>
@@ -288,8 +278,7 @@ if (isset($_GET['tid']))
 
 	require PUN_ROOT.'include/parser.php';
 
-	$bg_switch = true;	// Used for switching background color in posts
-	$post_count = 0;	// Keep track of post numbers
+	$post_count = 0; // Keep track of post numbers
 
 	// Retrieve the posts (and their respective poster)
 	$result = $db->query('SELECT u.title, u.num_posts, g.g_id, g.g_user_title, p.id, p.poster, p.poster_id, p.message, p.hide_smilies, p.posted, p.edited, p.edited_by FROM '.$db->prefix.'posts AS p INNER JOIN '.$db->prefix.'users AS u ON u.id=p.poster_id INNER JOIN '.$db->prefix.'groups AS g ON g.g_id=u.group_id WHERE p.topic_id='.$tid.' ORDER BY p.id LIMIT '.$start_from.','.$pun_user['disp_posts'], true) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
@@ -298,7 +287,7 @@ if (isset($_GET['tid']))
 	{
 		$post_count++;
 
-		// If the poster is a registered user.
+		// If the poster is a registered user
 		if ($cur_post['poster_id'] > 1)
 		{
 			if ($pun_user['g_view_users'] == '1')
@@ -320,35 +309,35 @@ if (isset($_GET['tid']))
 			$user_title = $lang_topic['Guest'];
 		}
 
-		// Switch the background color for every message.
-		$bg_switch = ($bg_switch) ? $bg_switch = false : $bg_switch = true;
-		$vtbg = ($bg_switch) ? ' roweven' : ' rowodd';
-
 		// Perform the main parsing of the message (BBCode, smilies, censor words etc)
 		$cur_post['message'] = parse_message($cur_post['message'], $cur_post['hide_smilies']);
 
 ?>
 
-<div class="blockpost<?php echo $vtbg ?>">
-	<a name="<?php echo $cur_post['id'] ?>"></a>
-	<h2><span><span class="conr">#<?php echo ($start_from + $post_count) ?>&nbsp;</span><a href="viewtopic.php?pid=<?php echo $cur_post['id'].'#p'.$cur_post['id'] ?>"><?php echo format_time($cur_post['posted']) ?></a></span></h2>
+<div id="p<?php echo $cur_post['id'] ?>" class="blockpost<?php if($cur_post['id'] == $cur_topic['first_post_id']) echo ' firstpost' ?><?php echo ($post_count % 2 == 0) ? ' roweven' : ' rowodd' ?><?php if ($post_count == 1) echo ' blockpost1' ?>">
+	<h2><span><span class="conr">#<?php echo ($start_from + $post_count) ?></span> <a href="viewtopic.php?pid=<?php echo $cur_post['id'].'#p'.$cur_post['id'] ?>"><?php echo format_time($cur_post['posted']) ?></a></span></h2>
 	<div class="box">
 		<div class="inbox">
-			<div class="postleft">
-				<dl>
-					<dt><strong><?php echo $poster ?></strong></dt>
-					<dd><strong><?php echo $user_title ?></strong></dd>
-				</dl>
-			</div>
-			<div class="postright">
-				<h3 class="nosize"><?php echo $lang_common['Message'] ?></h3>
-				<div class="postmsg">
-					<?php echo $cur_post['message']."\n" ?>
-<?php if ($cur_post['edited'] != '') echo "\t\t\t\t\t".'<p class="postedit"><em>'.$lang_topic['Last edit'].' '.pun_htmlspecialchars($cur_post['edited_by']).' ('.format_time($cur_post['edited']).')</em></p>'."\n"; ?>
+			<div class="postbody">
+				<div class="postleft">
+					<dl>
+						<dt><strong><?php echo $poster ?></strong></dt>
+						<dd class="usertitle"><strong><?php echo $user_title ?></strong></dd>
+					</dl>
 				</div>
-				<?php if ($start_from + $post_count > 1) echo '<p class="multidelete"><label><strong>'.$lang_misc['Select'].'</strong>&nbsp;&nbsp;<input type="checkbox" name="posts['.$cur_post['id'].']" value="1" /></label></p>'."\n" ?>
+				<div class="postright">
+					<h3 class="nosize"><?php echo $lang_common['Message'] ?></h3>
+					<div class="postmsg">
+						<?php echo $cur_post['message']."\n" ?>
+<?php if ($cur_post['edited'] != '') echo "\t\t\t\t\t\t".'<p class="postedit"><em>'.$lang_topic['Last edit'].' '.pun_htmlspecialchars($cur_post['edited_by']).' ('.format_time($cur_post['edited']).')</em></p>'."\n"; ?>
+					</div>
+				</div>
 			</div>
-			<div class="clearer"></div>
+		</div>
+		<div class="inbox">
+			<div class="postfoot clearb">
+				<div class="postfootright"><?php echo ($cur_post['id'] != $cur_topic['first_post_id']) ? '<p class="multidelete"><label><strong>'.$lang_misc['Select'].'</strong>&#160;<input type="checkbox" name="posts['.$cur_post['id'].']" value="1" /></label></p>' : '<p>'.$lang_misc['Cannot select first'].'</p>' ?></div>
+			</div>
 		</div>
 	</div>
 </div>
@@ -361,10 +350,7 @@ if (isset($_GET['tid']))
 <div class="postlinksb">
 	<div class="inbox">
 		<p class="pagelink conl"><?php echo $paging_links ?></p>
-		<p class="conr">
-			<input type="submit" name="split_posts" value="<?php echo $lang_misc['Split'] ?>"<?php echo $button_status ?> />
-			<input type="submit" name="delete_posts" value="<?php echo $lang_misc['Delete'] ?>"<?php echo $button_status ?> />
-		</p>
+		<p class="conr modbuttons"><input type="submit" name="split_posts" value="<?php echo $lang_misc['Split'] ?>"<?php echo $button_status ?> /> <input type="submit" name="delete_posts" value="<?php echo $lang_misc['Delete'] ?>"<?php echo $button_status ?> /></p>
 		<div class="clearer"></div>
 	</div>
 </div>
@@ -396,7 +382,7 @@ if (isset($_REQUEST['move_topics']) || isset($_POST['move_topics_to']))
 		if ($db->num_rows($result) != count($topics))
 			message($lang_common['Bad request']);
 
-		// Delete any redirect topics if there are any (only if we moved/copied the topic back to where it where it was once moved from)
+		// Delete any redirect topics if there are any (only if we moved/copied the topic back to where it was once moved from)
 		$db->query('DELETE FROM '.$db->prefix.'topics WHERE forum_id='.$move_to_forum.' AND moved_to IN('.implode(',',$topics).')') or error('Unable to delete redirect topics', __FILE__, __LINE__, $db->error());
 
 		// Move the topic(s)
@@ -405,7 +391,7 @@ if (isset($_REQUEST['move_topics']) || isset($_POST['move_topics_to']))
 		// Should we create redirect topics?
 		if (isset($_POST['with_redirect']))
 		{
-			while (list(, $cur_topic) = @each($topics))
+			foreach ($topics as $cur_topic)
 			{
 				// Fetch info for the redirect topic
 				$result = $db->query('SELECT poster, subject, posted, last_post FROM '.$db->prefix.'topics WHERE id='.$cur_topic) or error('Unable to fetch topic info', __FILE__, __LINE__, $db->error());
@@ -416,8 +402,8 @@ if (isset($_REQUEST['move_topics']) || isset($_POST['move_topics_to']))
 			}
 		}
 
-		update_forum($fid);				// Update the forum FROM which the topic was moved
-		update_forum($move_to_forum);	// Update the forum TO which the topic was moved
+		update_forum($fid); // Update the forum FROM which the topic was moved
+		update_forum($move_to_forum); // Update the forum TO which the topic was moved
 
 		$redirect_msg = (count($topics) > 1) ? $lang_misc['Move topics redirect'] : $lang_misc['Move topic redirect'];
 		redirect('viewforum.php?id='.$move_to_forum, $redirect_msg);
@@ -441,7 +427,12 @@ if (isset($_REQUEST['move_topics']) || isset($_POST['move_topics_to']))
 		$action = 'single';
 	}
 
-	$page_title = pun_htmlspecialchars($pun_config['o_board_title']).' / Moderate';
+	$result = $db->query('SELECT c.id AS cid, c.cat_name, f.id AS fid, f.forum_name FROM '.$db->prefix.'categories AS c INNER JOIN '.$db->prefix.'forums AS f ON c.id=f.cat_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND f.redirect_url IS NULL ORDER BY c.disp_position, c.id, f.disp_position') or error('Unable to fetch category/forum list', __FILE__, __LINE__, $db->error());
+	if ($db->num_rows($result) < 2)
+		message($lang_misc['Nowhere to move']);
+
+	$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_misc['Moderate']);
+	define('PUN_ACTIVE_PAGE', 'index');
 	require PUN_ROOT.'header.php';
 
 ?>
@@ -458,12 +449,10 @@ if (isset($_REQUEST['move_topics']) || isset($_POST['move_topics_to']))
 						<br /><select name="move_to_forum">
 <?php
 
-	$result = $db->query('SELECT c.id AS cid, c.cat_name, f.id AS fid, f.forum_name FROM '.$db->prefix.'categories AS c INNER JOIN '.$db->prefix.'forums AS f ON c.id=f.cat_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND f.redirect_url IS NULL ORDER BY c.disp_position, c.id, f.disp_position', true) or error('Unable to fetch category/forum list', __FILE__, __LINE__, $db->error());
-
 	$cur_category = 0;
 	while ($cur_forum = $db->fetch_assoc($result))
 	{
-		if ($cur_forum['cid'] != $cur_category)	// A new category since last iteration?
+		if ($cur_forum['cid'] != $cur_category) // A new category since last iteration?
 		{
 			if ($cur_category)
 				echo "\t\t\t\t\t\t\t".'</optgroup>'."\n";
@@ -486,7 +475,7 @@ if (isset($_REQUEST['move_topics']) || isset($_POST['move_topics_to']))
 					</div>
 				</fieldset>
 			</div>
-			<p><input type="submit" name="move_topics_to" value="<?php echo $lang_misc['Move'] ?>" /><a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
+			<p class="buttons"><input type="submit" name="move_topics_to" value="<?php echo $lang_misc['Move'] ?>" /> <a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
 		</form>
 	</div>
 </div>
@@ -558,12 +547,13 @@ else if (isset($_POST['merge_topics']) || isset($_POST['merge_topics_comply']))
 	if (count($topics) < 2)
 		message($lang_misc['Not enough topics selected']);
 
-	$page_title = pun_htmlspecialchars($pun_config['o_board_title']).' / '.$lang_misc['Moderate'];
+	$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_misc['Moderate']);
+	define('PUN_ACTIVE_PAGE', 'index');
 	require PUN_ROOT.'header.php';
 
 ?>
 <div class="blockform">
-	<h2><?php echo $lang_misc['Merge topics'] ?></h2>
+	<h2><span><?php echo $lang_misc['Merge topics'] ?></span></h2>
 	<div class="box">
 		<form method="post" action="moderate.php?fid=<?php echo $fid ?>">
 			<input type="hidden" name="topics" value="<?php echo implode(',', array_map('intval', array_keys($topics))) ?>" />
@@ -577,7 +567,7 @@ else if (isset($_POST['merge_topics']) || isset($_POST['merge_topics_comply']))
 					</div>
 				</fieldset>
 			</div>
-			<p><input type="submit" name="merge_topics_comply" value="<?php echo $lang_misc['Merge'] ?>" /><a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
+			<p class="buttons"><input type="submit" name="merge_topics_comply" value="<?php echo $lang_misc['Merge'] ?>" /> <a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
 		</form>
 	</div>
 </div>
@@ -601,7 +591,6 @@ else if (isset($_POST['delete_topics']) || isset($_POST['delete_topics_comply'])
 			message($lang_common['Bad request']);
 
 		require PUN_ROOT.'include/search_idx.php';
-		require PUN_ROOT.'include/file_func.php';
 
 		// Verify that the topic IDs are valid
 		$result = $db->query('SELECT 1 FROM '.$db->prefix.'topics WHERE id IN('.$topics.') AND forum_id='.$fid) or error('Unable to check topics', __FILE__, __LINE__, $db->error());
@@ -615,19 +604,16 @@ else if (isset($_POST['delete_topics']) || isset($_POST['delete_topics_comply'])
 		// Delete any subscriptions
 		$db->query('DELETE FROM '.$db->prefix.'subscriptions WHERE topic_id IN('.$topics.')') or error('Unable to delete subscriptions', __FILE__, __LINE__, $db->error());
 
-		// Create a list of the post ID's in this topic and then strip the search index
+		// Create a list of the post IDs in this topic and then strip the search index
 		$result = $db->query('SELECT id FROM '.$db->prefix.'posts WHERE topic_id IN('.$topics.')') or error('Unable to fetch posts', __FILE__, __LINE__, $db->error());
 
 		$post_ids = '';
 		while ($row = $db->fetch_row($result))
 			$post_ids .= ($post_ids != '') ? ','.$row[0] : $row[0];
 
-		// We have to check that we actually have a list of post ID's since we could be deleting just a redirect topic
+		// We have to check that we actually have a list of post IDs since we could be deleting just a redirect topic
 		if ($post_ids != '')
-		{
 			strip_search_index($post_ids);
-			delete_post_files($post_ids);
-        }
 
 		// Delete posts
 		$db->query('DELETE FROM '.$db->prefix.'posts WHERE topic_id IN('.$topics.')') or error('Unable to delete posts', __FILE__, __LINE__, $db->error());
@@ -638,12 +624,13 @@ else if (isset($_POST['delete_topics']) || isset($_POST['delete_topics_comply'])
 	}
 
 
-	$page_title = pun_htmlspecialchars($pun_config['o_board_title']).' / '.$lang_misc['Moderate'];
+	$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_misc['Moderate']);
+	define('PUN_ACTIVE_PAGE', 'index');
 	require PUN_ROOT.'header.php';
 
 ?>
 <div class="blockform">
-	<h2><?php echo $lang_misc['Delete topics'] ?></h2>
+	<h2><span><?php echo $lang_misc['Delete topics'] ?></span></h2>
 	<div class="box">
 		<form method="post" action="moderate.php?fid=<?php echo $fid ?>">
 			<input type="hidden" name="topics" value="<?php echo implode(',', array_map('intval', array_keys($topics))) ?>" />
@@ -655,7 +642,7 @@ else if (isset($_POST['delete_topics']) || isset($_POST['delete_topics_comply'])
 					</div>
 				</fieldset>
 			</div>
-			<p><input type="submit" name="delete_topics_comply" value="<?php echo $lang_misc['Delete'] ?>" /><a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
+			<p class="buttons"><input type="submit" name="delete_topics_comply" value="<?php echo $lang_misc['Delete'] ?>" /><a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
 		</form>
 	</div>
 </div>
@@ -737,7 +724,7 @@ else if (isset($_GET['unstick']))
 require PUN_ROOT.'lang/'.$pun_user['language'].'/forum.php';
 
 // Fetch some info about the forum
-$result = $db->query('SELECT f.forum_name, f.redirect_url, f.num_topics FROM '.$db->prefix.'forums AS f LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND f.id='.$fid) or error('Unable to fetch forum info', __FILE__, __LINE__, $db->error());
+$result = $db->query('SELECT f.forum_name, f.redirect_url, f.num_topics, f.sort_by FROM '.$db->prefix.'forums AS f LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND f.id='.$fid) or error('Unable to fetch forum info', __FILE__, __LINE__, $db->error());
 if (!$db->num_rows($result))
 	message($lang_common['Bad request']);
 
@@ -747,9 +734,6 @@ $cur_forum = $db->fetch_assoc($result);
 if ($cur_forum['redirect_url'] != '')
 	message($lang_common['Bad request']);
 
-$page_title = pun_htmlspecialchars($pun_config['o_board_title']).' / '.pun_htmlspecialchars($cur_forum['forum_name']);
-require PUN_ROOT.'header.php';
-
 // Determine the topic offset (based on $_GET['p'])
 $num_pages = ceil($cur_forum['num_topics'] / $pun_user['disp_topics']);
 
@@ -757,13 +741,21 @@ $p = (!isset($_GET['p']) || $_GET['p'] <= 1 || $_GET['p'] > $num_pages) ? 1 : in
 $start_from = $pun_user['disp_topics'] * ($p - 1);
 
 // Generate paging links
-$paging_links = $lang_common['Pages'].': '.paginate($num_pages, $p, 'moderate.php?fid='.$fid)
+$paging_links = '<span class="pages-label">'.$lang_common['Pages'].' </span>'.paginate($num_pages, $p, 'moderate.php?fid='.$fid);
+
+$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), pun_htmlspecialchars($cur_forum['forum_name']));
+define('PUN_ACTIVE_PAGE', 'index');
+require PUN_ROOT.'header.php';
 
 ?>
 <div class="linkst">
-	<div class="inbox">
+	<div class="inbox crumbsplus">
+		<ul class="crumbs">
+			<li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li>
+			<li><span>&raquo;&#160;</span><a href="viewforum.php?id=<?php echo $fid ?>"><?php echo pun_htmlspecialchars($cur_forum['forum_name']) ?></a></li>
+			<li><span>&raquo;&#160;</span><strong><?php echo $lang_misc['Moderate'] ?></strong></li>
+		</ul>
 		<p class="pagelink conl"><?php echo $paging_links ?></p>
-		<ul><li><a href="index.php"><?php echo $lang_common['Index'] ?></a>&nbsp;</li><li>&raquo;&nbsp;<?php echo pun_htmlspecialchars($cur_forum['forum_name']) ?></li></ul>
 		<div class="clearer"></div>
 	</div>
 </div>
@@ -787,91 +779,95 @@ $paging_links = $lang_common['Pages'].': '.paginate($num_pages, $p, 'moderate.ph
 <?php
 
 // Select topics
-$result = $db->query('SELECT id, poster, subject, posted, last_post, last_post_id, last_poster, num_views, num_replies, closed, sticky, moved_to FROM '.$db->prefix.'topics WHERE forum_id='.$fid.' ORDER BY sticky DESC, last_post DESC LIMIT '.$start_from.', '.$pun_user['disp_topics']) or error('Unable to fetch topic list for forum', __FILE__, __LINE__, $db->error());
+$result = $db->query('SELECT id, poster, subject, posted, last_post, last_post_id, last_poster, num_views, num_replies, closed, sticky, moved_to FROM '.$db->prefix.'topics WHERE forum_id='.$fid.' ORDER BY sticky DESC, '.(($cur_forum['sort_by'] == '1') ? 'posted' : 'last_post').' DESC LIMIT '.$start_from.', '.$pun_user['disp_topics']) or error('Unable to fetch topic list for forum', __FILE__, __LINE__, $db->error());
 
-// If there are topics in this forum.
+// If there are topics in this forum
 if ($db->num_rows($result))
 {
 	$button_status = '';
-
+	$topic_count = 0;
 	while ($cur_topic = $db->fetch_assoc($result))
 	{
 
-		$icon_text = $lang_common['Normal icon'];
-		$item_status = '';
+		++$topic_count;
+		$status_text = array();
+		$item_status = ($topic_count % 2 == 0) ? 'roweven' : 'rowodd';
 		$icon_type = 'icon';
 
 		if ($cur_topic['moved_to'] == null)
 		{
-			$last_post = '<a href="viewtopic.php?pid='.$cur_topic['last_post_id'].'#p'.$cur_topic['last_post_id'].'">'.format_time($cur_topic['last_post']).'</a> '.$lang_common['by'].' '.pun_htmlspecialchars($cur_topic['last_poster']);
+			$last_post = '<a href="viewtopic.php?pid='.$cur_topic['last_post_id'].'#p'.$cur_topic['last_post_id'].'">'.format_time($cur_topic['last_post']).'</a> <span class="byuser">'.$lang_common['by'].' '.pun_htmlspecialchars($cur_topic['last_poster']).'</span>';
 			$ghost_topic = false;
 		}
 		else
 		{
-			$last_post = '&nbsp;';
+			$last_post = '- - -';
 			$ghost_topic = true;
 		}
 
 		if ($pun_config['o_censoring'] == '1')
 			$cur_topic['subject'] = censor_words($cur_topic['subject']);
 
+		if ($cur_topic['sticky'] == '1')
+		{
+			$item_status .= ' isticky';
+			$status_text[] = '<span class="stickytext">'.$lang_forum['Sticky'].'</span>';
+		}
+
 		if ($cur_topic['moved_to'] != 0)
-			$subject = $lang_forum['Moved'].': <a href="viewtopic.php?id='.$cur_topic['moved_to'].'">'.pun_htmlspecialchars($cur_topic['subject']).'</a> <span class="byuser">'.$lang_common['by'].' '.pun_htmlspecialchars($cur_topic['poster']).'</span>';
+		{
+			$subject = '<a href="viewtopic.php?id='.$cur_topic['moved_to'].'">'.pun_htmlspecialchars($cur_topic['subject']).'</a> <span class="byuser">'.$lang_common['by'].' '.pun_htmlspecialchars($cur_topic['poster']).'</span>';
+			$status_text[] = '<span class="movedtext">'.$lang_forum['Moved'].'</span>';
+			$item_status .= ' imoved';
+		}
 		else if ($cur_topic['closed'] == '0')
-			$subject = '<a href="viewtopic.php?id='.$cur_topic['id'].'">'.pun_htmlspecialchars($cur_topic['subject']).'</a> <span>'.$lang_common['by'].'&nbsp;'.pun_htmlspecialchars($cur_topic['poster']).'</span>';
+			$subject = '<a href="viewtopic.php?id='.$cur_topic['id'].'">'.pun_htmlspecialchars($cur_topic['subject']).'</a> <span class="byuser">'.$lang_common['by'].' '.pun_htmlspecialchars($cur_topic['poster']).'</span>';
 		else
 		{
 			$subject = '<a href="viewtopic.php?id='.$cur_topic['id'].'">'.pun_htmlspecialchars($cur_topic['subject']).'</a> <span class="byuser">'.$lang_common['by'].' '.pun_htmlspecialchars($cur_topic['poster']).'</span>';
-			$icon_text = $lang_common['Closed icon'];
-			$item_status = 'iclosed';
+			$status_text[] = '<span class="closedtext">'.$lang_forum['Closed'].'</span>';
+			$item_status .= ' iclosed';
 		}
 
 		if (!$ghost_topic && $cur_topic['last_post'] > $pun_user['last_visit'] && (!isset($tracked_topics['topics'][$cur_topic['id']]) || $tracked_topics['topics'][$cur_topic['id']] < $cur_topic['last_post']) && (!isset($tracked_topics['forums'][$fid]) || $tracked_topics['forums'][$fid] < $cur_topic['last_post']))
 		{
-			$icon_text .= ' '.$lang_common['New icon'];
 			$item_status .= ' inew';
-			$icon_type = 'icon inew';
+			$icon_type = 'icon icon-new';
 			$subject = '<strong>'.$subject.'</strong>';
-			$subject_new_posts = '<span class="newtext">[&nbsp;<a href="viewtopic.php?id='.$cur_topic['id'].'&amp;action=new" title="'.$lang_common['New posts info'].'">'.$lang_common['New posts'].'</a>&nbsp;]</span>';
+			$subject_new_posts = '<span class="newtext">[ <a href="viewtopic.php?id='.$cur_topic['id'].'&amp;action=new" title="'.$lang_common['New posts info'].'">'.$lang_common['New posts'].'</a> ]</span>';
 		}
 		else
 			$subject_new_posts = null;
 
-		// We won't display "the dot", but we add the spaces anyway
-		if ($pun_config['o_show_dot'] == '1')
-			$subject = '&nbsp;&nbsp;'.$subject;
-
-		if ($cur_topic['sticky'] == '1')
-		{
-			$subject = '<span class="stickytext">'.$lang_forum['Sticky'].': </span>'.$subject;
-			$item_status .= ' isticky';
-			$icon_text .= ' '.$lang_forum['Sticky'];
-		}
+		// Insert the status text before the subject
+		$subject = implode(' ', $status_text).' '.$subject;
 
 		$num_pages_topic = ceil(($cur_topic['num_replies'] + 1) / $pun_user['disp_posts']);
 
 		if ($num_pages_topic > 1)
-			$subject_multipage = '[ '.paginate($num_pages_topic, -1, 'viewtopic.php?id='.$cur_topic['id']).' ]';
+			$subject_multipage = '<span class="pagestext">[ '.paginate($num_pages_topic, -1, 'viewtopic.php?id='.$cur_topic['id']).' ]</span>';
 		else
 			$subject_multipage = null;
 
 		// Should we show the "New posts" and/or the multipage links?
 		if (!empty($subject_new_posts) || !empty($subject_multipage))
 		{
-			$subject .= '&nbsp; '.(!empty($subject_new_posts) ? $subject_new_posts : '');
+			$subject .= !empty($subject_new_posts) ? ' '.$subject_new_posts : '';
 			$subject .= !empty($subject_multipage) ? ' '.$subject_multipage : '';
 		}
 
 ?>
-				<tr<?php if ($item_status != '') echo ' class="'.trim($item_status).'"'; ?>>
+				<tr class="<?php echo $item_status ?>">
 					<td class="tcl">
-						<div class="<?php echo $icon_type ?>"><div class="nosize"><?php echo trim($icon_text) ?></div></div>
+						<div class="<?php echo $icon_type ?>"><div class="nosize"><?php echo forum_number_format($topic_count + $start_from) ?></div></div>
 						<div class="tclcon">
-							<?php echo $subject."\n" ?>
+							<div>
+								<?php echo $subject."\n" ?>
+							</div>
 						</div>
 					</td>
-					<td class="tc2"><?php echo (!$ghost_topic) ? forum_number_format($cur_topic['num_replies']) : '&nbsp;' ?></td>
-<?php if ($pun_config['o_topic_views'] == '1'): ?>					<td class="tc3"><?php echo (!$ghost_topic) ? forum_number_format($cur_topic['num_views']) : '&nbsp;' ?></td>
+					<td class="tc2"><?php echo (!$ghost_topic) ? forum_number_format($cur_topic['num_replies']) : '-' ?></td>
+<?php if ($pun_config['o_topic_views'] == '1'): ?>					<td class="tc3"><?php echo (!$ghost_topic) ? forum_number_format($cur_topic['num_views']) : '-' ?></td>
 <?php endif; ?>					<td class="tcr"><?php echo $last_post ?></td>
 					<td class="tcmod"><input type="checkbox" name="topics[<?php echo $cur_topic['id'] ?>]" value="1" /></td>
 				</tr>
@@ -896,7 +892,7 @@ else
 <div class="linksb">
 	<div class="inbox">
 		<p class="pagelink conl"><?php echo $paging_links ?></p>
-		<p class="conr"><input type="submit" name="move_topics" value="<?php echo $lang_misc['Move'] ?>"<?php echo $button_status ?> />&nbsp;&nbsp;<input type="submit" name="delete_topics" value="<?php echo $lang_misc['Delete'] ?>"<?php echo $button_status ?> />&nbsp;&nbsp;<input type="submit" name="merge_topics" value="<?php echo $lang_misc['Merge'] ?>"<?php echo $button_status ?> />&nbsp;&nbsp;<input type="submit" name="open" value="<?php echo $lang_misc['Open'] ?>"<?php echo $button_status ?> />&nbsp;&nbsp;<input type="submit" name="close" value="<?php echo $lang_misc['Close'] ?>"<?php echo $button_status ?> /></p>
+		<p class="conr modbuttons"><input type="submit" name="move_topics" value="<?php echo $lang_misc['Move'] ?>"<?php echo $button_status ?> /> <input type="submit" name="delete_topics" value="<?php echo $lang_misc['Delete'] ?>"<?php echo $button_status ?> /> <input type="submit" name="merge_topics" value="<?php echo $lang_misc['Merge'] ?>"<?php echo $button_status ?> /> <input type="submit" name="open" value="<?php echo $lang_misc['Open'] ?>"<?php echo $button_status ?> /> <input type="submit" name="close" value="<?php echo $lang_misc['Close'] ?>"<?php echo $button_status ?> /></p>
 		<div class="clearer"></div>
 	</div>
 </div>

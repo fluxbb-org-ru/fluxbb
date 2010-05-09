@@ -1,27 +1,10 @@
 <?php
-/***********************************************************************
 
-  Copyright (C) 2002-2005  Rickard Andersson (rickard@punbb.org)
-
-  This file is part of PunBB.
-
-  PunBB is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published
-  by the Free Software Foundation; either version 2 of the License,
-  or (at your option) any later version.
-
-  PunBB is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-  MA  02111-1307  USA
-
-************************************************************************/
-
+/**
+ * Copyright (C) 2008-2010 FluxBB
+ * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
+ * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
+ */
 
 define('PUN_ROOT', './');
 require PUN_ROOT.'include/common.php';
@@ -38,14 +21,15 @@ if ($tid < 1 && $fid < 1 || $tid > 0 && $fid > 0)
 
 // Fetch some info about the topic and/or the forum
 if ($tid)
-	$result = $db->query('SELECT f.id, f.forum_name, f.moderators, f.redirect_url, fp.post_replies, fp.post_topics, fp.upload, t.subject, t.closed FROM '.$db->prefix.'topics AS t INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND t.id='.$tid) or error('Unable to fetch forum info', __FILE__, __LINE__, $db->error());
+	$result = $db->query('SELECT f.id, f.forum_name, f.moderators, f.redirect_url, fp.post_replies, fp.post_topics, t.subject, t.closed, s.user_id AS is_subscribed FROM '.$db->prefix.'topics AS t INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') LEFT JOIN '.$db->prefix.'subscriptions AS s ON (t.id=s.topic_id AND s.user_id='.$pun_user['id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND t.id='.$tid) or error('Unable to fetch forum info', __FILE__, __LINE__, $db->error());
 else
-	$result = $db->query('SELECT f.id, f.forum_name, f.moderators, f.redirect_url, fp.post_replies, fp.post_topics, fp.upload FROM '.$db->prefix.'forums AS f LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND f.id='.$fid) or error('Unable to fetch forum info', __FILE__, __LINE__, $db->error());
+	$result = $db->query('SELECT f.id, f.forum_name, f.moderators, f.redirect_url, fp.post_replies, fp.post_topics FROM '.$db->prefix.'forums AS f LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND f.id='.$fid) or error('Unable to fetch forum info', __FILE__, __LINE__, $db->error());
 
 if (!$db->num_rows($result))
 	message($lang_common['Bad request']);
 
 $cur_posting = $db->fetch_assoc($result);
+$is_subscribed = $tid && $cur_posting['is_subscribed'];
 
 // Is someone trying to post into a redirect forum?
 if ($cur_posting['redirect_url'] != '')
@@ -62,24 +46,8 @@ if ((($tid && (($cur_posting['post_replies'] == '' && $pun_user['g_post_replies'
 	!$is_admmod)
 	message($lang_common['No permission']);
 
-// Do we have permission to upload file?
-if ($pun_user['is_guest'])
-	$can_upload = false;
-else if ($pun_user['g_id'] == PUN_ADMIN)
-	$can_upload = true;
-else
-	$can_upload = ($cur_posting['upload'] == '' && $pun_user['g_upload'] == '1') || $cur_posting['upload'] == '1';
-
 // Load the post.php language file
 require PUN_ROOT.'lang/'.$pun_user['language'].'/post.php';
-
-if ($can_upload)
-{
-	// Load the file-upload language file
-	require PUN_ROOT.'lang/'.$pun_user['language'].'/file.php';
-	// Include file & image support functions
-	require PUN_ROOT.'include/file_func.php';
-}
 
 // Start with a clean slate
 $errors = array();
@@ -88,31 +56,9 @@ $errors = array();
 // Did someone just hit "Submit" or "Preview"?
 if (isset($_POST['form_sent']))
 {
-
 	// Make sure form_user is correct
 	if (($pun_user['is_guest'] && $_POST['form_user'] != 'Guest') || (!$pun_user['is_guest'] && $_POST['form_user'] != $pun_user['username']))
 		message($lang_common['Bad request']);
-
-	if ($can_upload)
-	{
-		// Process attachments if any
-		$attach_ids = array();
-		if (isset($_FILES['attach']))
-		{
-			foreach ($_FILES['attach']['error'] as $file_key => $file_error)
-			{
-				if ($file_error != UPLOAD_ERR_NO_FILE)
-				{
-					$file_item = file_item('attach', $file_key);
-					$result = upload_file($file_item, '');
-					if (is_array($result))
-						$errors = array_merge($errors, $result);
-					else
-						$attach_ids[] = $result;
-				}
-			}
-		}
-	}
 
 	// Flood protection
 	if (!isset($_POST['preview']) && $pun_user['last_post'] != '' && (time() - $pun_user['last_post']) < $pun_user['g_post_flood'])
@@ -127,11 +73,11 @@ if (isset($_POST['form_sent']))
 			$errors[] = $lang_post['No subject'];
 		else if (pun_strlen($subject) > 70)
 			$errors[] = $lang_post['Too long subject'];
-		else if ($pun_config['p_subject_all_caps'] == '0' && strtoupper($subject) == $subject && !$pun_user['is_admmod'])
-			$subject = ucwords(strtolower($subject));
+		else if ($pun_config['p_subject_all_caps'] == '0' && is_all_uppercase($subject) && !$pun_user['is_admmod'])
+			$errors[] = $lang_post['All caps subject'];
 	}
 
-	// If the user is logged in we get the username and e-mail from $pun_user
+	// If the user is logged in we get the username and email from $pun_user
 	if (!$pun_user['is_guest'])
 	{
 		$username = $pun_user['username'];
@@ -140,7 +86,7 @@ if (isset($_POST['form_sent']))
 	// Otherwise it should be in $_POST
 	else
 	{
-		$username = trim($_POST['req_username']);
+		$username = pun_trim($_POST['req_username']);
 		$email = strtolower(trim(($pun_config['p_force_guest_email'] == '1') ? $_POST['req_email'] : $_POST['email']));
 
 		// Load the register.php/profile.php language files
@@ -148,59 +94,45 @@ if (isset($_POST['form_sent']))
 		require PUN_ROOT.'lang/'.$pun_user['language'].'/register.php';
 
 		// It's a guest, so we have to validate the username
-		if (strlen($username) < 2)
-			$errors[] = $lang_prof_reg['Username too short'];
-		else if (pun_strlen($username) > 25)	// This usually doesn't happen since the form element only accepts 25 characters
-			$errors[] = $lang_prof_reg['Username too long'];
-		else if (!strcasecmp($username, 'Guest') || !strcasecmp($username, $lang_common['Guest']))
-			$errors[] = $lang_prof_reg['Username guest'];
-		else if (preg_match('/[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/', $username) || preg_match('/((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(([0-9A-Fa-f]{1,4}:){0,5}:((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(::([0-9A-Fa-f]{1,4}:){0,5}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))/', $username))
-			$errors[] = $lang_prof_reg['Username IP'];
-		else if ((strpos($username, '[') !== false || strpos($username, ']') !== false) && strpos($username, '\'') !== false && strpos($username, '"') !== false)
-			$errors[] = $lang_prof_reg['Username reserved chars'];
-		else if (preg_match('/(?:\[\/?(?:b|u|i|h|colou?r|quote|code|img|url|email|list)\]|\[(?:code|quote|list)=)/i', $username))
-			$errors[] = $lang_prof_reg['Username BBCode'];
-
-		// Check username for any censored words
-		$temp = censor_words($username);
-		if ($temp != $username)
-			$errors[] = $lang_register['Username censor'];
-
-		// Check that the username (or a too similar username) is not already registered
-		$result = $db->query('SELECT username FROM '.$db->prefix.'users WHERE (username=\''.$db->escape($username).'\' OR username=\''.$db->escape(preg_replace('/[^\w]/', '', $username)).'\') AND id>1') or error('Unable to fetch user info', __FILE__, __LINE__, $db->error());
-		if ($db->num_rows($result))
-		{
-			$busy = $db->result($result);
-			$errors[] = $lang_register['Username dupe 1'].' '.pun_htmlspecialchars($busy).'. '.$lang_register['Username dupe 2'];
-		}
+		check_username($username);
 
 		if ($pun_config['p_force_guest_email'] == '1' || $email != '')
 		{
 			require PUN_ROOT.'include/email.php';
 			if (!is_valid_email($email))
-				$errors[] = $lang_common['Invalid e-mail'];
+				$errors[] = $lang_common['Invalid email'];
+
+			// Check if it's a banned email address
+			// we should only check guests because members addresses are already verified
+			if ($pun_user['is_guest'] && is_banned_email($email))
+			{
+				if ($pun_config['p_allow_banned_email'] == '0')
+					$errors[] = $lang_prof_reg['Banned email'];
+
+				$banned_email = true; // Used later when we send an alert email
+			}
+			else
+				$banned_email = false;
 		}
 	}
 
 	// Clean up message from POST
 	$message = pun_linebreaks(pun_trim($_POST['req_message']));
 
-	if ($message == '')
-		$errors[] = $lang_post['No message'];
-	else if (strlen($message) > 65535)
+	if (pun_strlen($message) > PUN_MAX_POSTSIZE)
 		$errors[] = $lang_post['Too long message'];
-	else if ($pun_config['p_message_all_caps'] == '0' && strtoupper($message) == $message && !$pun_user['is_admmod'])
-		$message = ucwords(strtolower($message));
+	else if ($pun_config['p_message_all_caps'] == '0' && is_all_uppercase($message) && !$pun_user['is_admmod'])
+		$errors[] = $lang_post['All caps message'];
 
 	// Validate BBCode syntax
-	if ($pun_config['p_message_bbcode'] == '1' || $pun_config['o_make_links'] == '1')
+	if ($pun_config['p_message_bbcode'] == '1')
 	{
 		require PUN_ROOT.'include/parser.php';
 		$message = preparse_bbcode($message, $errors);
 	}
 
-
-	require PUN_ROOT.'include/search_idx.php';
+	if ($message == '')
+		$errors[] = $lang_post['No message'];
 
 	$hide_smilies = isset($_POST['hide_smilies']) ? '1' : '0';
 	$subscribe = isset($_POST['subscribe']) ? '1' : '0';
@@ -210,6 +142,8 @@ if (isset($_POST['form_sent']))
 	// Did everything go according to plan?
 	if (empty($errors) && !isset($_POST['preview']))
 	{
+		require PUN_ROOT.'include/search_idx.php';
+
 		// If it's a reply
 		if ($tid)
 		{
@@ -222,11 +156,12 @@ if (isset($_POST['form_sent']))
 				$new_pid = $db->insert_id();
 
 				// To subscribe or not to subscribe, that ...
-				if ($pun_config['o_subscriptions'] == '1' && $subscribe)
+				if ($pun_config['o_subscriptions'] == '1')
 				{
-					$result = $db->query('SELECT 1 FROM '.$db->prefix.'subscriptions WHERE user_id='.$pun_user['id'].' AND topic_id='.$tid) or error('Unable to fetch subscription info', __FILE__, __LINE__, $db->error());
-					if (!$db->num_rows($result))
+					if ($subscribe && !$is_subscribed)
 						$db->query('INSERT INTO '.$db->prefix.'subscriptions (user_id, topic_id) VALUES('.$pun_user['id'].' ,'.$tid.')') or error('Unable to add subscription', __FILE__, __LINE__, $db->error());
+					else if (!$subscribe && $is_subscribed)
+						$db->query('DELETE FROM '.$db->prefix.'subscriptions WHERE user_id='.$pun_user['id'].' AND topic_id='.$tid) or error('Unable to remove subscription', __FILE__, __LINE__, $db->error());
 				}
 			}
 			else
@@ -263,10 +198,10 @@ if (isset($_POST['form_sent']))
 
 					$notification_emails = array();
 
-					// Loop through subscribed users and send e-mails
+					// Loop through subscribed users and send emails
 					while ($cur_subscriber = $db->fetch_assoc($result))
 					{
-						// Is the subscription e-mail for $cur_subscriber['language'] cached or not?
+						// Is the subscription email for $cur_subscriber['language'] cached or not?
 						if (!isset($notification_emails[$cur_subscriber['language']]))
 						{
 							if (file_exists(PUN_ROOT.'lang/'.$cur_subscriber['language'].'/mail_templates/new_reply.tpl'))
@@ -332,7 +267,7 @@ if (isset($_POST['form_sent']))
 			if (!$pun_user['is_guest'])
 			{
 				// To subscribe or not to subscribe, that ...
-				if ($pun_config['o_subscriptions'] == '1' && (isset($_POST['subscribe']) && $_POST['subscribe'] == '1'))
+				if ($pun_config['o_subscriptions'] == '1' && $subscribe)
 					$db->query('INSERT INTO '.$db->prefix.'subscriptions (user_id, topic_id) VALUES('.$pun_user['id'].' ,'.$new_tid.')') or error('Unable to add subscription', __FILE__, __LINE__, $db->error());
 
 				// Create the post ("topic post")
@@ -354,25 +289,29 @@ if (isset($_POST['form_sent']))
 			update_forum($fid);
 		}
 
+		// If we previously found out that the email was banned
+		if ($pun_user['is_guest'] && $banned_email && $pun_config['o_mailing_list'] != '')
+		{
+			$mail_subject = $lang_common['Banned email notification'];
+			$mail_message = sprintf($lang_common['Banned email post message'], $username, $email)."\n";
+			$mail_message .= sprintf($lang_common['Post URL'], $pun_config['o_base_url'].'/viewtopic.php?pid='.$new_pid.'#p'.$new_pid)."\n";
+			$mail_message .= "\n".'--'."\n".$lang_common['Email signature'];
+
+			pun_mail($pun_config['o_mailing_list'], $mail_subject, $mail_message);
+		}
+
 		// If the posting user is logged in, increment his/her post count
 		if (!$pun_user['is_guest'])
 		{
 			$db->query('UPDATE '.$db->prefix.'users SET num_posts=num_posts+1, last_post='.$now.' WHERE id='.$pun_user['id']) or error('Unable to update user', __FILE__, __LINE__, $db->error());
 
-      		$tracked_topics = get_tracked_topics();
-      		$tracked_topics['topics'][$new_tid] = time();
-      		set_tracked_topics($tracked_topics);
+			$tracked_topics = get_tracked_topics();
+			$tracked_topics['topics'][$new_tid] = time();
+			set_tracked_topics($tracked_topics);
 		}
 		else
 		{
 			$db->query('UPDATE '.$db->prefix.'online SET last_post='.$now.' WHERE ident=\''.$db->escape(get_remote_address()).'\'' ) or error('Unable to update user', __FILE__, __LINE__, $db->error());
-		}
-
-		// Attach files uploaded into post
-		if ($can_upload && !empty($attach_ids))
-		{
-			// Just in case: verify poster and attach info
-			$db->query('UPDATE '.$db->prefix.'files SET post_id='.$new_pid.' WHERE poster_id='.$pun_user['id'].' AND post_id=0 AND id IN('.implode(',', $attach_ids).')' ) or error('Unable to update files post_id', __FILE__, __LINE__, $db->error());
 		}
 
 		redirect('viewtopic.php?pid='.$new_pid.'#p'.$new_pid, $lang_post['Post redirect']);
@@ -380,13 +319,13 @@ if (isset($_POST['form_sent']))
 }
 
 
-// If a topic id was specified in the url (it's a reply).
+// If a topic ID was specified in the url (it's a reply)
 if ($tid)
 {
 	$action = $lang_post['Post a reply'];
-	$form = '<form id="post" method="post" action="post.php?action=post&amp;tid='.$tid.'" onsubmit="this.submit.disabled=true;if(process_form(this)){return true;}else{this.submit.disabled=false;return false;}" enctype="multipart/form-data">';
+	$form = '<form id="post" method="post" action="post.php?action=post&amp;tid='.$tid.'" onsubmit="this.submit.disabled=true;if(process_form(this)){return true;}else{this.submit.disabled=false;return false;}">';
 
-	// If a quote-id was specified in the url.
+	// If a quote ID was specified in the url
 	if (isset($_GET['qid']))
 	{
 		$qid = intval($_GET['qid']);
@@ -428,25 +367,21 @@ if ($tid)
 			$quote = '[quote='.$q_poster.']'.$q_message.'[/quote]'."\n";
 		}
 		else
-			$quote = '> '.$q_poster.' '.$lang_common['wrote'].':'."\n\n".'> '.$q_message."\n";
+			$quote = '> '.$q_poster.' '.$lang_common['wrote']."\n\n".'> '.$q_message."\n";
 	}
-
-	$forum_name = '<a href="viewforum.php?id='.$cur_posting['id'].'">'.pun_htmlspecialchars($cur_posting['forum_name']).'</a>';
 }
-// If a forum_id was specified in the url (new topic).
+// If a forum ID was specified in the url (new topic)
 else if ($fid)
 {
 	$action = $lang_post['Post new topic'];
-	$form = '<form id="post" method="post" action="post.php?action=post&amp;fid='.$fid.'" onsubmit="return process_form(this)" enctype="multipart/form-data">';
-
-	$forum_name = pun_htmlspecialchars($cur_posting['forum_name']);
+	$form = '<form id="post" method="post" action="post.php?action=post&amp;fid='.$fid.'" onsubmit="return process_form(this)">';
 }
 else
 	message($lang_common['Bad request']);
 
 
-$page_title = pun_htmlspecialchars($pun_config['o_board_title']).' / '.$action;
-$required_fields = array('req_email' => $lang_common['E-mail'], 'req_subject' => $lang_common['Subject'], 'req_message' => $lang_common['Message']);
+$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $action);
+$required_fields = array('req_email' => $lang_common['Email'], 'req_subject' => $lang_common['Subject'], 'req_message' => $lang_common['Message']);
 $focus_element = array('post');
 
 if (!$pun_user['is_guest'])
@@ -457,12 +392,18 @@ else
 	$focus_element[] = 'req_username';
 }
 
+define('PUN_ACTIVE_PAGE', 'index');
 require PUN_ROOT.'header.php';
 
 ?>
 <div class="linkst">
 	<div class="inbox">
-		<ul><li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li><li>&nbsp;&raquo;&nbsp;<?php echo $forum_name ?><?php if (isset($cur_posting['subject'])) echo '</li><li>&nbsp;&raquo;&nbsp;'.pun_htmlspecialchars($cur_posting['subject']) ?></li></ul>
+		<ul class="crumbs">
+			<li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li>
+			<li><span>&raquo;&#160;</span><a href="viewforum.php?id=<?php echo $cur_posting['id'] ?>"><?php echo pun_htmlspecialchars($cur_posting['forum_name']) ?></a></li>
+<?php if (isset($cur_posting['subject'])): ?>			<li><span>&raquo;&#160;</span><a href="viewtopic.php?id=<?php echo $tid ?>"><?php echo pun_htmlspecialchars($cur_posting['subject']) ?></a></li>
+<?php endif; ?>			<li><span>&raquo;&#160;</span><strong><?php echo $action ?></strong></li>
+		</ul>
 	</div>
 </div>
 
@@ -476,12 +417,12 @@ if (!empty($errors))
 <div id="posterror" class="block">
 	<h2><span><?php echo $lang_post['Post errors'] ?></span></h2>
 	<div class="box">
-		<div class="inbox">
+		<div class="inbox error-info">
 			<p><?php echo $lang_post['Post errors info'] ?></p>
-			<ul>
+			<ul class="error-list">
 <?php
 
-	while (list(, $cur_error) = each($errors))
+	foreach ($errors as $cur_error)
 		echo "\t\t\t\t".'<li><strong>'.$cur_error.'</strong></li>'."\n";
 ?>
 			</ul>
@@ -502,9 +443,11 @@ else if (isset($_POST['preview']))
 	<h2><span><?php echo $lang_post['Post preview'] ?></span></h2>
 	<div class="box">
 		<div class="inbox">
-			<div class="postright">
-				<div class="postmsg">
-					<?php echo $preview_message."\n" ?>
+			<div class="postbody">
+				<div class="postright">
+					<div class="postmsg">
+						<?php echo $preview_message."\n" ?>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -533,44 +476,55 @@ $cur_index = 1;
 
 if ($pun_user['is_guest'])
 {
-	$email_label = ($pun_config['p_force_guest_email'] == '1') ? '<strong>'.$lang_common['E-mail'].'</strong>' : $lang_common['E-mail'];
+	$email_label = ($pun_config['p_force_guest_email'] == '1') ? '<strong>'.$lang_common['Email'].' <span>'.$lang_common['Required'].'</span></strong>' : $lang_common['Email'];
 	$email_form_name = ($pun_config['p_force_guest_email'] == '1') ? 'req_email' : 'email';
 
-?>						<label class="conl"><strong><?php echo $lang_post['Guest name'] ?></strong><br /><input type="text" name="req_username" value="<?php if (isset($_POST['req_username'])) echo pun_htmlspecialchars($username); ?>" size="25" maxlength="25" tabindex="<?php echo $cur_index++ ?>" /><br /></label>
-						<label class="conl"><?php echo $email_label ?><br /><input type="text" name="<?php echo $email_form_name ?>" value="<?php if (isset($_POST[$email_form_name])) echo pun_htmlspecialchars($email); ?>" size="50" maxlength="50" tabindex="<?php echo $cur_index++ ?>" /><br /></label>
+?>
+						<label class="conl required"><strong><?php echo $lang_post['Guest name'] ?> <span><?php echo $lang_common['Required'] ?></span></strong><br /><input type="text" name="req_username" value="<?php if (isset($_POST['req_username'])) echo pun_htmlspecialchars($username); ?>" size="25" maxlength="25" tabindex="<?php echo $cur_index++ ?>" /><br /></label>
+						<label class="conl<?php echo ($pun_config['p_force_guest_email'] == '1') ? ' required' : '' ?>"><?php echo $email_label ?><br /><input type="text" name="<?php echo $email_form_name ?>" value="<?php if (isset($_POST[$email_form_name])) echo pun_htmlspecialchars($email); ?>" size="50" maxlength="80" tabindex="<?php echo $cur_index++ ?>" /><br /></label>
 						<div class="clearer"></div>
 <?php
 
 }
 
 if ($fid): ?>
-						<label><strong><?php echo $lang_common['Subject'] ?></strong><br /><input class="longinput" type="text" name="req_subject" value="<?php if (isset($_POST['req_subject'])) echo pun_htmlspecialchars($subject); ?>" size="80" maxlength="70" tabindex="<?php echo $cur_index++ ?>" /><br /></label>
-<?php endif; ?>						<label><strong><?php echo $lang_common['Message'] ?></strong><br />
+						<label class="required"><strong><?php echo $lang_common['Subject'] ?> <span><?php echo $lang_common['Required'] ?></span></strong><br /><input class="longinput" type="text" name="req_subject" value="<?php if (isset($_POST['req_subject'])) echo pun_htmlspecialchars($subject); ?>" size="80" maxlength="70" tabindex="<?php echo $cur_index++ ?>" /><br /></label>
+<?php endif; ?>						<label class="required"><strong><?php echo $lang_common['Message'] ?> <span><?php echo $lang_common['Required'] ?></span></strong><br />
 						<textarea name="req_message" rows="20" cols="95" tabindex="<?php echo $cur_index++ ?>"><?php echo isset($_POST['req_message']) ? pun_htmlspecialchars($message) : (isset($quote) ? $quote : ''); ?></textarea><br /></label>
 						<ul class="bblinks">
-							<li><a href="help.php#bbcode" onclick="window.open(this.href); return false;"><?php echo $lang_common['BBCode'] ?></a>: <?php echo ($pun_config['p_message_bbcode'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
-							<li><a href="help.php#img" onclick="window.open(this.href); return false;"><?php echo $lang_common['img tag'] ?></a>: <?php echo ($pun_config['p_message_img_tag'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
-							<li><a href="help.php#smilies" onclick="window.open(this.href); return false;"><?php echo $lang_common['Smilies'] ?></a>: <?php echo ($pun_config['o_smilies'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
+							<li><a href="help.php#bbcode" onclick="window.open(this.href); return false;"><?php echo $lang_common['BBCode'] ?></a> <?php echo ($pun_config['p_message_bbcode'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
+							<li><a href="help.php#img" onclick="window.open(this.href); return false;"><?php echo $lang_common['img tag'] ?></a> <?php echo ($pun_config['p_message_img_tag'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
+							<li><a href="help.php#smilies" onclick="window.open(this.href); return false;"><?php echo $lang_common['Smilies'] ?></a> <?php echo ($pun_config['o_smilies'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
 						</ul>
 					</div>
 				</fieldset>
 <?php
 
-// Include file input field(s) if possible
-if ($can_upload)
-	include PUN_ROOT.'include/template/post/attach_input.php';
-
 $checkboxes = array();
 if (!$pun_user['is_guest'])
 {
 	if ($pun_config['o_smilies'] == '1')
-		$checkboxes[] = '<label><input type="checkbox" name="hide_smilies" value="1" tabindex="'.($cur_index++).'"'.(isset($_POST['hide_smilies']) ? ' checked="checked"' : '').' />'.$lang_post['Hide smilies'];
+		$checkboxes[] = '<label><input type="checkbox" name="hide_smilies" value="1" tabindex="'.($cur_index++).'"'.(isset($_POST['hide_smilies']) ? ' checked="checked"' : '').' />'.$lang_post['Hide smilies'].'<br /></label>';
 
 	if ($pun_config['o_subscriptions'] == '1')
-		$checkboxes[] = '<label><input type="checkbox" name="subscribe" value="1" tabindex="'.($cur_index++).'"'.(isset($_POST['subscribe']) || $pun_user['auto_notify'] == '1' ? ' checked="checked"' : '').' />'.$lang_post['Subscribe'];
+	{
+		$subscr_checked = false;
+
+		// If it's a preview
+		if (isset($_POST['preview']))
+			$subscr_checked = isset($_POST['subscribe']) ? true : false;
+		// If auto subscribed
+		else if ($pun_user['auto_notify'])
+			$subscr_checked = true;
+		// If already subscribed to the topic
+		else if ($is_subscribed)
+			$subscr_checked = true;
+
+		$checkboxes[] = '<label><input type="checkbox" name="subscribe" value="1" tabindex="'.($cur_index++).'"'.($subscr_checked ? ' checked="checked"' : '').' />'.($is_subscribed ? $lang_post['Stay subscribed'] : $lang_post['Subscribe']).'<br /></label>';
+	}
 }
 else if ($pun_config['o_smilies'] == '1')
-	$checkboxes[] = '<label><input type="checkbox" name="hide_smilies" value="1" tabindex="'.($cur_index++).'"'.(isset($_POST['hide_smilies']) ? ' checked="checked"' : '').' />'.$lang_post['Hide smilies'];
+	$checkboxes[] = '<label><input type="checkbox" name="hide_smilies" value="1" tabindex="'.($cur_index++).'"'.(isset($_POST['hide_smilies']) ? ' checked="checked"' : '').' />'.$lang_post['Hide smilies'].'<br /></label>';
 
 if (!empty($checkboxes))
 {
@@ -582,7 +536,7 @@ if (!empty($checkboxes))
 					<legend><?php echo $lang_common['Options'] ?></legend>
 					<div class="infldset">
 						<div class="rbox">
-							<?php echo implode('<br /></label>'."\n\t\t\t\t", $checkboxes).'<br /></label>'."\n" ?>
+							<?php echo implode("\n\t\t\t\t\t\t\t", $checkboxes)."\n" ?>
 						</div>
 					</div>
 				</fieldset>
@@ -592,14 +546,14 @@ if (!empty($checkboxes))
 
 ?>
 			</div>
-			<p><input type="submit" name="submit" value="<?php echo $lang_common['Submit'] ?>" tabindex="<?php echo $cur_index++ ?>" accesskey="s" /><input type="submit" name="preview" value="<?php echo $lang_post['Preview'] ?>" tabindex="<?php echo $cur_index++ ?>" accesskey="p" /><a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
+			<p class="buttons"><input type="submit" name="submit" value="<?php echo $lang_common['Submit'] ?>" tabindex="<?php echo $cur_index++ ?>" accesskey="s" /> <input type="submit" name="preview" value="<?php echo $lang_post['Preview'] ?>" tabindex="<?php echo $cur_index++ ?>" accesskey="p" /> <a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
 		</form>
 	</div>
 </div>
 
 <?php
 
-// Check to see if the topic review is to be displayed.
+// Check to see if the topic review is to be displayed
 if ($tid && $pun_config['o_topic_review'] != '0')
 {
 	require_once PUN_ROOT.'include/parser.php';
@@ -608,38 +562,38 @@ if ($tid && $pun_config['o_topic_review'] != '0')
 
 ?>
 
-<div id="postreview" class="blockpost">
+<div id="postreview">
 	<h2><span><?php echo $lang_post['Topic review'] ?></span></h2>
 <?php
 
-	//Set background switching on
-	$bg_switch = true;
+	// Set background switching on
 	$post_count = 0;
 
 	while ($cur_post = $db->fetch_assoc($result))
 	{
-		// Switch the background color for every message.
-		$bg_switch = ($bg_switch) ? $bg_switch = false : $bg_switch = true;
-		$vtbg = ($bg_switch) ? ' roweven' : ' rowodd';
 		$post_count++;
 
 		$cur_post['message'] = parse_message($cur_post['message'], $cur_post['hide_smilies']);
 
 ?>
-	<div class="box<?php echo $vtbg ?>">
-		<div class="inbox">
-			<div class="postleft">
-				<dl>
-					<dt><strong><?php echo pun_htmlspecialchars($cur_post['poster']) ?></strong></dt>
-					<dd><?php echo format_time($cur_post['posted']) ?></dd>
-				</dl>
-			</div>
-			<div class="postright">
-				<div class="postmsg">
-					<?php echo $cur_post['message'] ?>
+	<div class="blockpost">
+		<div class="box<?php echo ($post_count % 2 == 0) ? ' roweven' : ' rowodd' ?>">
+			<div class="inbox">
+				<div class="postbody">
+					<div class="postleft">
+						<dl>
+							<dt><strong><?php echo pun_htmlspecialchars($cur_post['poster']) ?></strong></dt>
+							<dd><?php echo format_time($cur_post['posted']) ?></dd>
+						</dl>
+					</div>
+					<div class="postright">
+						<div class="postmsg">
+							<?php echo $cur_post['message']."\n" ?>
+						</div>
+					</div>
 				</div>
+				<div class="clearer"></div>
 			</div>
-			<div class="clearer"></div>
 		</div>
 	</div>
 <?php

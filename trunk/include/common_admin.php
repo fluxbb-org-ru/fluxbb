@@ -1,60 +1,55 @@
 <?php
-/***********************************************************************
 
-  Copyright (C) 2002-2005  Rickard Andersson (rickard@punbb.org)
-
-  This file is part of PunBB.
-
-  PunBB is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published
-  by the Free Software Foundation; either version 2 of the License,
-  or (at your option) any later version.
-
-  PunBB is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-  MA  02111-1307  USA
-
-************************************************************************/
+/**
+ * Copyright (C) 2008-2010 FluxBB
+ * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
+ * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
+ */
 
 // Make sure no one attempts to run this script "directly"
 if (!defined('PUN'))
 	exit;
+
+// Make sure we have a usable language pack for admin.
+if (file_exists(PUN_ROOT.'lang/'.$pun_user['language'].'/admin_common.php'))
+	$admin_language = $pun_user['language'];
+else if (file_exists(PUN_ROOT.'lang/'.$pun_config['o_default_lang'].'/admin_common.php'))
+	$admin_language = $pun_config['language'];
+else
+	$admin_language = 'English';
+
+// Attempt to load the admin_common language file
+require PUN_ROOT.'lang/'.$admin_language.'/admin_common.php';
 
 //
 // Display the admin navigation menu
 //
 function generate_admin_menu($page = '')
 {
-	global $pun_config, $pun_user;
+	global $pun_config, $pun_user, $lang_admin_common;
 
 	$is_admin = $pun_user['g_id'] == PUN_ADMIN ? true : false;
 
 ?>
 <div id="adminconsole" class="block2col">
 	<div id="adminmenu" class="blockmenu">
-		<h2><span><?php echo ($is_admin) ? 'Admin' : 'Moderator' ?> menu</span></h2>
+		<h2><span><?php echo ($is_admin) ? $lang_admin_common['Admin menu'] : $lang_admin_common['Moderator menu'] ?></span></h2>
 		<div class="box">
 			<div class="inbox">
 				<ul>
-					<li<?php if ($page == 'index') echo ' class="isactive"'; ?>><a href="admin_index.php">Index</a></li>
-<?php if ($is_admin): ?>					<li<?php if ($page == 'categories') echo ' class="isactive"'; ?>><a href="admin_categories.php">Categories</a></li>
-<?php endif; ?><?php if ($is_admin): ?>					<li<?php if ($page == 'forums') echo ' class="isactive"'; ?>><a href="admin_forums.php">Forums</a></li>
-<?php endif; ?>					<li<?php if ($page == 'users') echo ' class="isactive"'; ?>><a href="admin_users.php">Users</a></li>
-<?php if ($is_admin): ?>					<li<?php if ($page == 'groups') echo ' class="isactive"'; ?>><a href="admin_groups.php">User groups</a></li>
-<?php endif; ?><?php if ($is_admin): ?>					<li<?php if ($page == 'options') echo ' class="isactive"'; ?>><a href="admin_options.php">Options</a></li>
-<?php endif; ?><?php if ($is_admin): ?>					<li<?php if ($page == 'permissions') echo ' class="isactive"'; ?>><a href="admin_permissions.php">Permissions</a></li>
-<?php endif; ?>					<li<?php if ($page == 'censoring') echo ' class="isactive"'; ?>><a href="admin_censoring.php">Censoring</a></li>
-<?php if ($is_admin): ?>					<li<?php if ($page == 'ranks') echo ' class="isactive"'; ?>><a href="admin_ranks.php">Ranks</a></li>
-<?php endif; ?><?php if ($is_admin || $pun_user['g_mod_ban_users'] == '1'): ?>					<li<?php if ($page == 'bans') echo ' class="isactive"'; ?>><a href="admin_bans.php">Bans</a></li>
-<?php endif; ?><?php if ($is_admin): ?>					<li<?php if ($page == 'prune') echo ' class="isactive"'; ?>><a href="admin_prune.php">Prune</a></li>
-<?php endif; ?><?php if ($is_admin): ?>					<li<?php if ($page == 'maintenance') echo ' class="isactive"'; ?>><a href="admin_maintenance.php">Maintenance</a></li>
-<?php endif; ?>					<li<?php if ($page == 'reports') echo ' class="isactive"'; ?>><a href="admin_reports.php">Reports</a></li>
+					<li<?php if ($page == 'index') echo ' class="isactive"'; ?>><a href="admin_index.php"><?php echo $lang_admin_common['Index'] ?></a></li>
+<?php if ($is_admin): ?>					<li<?php if ($page == 'categories') echo ' class="isactive"'; ?>><a href="admin_categories.php"><?php echo $lang_admin_common['Categories'] ?></a></li>
+<?php endif; ?><?php if ($is_admin): ?>					<li<?php if ($page == 'forums') echo ' class="isactive"'; ?>><a href="admin_forums.php"><?php echo $lang_admin_common['Forums'] ?></a></li>
+<?php endif; ?>					<li<?php if ($page == 'users') echo ' class="isactive"'; ?>><a href="admin_users.php"><?php echo $lang_admin_common['Users'] ?></a></li>
+<?php if ($is_admin): ?>					<li<?php if ($page == 'groups') echo ' class="isactive"'; ?>><a href="admin_groups.php"><?php echo $lang_admin_common['User groups'] ?></a></li>
+<?php endif; ?><?php if ($is_admin): ?>					<li<?php if ($page == 'options') echo ' class="isactive"'; ?>><a href="admin_options.php"><?php echo $lang_admin_common['Options'] ?></a></li>
+<?php endif; ?><?php if ($is_admin): ?>					<li<?php if ($page == 'permissions') echo ' class="isactive"'; ?>><a href="admin_permissions.php"><?php echo $lang_admin_common['Permissions'] ?></a></li>
+<?php endif; ?>					<li<?php if ($page == 'censoring') echo ' class="isactive"'; ?>><a href="admin_censoring.php"><?php echo $lang_admin_common['Censoring'] ?></a></li>
+<?php if ($is_admin): ?>					<li<?php if ($page == 'ranks') echo ' class="isactive"'; ?>><a href="admin_ranks.php"><?php echo $lang_admin_common['Ranks'] ?></a></li>
+<?php endif; ?><?php if ($is_admin || $pun_user['g_mod_ban_users'] == '1'): ?>					<li<?php if ($page == 'bans') echo ' class="isactive"'; ?>><a href="admin_bans.php"><?php echo $lang_admin_common['Bans'] ?></a></li>
+<?php endif; ?><?php if ($is_admin): ?>					<li<?php if ($page == 'prune') echo ' class="isactive"'; ?>><a href="admin_prune.php"><?php echo $lang_admin_common['Prune'] ?></a></li>
+<?php endif; ?><?php if ($is_admin): ?>					<li<?php if ($page == 'maintenance') echo ' class="isactive"'; ?>><a href="admin_maintenance.php"><?php echo $lang_admin_common['Maintenance'] ?></a></li>
+<?php endif; ?>					<li<?php if ($page == 'reports') echo ' class="isactive"'; ?>><a href="admin_reports.php"><?php echo $lang_admin_common['Reports'] ?></a></li>
 				</ul>
 			</div>
 		</div>
@@ -69,7 +64,7 @@ function generate_admin_menu($page = '')
 		$suffix = substr($entry, strlen($entry) - 4);
 
 		if ($suffix == '.php' && ((!$is_admin && $prefix == 'AMP') || ($is_admin && ($prefix == 'AP' || $prefix == 'AMP'))))
-			$plugins[] = array(substr(substr($entry, strpos($entry, '_') + 1), 0, -4), $entry);
+			$plugins[] = array(substr($entry, strpos($entry, '_') + 1, -4), $entry);
 	}
 	$d->close();
 
@@ -78,7 +73,7 @@ function generate_admin_menu($page = '')
 	{
 
 ?>
-		<h2 class="block2"><span>Plugins</span></h2>
+		<h2 class="block2"><span><?php echo $lang_admin_common['Plugins menu'] ?></span></h2>
 		<div class="box">
 			<div class="inbox">
 				<ul>
@@ -143,10 +138,6 @@ function prune($forum_id, $prune_sticky, $prune_date)
 			// We removed a bunch of posts, so now we have to update the search index
 			require_once PUN_ROOT.'include/search_idx.php';
 			strip_search_index($post_ids);
-
-			// Delete attached files
-			require_once PUN_ROOT.'include/file_func.php';
-			delete_post_files($post_ids);
 		}
 	}
 }
