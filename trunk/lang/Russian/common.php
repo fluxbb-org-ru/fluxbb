@@ -151,6 +151,8 @@ $lang_common = array(
 // Debug information
 'Debug table'			=>	'Отладочная информация',
 'Querytime'				=>	'Сгенерировано за %1$s сек, %2$s запросов выполнено',
+'Memory usage'			=>	'Использовано памяти: %1$s',
+'Peak usage'			=>	'(Пик: %1$s)',
 'Query times'			=>	'Время (s)',
 'Query'					=>	'Запрос',
 'Total query time'		=>	'Итого время выполнения запросов: %s',
