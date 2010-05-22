@@ -120,7 +120,7 @@ elseif (isset($_POST['add_user']))
 	require PUN_ROOT.'include/email.php';
 
 	if (!is_valid_email($email1))
-		message($lang_common['Invalid e-mail']);
+		message($lang_common['Invalid email']);
 
 	// Check if someone else already has registered with that e-mail address
 	$dupe_list = array();
