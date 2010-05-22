@@ -80,7 +80,7 @@ $lang_prof_reg = array(
 
 'Robot test'				=>	'Robot test',
 'Not robot'					=>	'I am not a robot',
-'Robot info'				=>	'To prevent automatic registration please check this box.',
+'Robot info'				=>	'We do some extra virification to prevent automatic registration. Please check this box to help us.',
 'You are robot'				=>	'We think you are robot. Please return back and carefully check all fields.',
 
 );
