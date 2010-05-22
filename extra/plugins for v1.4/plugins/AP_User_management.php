@@ -50,7 +50,7 @@ if (isset($_POST['prune']))
 		else
 			$ver_cond = 'u.group_id = '.PUN_UNVERIFIED;
 
-		$prune_sql = 'DELETE u FROM '.$db->prefix.'users AS u LEFT JOIN rc3_groups AS g ON g.g_id=u.group_id WHERE (g.g_moderator=0) AND (u.num_posts < %s) AND ('.$prune.' < %s) AND (u.id > 2) AND ('.$ver_cond.')';
+		$prune_sql = 'DELETE u FROM '.$db->prefix.'users AS u LEFT JOIN '.$db->prefix.'groups AS g ON g.g_id=u.group_id WHERE (g.g_moderator=0) AND (u.num_posts < %s) AND ('.$prune.' < %s) AND (u.id > 2) AND ('.$ver_cond.')';
 	}
 
 	$user_time = time() - ($_POST['days'] * 86400);
