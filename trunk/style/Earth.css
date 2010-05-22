@@ -134,6 +134,10 @@ html, body, .pun table, .pun div, .pun form, .pun p, .pun h1, .pun h2, .pun h3, 
 	text-decoration: underline;
 }
 
+.pun .postmsg a, .pun .postmsg a:link, .pun .postmsg a:visited {
+	text-decoration: underline;
+}
+
 /* Content Special Cases
 ----------------------------------------------------------------*/
 
@@ -1538,4 +1542,25 @@ html, body, #punwrap {
 
 .pun .inew .icon {
 	border-color: #50a42f #408426 #32671d #4a982c;
+}
+
+/* ---------- BBCODE TOOLBAR ------------- */
+#bbcodewrapper IMG {
+	border: 0;
+}
+#bbcodewrapper {
+	padding: 0 2em 0 0;
+	position: relative;
+	overflow: hidden;
+}
+#bbcodewrapper A {
+	display: block;
+	float: left;
+	padding-right: 4px;
+}
+#bbcodebuttons {
+	float: left;
+}
+#bbcodesmilies {
+	float: right;
 }

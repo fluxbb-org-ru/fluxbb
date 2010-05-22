@@ -329,7 +329,7 @@ while ($cur_post = $db->fetch_assoc($result))
 			<div class="postbody">
 				<div class="postleft">
 					<dl>
-						<dt><strong><?php echo $username ?></strong></dt>
+						<dt><strong><?php echo $username ?></strong><a href="#req_message" onclick="return insert_text('', '[b]<?php echo pun_htmlspecialchars($cur_post['username']) ?>[/b], ')">&nbsp;&darr;&nbsp;</a></dt>
 						<dd class="usertitle"><strong><?php echo $user_title ?></strong></dd>
 <?php if ($user_avatar != '') echo "\t\t\t\t\t\t".'<dd class="postavatar">'.$user_avatar.'</dd>'."\n"; ?>
 <?php if (count($user_info)) echo "\t\t\t\t\t\t".implode('</dd>'."\n\t\t\t\t\t\t", $user_info).'</dd>'."\n"; ?>
@@ -389,6 +389,7 @@ if ($quickpost)
 				<fieldset>
 					<legend><?php echo $lang_common['Write message legend'] ?></legend>
 					<div class="infldset txtarea">
+<?php include PUN_ROOT.'include/bbcode.inc.php'; ?>
 						<input type="hidden" name="form_sent" value="1" />
 						<input type="hidden" name="form_user" value="<?php echo pun_htmlspecialchars($pun_user['username']) ?>" />
 <?php if ($pun_config['o_subscriptions'] == '1' && ($pun_user['auto_notify'] == '1' || $cur_topic['is_subscribed'])): ?>						<input type="hidden" name="subscribe" value="1" />

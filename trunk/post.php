@@ -470,6 +470,7 @@ $cur_index = 1;
 				<fieldset>
 					<legend><?php echo $lang_common['Write message legend'] ?></legend>
 					<div class="infldset txtarea">
+<?php include PUN_ROOT.'include/bbcode.inc.php'; ?>
 						<input type="hidden" name="form_sent" value="1" />
 						<input type="hidden" name="form_user" value="<?php echo (!$pun_user['is_guest']) ? pun_htmlspecialchars($pun_user['username']) : 'Guest'; ?>" />
 <?php

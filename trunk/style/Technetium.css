@@ -1229,6 +1229,10 @@ body {
 	text-decoration: none;
 	}
 
+.pun .postmsg a, .pun .postmsg a:link, .pun .postmsg a:visited {
+	text-decoration: underline;
+}
+
 .pun a:hover, .pun a:active, .pun a:focus {
 	color: #9E1D00
 	}
@@ -1308,3 +1312,24 @@ body {
 .pun .imoved .icon {
 	background-image:url(Technetium/icon-moved.png);
 	}
+
+/* ---------- BBCODE TOOLBAR ------------- */
+#bbcodewrapper IMG {
+	border: 0;
+}
+#bbcodewrapper {
+	padding: 0 2em 0 0;
+	position: relative;
+	overflow: hidden;
+}
+#bbcodewrapper A {
+	display: block;
+	float: left;
+	padding-right: 4px;
+}
+#bbcodebuttons {
+	float: left;
+}
+#bbcodesmilies {
+	float: right;
+}
