@@ -76,6 +76,11 @@ $lang_prof_reg = array(
 'UTC+12:00'					=>	'(UTC+12:00) New Zealand, Fiji, Камчатка',
 'UTC+12:45'					=>	'(UTC+12:45) Chatham Islands',
 'UTC+13:00'					=>	'(UTC+13:00) Tonga, Phoenix Islands',
-'UTC+14:00'					=>	'(UTC+14:00) Line Islands'
+'UTC+14:00'					=>	'(UTC+14:00) Line Islands',
+
+'Robot test'				=>	'Тест на человечность',
+'Not robot'					=>	'Я не робот',
+'Robot info'				=>	'Для предотвращения автоматической регистрации, пожалуйста поставьте эту галочку.',
+'You are robot'				=>	'Нам кажется вы робот. Пожалуйста вернитесь и внимательно проверьте все поля.',
 
 );

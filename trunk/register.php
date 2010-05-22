@@ -75,6 +75,9 @@ if (isset($_POST['form_sent']))
 	$username = pun_trim($_POST['req_username']);
 	$email1 = strtolower(trim($_POST['req_email1']));
 
+	$not_robot = (isset($_POST['csrf_token']) && $_POST['csrf_token'] == pun_hash('1'.pun_hash(get_remote_address())) &&
+	              isset($_POST['not_robot'])) ? $_POST['not_robot'] : '0';
+
 	if ($pun_config['o_regs_verify'] == '1')
 	{
 		$email2 = strtolower(trim($_POST['req_email2']));
@@ -103,6 +106,8 @@ if (isset($_POST['form_sent']))
 		$errors[] = $lang_common['Invalid email'];
 	else if ($pun_config['o_regs_verify'] == '1' && $email1 != $email2)
 		$errors[] = $lang_register['Email not match'];
+	else if ($not_robot != '1')
+		message($lang_prof_reg['You are robot']);
 
 	// Check if it's a banned email address
 	if (is_banned_email($email1))
@@ -267,7 +272,8 @@ if (!empty($errors))
 <div id="regform" class="blockform">
 	<h2><span><?php echo $lang_register['Register'] ?></span></h2>
 	<div class="box">
-		<form id="register" method="post" action="register.php?action=register" onsubmit="this.register.disabled=true;if(process_form(this)){return true;}else{this.register.disabled=false;return false;}">
+<!--		<form id="register" method="post" action="register.php?action=register" onsubmit="this.register.disabled=true;if(process_form(this)){return true;}else{this.register.disabled=false;return false;}"> -->
+		<form id="register" method="post" action="register.php?action=register" onsubmit="if(process_form(this)){return true;}else{return false;}">
 			<div class="inform">
 				<div class="forminfo">
 					<h3><?php echo $lang_common['Important information'] ?></h3>
@@ -304,6 +310,16 @@ if (!empty($errors))
 <?php if ($pun_config['o_regs_verify'] == '1'): ?>						<label class="required"><strong><?php echo $lang_register['Confirm email'] ?> <span><?php echo $lang_common['Required'] ?></span></strong><br />
 						<input type="text" name="req_email2" value="<?php if (isset($_POST['req_email2'])) echo pun_htmlspecialchars($_POST['req_email2']); ?>" size="50" maxlength="80" /><br /></label>
 <?php endif; ?>					</div>
+				</fieldset>
+			</div>
+			<div class="inform">
+				<fieldset>
+					<legend><?php echo $lang_prof_reg['Robot test'] ?></legend>
+					<div class="infldset">
+						<input type="hidden" name="csrf_token" value="<?php echo pun_hash('1'.pun_hash(get_remote_address())) ?>" />
+						<label><input type="checkbox" name="not_robot" value="1" />&nbsp;<?php echo $lang_prof_reg['Not robot'] ?><br /></label>
+						<p class="clearb"><?php echo $lang_prof_reg['Robot info'] ?></p>
+					</div>
 				</fieldset>
 			</div>
 			<div class="inform">
