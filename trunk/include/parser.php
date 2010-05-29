@@ -706,7 +706,7 @@ function do_bbcode($text, $is_signature = false)
 	$replace[] = '<strong>$1</strong>';
 	$replace[] = '<em>$1</em>';
 	$replace[] = '<span class="bbu">$1</span>';
-	$replace[] = '<del>$1</del>';
+	$replace[] = '<span class="bbs">$1</span>';
 	$replace[] = '<del>$1</del>';
 	$replace[] = '<ins>$1</ins>';
 	$replace[] = '<em>$1</em>';
