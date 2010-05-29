@@ -64,8 +64,8 @@ $lang_profile = array(
 'Upload'					=>	'Загрузить',	// submit button
 
 // Form validation stuff
-'Forbidden title'			=>	'The title you entered contains a forbidden word. You must choose a different title.',
-'Profile redirect'			=>	'Profile updated. Переадресация &hellip;',
+'Forbidden title'			=>	'В вашем титуле содержатся нецензурные слова. Выберите другой титул.',
+'Profile redirect'			=>	'Профиль сохранён. Переадресация &hellip;',
 
 // Profile display stuff
 'Users profile'				=>	'профиль %s',

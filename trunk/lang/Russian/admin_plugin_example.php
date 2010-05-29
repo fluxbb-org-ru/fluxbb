@@ -3,15 +3,15 @@
 // Language definitions used in example Plugin
 $lang_admin_plugin_example = array(
 
-'No text'				=>	'You didn\'t enter anything!',
-'Example plugin title'	=>	'Example plugin',
-'You said'				=>	'You said "%s". Great stuff.',
-'Explanation 1'			=>	'This plugin doesn\'t do anything useful. Hence the name "Example".',
-'Explanation 2'			=>	'This would be a good spot to talk a little about your plugin. Describe what it does and how it should be used. Be brief, but informative.',
-'Example form title'	=>	'An example form',
-'Legend text'			=>	'Enter a piece of text and hit "Show text"!',
-'Text to show'			=>	'Text to show',
-'Show text button'		=>	'Show text',
-'Input content'			=>	'The text you want to display.',
+'No text'				=>	'Вы не ввели ничего!',
+'Example plugin title'	=>	'Example - Тестовый плагин',
+'You said'				=>	'Вы ввели "%s". Отлично сказано.',
+'Explanation 1'			=>	'Плагин не делает ничего полезного. Отсюда и название "Example".',
+'Explanation 2'			=>	'Это подходящее место, чтобы рассказать о вашем плагине. Опишите для чего он нужен и как им пользоваться. Кратко, но информативно.',
+'Example form title'	=>	'Тестовая форма',
+'Legend text'			=>	'Введите что-нибудь и нажмите "Показать текст"!',
+'Text to show'			=>	'Текст для отображения',
+'Show text button'		=>	'Показать текст',
+'Input content'			=>	'Текст, который вы пожелаете ввести.',
 
 );
