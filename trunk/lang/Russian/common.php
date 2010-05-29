@@ -77,7 +77,7 @@ $lang_common = array(
 'Subject'				=>	'Заголовок темы',
 'Message'				=>	'Сообщение',
 'Topic'					=>	'Тема',
-'Forum'					=>	'Форум',
+'Forum'					=>	'Доска',
 'Posts'					=>	'Сообщений',
 'Replies'				=>	'Ответов',
 'Pages'					=>	'Страницы',
@@ -113,7 +113,7 @@ $lang_common = array(
 'BBCode list size error'			=>	'Ваш список слишком велик, пожалуйста уменьшите его!',
 
 // Stuff for the navigator (top of every page)
-'Index'					=>	'Список',
+'Index'					=>	'Форум',
 'User list'				=>	'Пользователи',
 'Rules'					=>  'Правила',
 'Search'				=>  'Поиск',
@@ -127,11 +127,11 @@ $lang_common = array(
 'Last visit'			=>	'Последний визит: %s',
 'Show new posts'		=>	'Новые сообщения',
 'Mark all as read'		=>	'Пометить всё как прочтённое',
-'Mark forum read'		=>	'Пометить форум как прочтённый',
+'Mark forum read'		=>	'Пометить доску как прочтённую',
 'Title separator'		=>	' / ',
 
 // Stuff for the page footer
-'Board footer'			=>	'Подвал форума',
+'Board footer'			=>	'Подвал доски',
 'Search links'			=>	'Поисковые ссылки',
 'Show recent posts'		=>	'Активные темы',
 'Show unanswered posts'	=>	'Темы без ответов',
@@ -145,7 +145,7 @@ $lang_common = array(
 'Close topic'			=>  'Закрыть тему',
 'Unstick topic'			=>  'Отклеить тему',
 'Stick topic'			=>  'Приклеить тему',
-'Moderate forum'		=>	'Модерировать форум',
+'Moderate forum'		=>	'Модерировать доску',
 'Powered by'			=>	'Под управлением %s',
 
 // Debug information
@@ -181,8 +181,8 @@ $lang_common = array(
 'RSS reply'							=>	'Re: ',	// The topic subject will be appended to this string (to signify a reply)
 'RSS active topics feed'			=>	'RSS активных тем',
 'Atom active topics feed'			=>	'Atom активных тем',
-'RSS forum feed'					=>	'RSS форума',
-'Atom forum feed'					=>	'Atom форума',
+'RSS forum feed'					=>	'RSS доски',
+'Atom forum feed'					=>	'Atom доски',
 'RSS topic feed'					=>	'RSS тем',
 'Atom topic feed'					=>	'Atom тем',
 
