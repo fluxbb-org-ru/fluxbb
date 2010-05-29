@@ -1,29 +1,5 @@
 <?php
 
-/*
-// Determine what locale to use
-switch (PHP_OS)
-{
-	case 'WINNT':
-	case 'WIN32':
-		$locale = 'russian';
-		break;
-
-	case 'FreeBSD':
-	case 'NetBSD':
-	case 'OpenBSD':
-		$locale = 'ru_RU.UTF-8';
-		break;
-
-	default:
-		$locale = 'ru_RU';
-		break;
-}
-
-// Attempt to set the locale
-setlocale(LC_CTYPE, $locale);
-*/
-
 // Language definitions for frequently used strings
 $lang_common = array(
 
