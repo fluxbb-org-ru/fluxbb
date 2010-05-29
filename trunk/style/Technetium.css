@@ -224,6 +224,20 @@ body {
 	text-decoration: underline
 	}
 
+.pun .postmsg span.bbs, .pun .postmsg del {
+	text-decoration: line-through;
+	}
+
+.pun .postmsg ins {
+	text-decoration: none;
+	background-color: #ff0;
+	}
+
+.pun .postmsg em {
+	text-decoration: none;
+	font-style: italic;
+	}
+
 .pun div.postmsg h5, #helpfile h5 {
 	font-size: 1.1em;
 	font-weight: bold;

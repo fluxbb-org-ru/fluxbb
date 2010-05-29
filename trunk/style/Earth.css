@@ -119,6 +119,20 @@ html, body, .pun table, .pun div, .pun form, .pun p, .pun h1, .pun h2, .pun h3, 
 	text-decoration: underline;
 }
 
+.pun .postmsg span.bbs, .pun .postmsg del {
+	text-decoration: line-through;
+}
+
+.pun .postmsg ins {
+	text-decoration: none;
+	background-color: #ff0;
+}
+
+.pun .postmsg em {
+	text-decoration: none;
+	font-style: italic;
+}
+
 /* Content Generally
 ----------------------------------------------------------------*/
 
