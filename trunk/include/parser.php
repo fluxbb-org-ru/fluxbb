@@ -70,7 +70,7 @@ function preparse_bbcode($text, &$errors, $is_signature = false)
 	{
 		global $lang_profile;
 
-		if (preg_match('%\[/?(?:quote|code|list|h)\b[^\]]*\]%i', $text))
+		if (preg_match('%\[/?(?:quote|code|list|h|video)\b[^\]]*\]%i', $text))
 			$errors[] = $lang_profile['Signature quote/code/list/h'];
 	}
 
@@ -117,7 +117,7 @@ function preparse_bbcode($text, &$errors, $is_signature = false)
 		$text = $temp_text;
 
 	// Remove empty tags
-	while (($new_text = preg_replace('/\[(b|u|s|ins|del|em|i|h|colou?r|quote|code|img|url|email|list)(?:\=[^\]]*)?\]\[\/\1\]/', '', $text)) !== false)
+	while (($new_text = preg_replace('/\[(b|u|s|ins|del|em|i|h|colou?r|quote|code|img|url|email|list|video)(?:\=[^\]]*)?\]\[\/\1\]/', '', $text)) !== false)
 	{
 		if ($new_text != $text)
 			$text = $new_text;
@@ -687,6 +687,24 @@ function do_bbcode($text, $is_signature = false)
 		$text = preg_replace('#\s*\[\/quote\]#S', '</p></div></blockquote></div><p>', $text);
 	}
 
+	if (strpos($text, '[video') !== false)
+	{
+		$text = preg_replace('#\[video\]http://www.youtube.com/watch\?v=(.*?)\[/video\]#U',
+			'</p><div class="bbvideo"><p><a href="http://www.youtube.com/watch?v=$1">http://www.youtube.com/watch?v=$1</a></p>'.
+			'<object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/$1"></param><embed src="http://www.youtube.com/v/$1" type="application/x-shockwave-flash" width="640" height="385"></embed></object>'.
+			'</div><p>', $text);
+
+		$text = preg_replace('#\[video\]http://rutube.ru/tracks/(.*?).html\?v=(.*?)\[/video\]#U',
+			'</p><div class="bbvideo"><p><a href="http://rutube.ru/tracks/$1.html?v=$2">http://rutube.ru/tracks/$1.html?v=$2</a></p>'.
+			'<object width="640" height="385"><param name="movie" value="http://video.rutube.ru/$2"></param><param name="wmode" value="window"></param><param name="allowFullScreen" value="true"></param><embed src="http://video.rutube.ru/$2" type="application/x-shockwave-flash" wmode="window" width="640" height="385" allowFullScreen="true" ></embed></object>'.
+			'</div><p>', $text);
+
+		$text = preg_replace('#\[video\]http://vimeo.com/(.*?)\[/video\]#U',
+			'</p><div class="bbvideo"><p><a href="http://vimeo.com/$1">http://vimeo.com/$1</a></p>'.
+			'<object width="640" height="385"><param name="allowfullscreen" value="true" /><param name="allowscriptaccess" value="always" /><param name="movie" value="http://vimeo.com/moogaloop.swf?clip_id=$1&amp;server=vimeo.com&amp;show_title=1&amp;show_byline=1&amp;show_portrait=0&amp;color=&amp;fullscreen=1" /><embed src="http://vimeo.com/moogaloop.swf?clip_id=$1&amp;server=vimeo.com&amp;show_title=1&amp;show_byline=1&amp;show_portrait=0&amp;color=&amp;fullscreen=1" type="application/x-shockwave-flash" allowfullscreen="true" allowscriptaccess="always" width="640" height="385"></embed></object>'.
+			'</div><p>', $text);
+	}
+
 	if (!$is_signature)
 	{
 		$pattern[] = $re_list;
@@ -753,8 +771,8 @@ function do_clickable($text)
 {
 	$text = ' '.$text;
 
-	$text = preg_replace('#(?<=[\s\]\)])(<)?(\[)?(\()?([\'"]?)(https?|ftp|news){1}://([\w\-]+\.([\w\-]+\.)*\w+(:[0-9]+)?(/[^\s\[]*[^\s.,?!\[;:-])?)\4(?(3)(\)))(?(2)(\]))(?(1)(>))(?![^\s]*\[/(?:url|img)\])#ie', 'stripslashes(\'$1$2$3$4\').handle_url_tag(\'$5://$6\', \'$5://$6\', true).stripslashes(\'$4$10$11$12\')', $text);
-	$text = preg_replace('#(?<=[\s\]\)])(<)?(\[)?(\()?([\'"]?)(www|ftp)\.(([\w\-]+\.)*\w+(:[0-9]+)?(/[^\s\[]*[^\s.,?!\[;:-])?)\4(?(3)(\)))(?(2)(\]))(?(1)(>))(?![^\s]*\[/(?:url|img)\])#ie', 'stripslashes(\'$1$2$3$4\').handle_url_tag(\'$5.$6\', \'$5.$6\', true).stripslashes(\'$4$10$11$12\')', $text);
+	$text = preg_replace('#(?<=[\s\]\)])(<)?(\[)?(\()?([\'"]?)(https?|ftp|news){1}://([\w\-]+\.([\w\-]+\.)*\w+(:[0-9]+)?(/[^\s\[]*[^\s.,?!\[;:-])?)\4(?(3)(\)))(?(2)(\]))(?(1)(>))(?![^\s]*\[/(?:url|img|video)\])#ie', 'stripslashes(\'$1$2$3$4\').handle_url_tag(\'$5://$6\', \'$5://$6\', true).stripslashes(\'$4$10$11$12\')', $text);
+	$text = preg_replace('#(?<=[\s\]\)])(<)?(\[)?(\()?([\'"]?)(www|ftp)\.(([\w\-]+\.)*\w+(:[0-9]+)?(/[^\s\[]*[^\s.,?!\[;:-])?)\4(?(3)(\)))(?(2)(\]))(?(1)(>))(?![^\s]*\[/(?:url|img|video)\])#ie', 'stripslashes(\'$1$2$3$4\').handle_url_tag(\'$5.$6\', \'$5.$6\', true).stripslashes(\'$4$10$11$12\')', $text);
 
 	return substr($text, 1);
 }
