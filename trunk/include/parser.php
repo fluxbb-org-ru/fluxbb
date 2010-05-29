@@ -70,7 +70,7 @@ function preparse_bbcode($text, &$errors, $is_signature = false)
 	{
 		global $lang_profile;
 
-		if (preg_match('%\[/?(?:quote|code|list|h|video)\b[^\]]*\]%i', $text))
+		if (preg_match('%\[/?(?:quote|code|list|h|video|audio)\b[^\]]*\]%i', $text))
 			$errors[] = $lang_profile['Signature quote/code/list/h'];
 	}
 
@@ -117,7 +117,7 @@ function preparse_bbcode($text, &$errors, $is_signature = false)
 		$text = $temp_text;
 
 	// Remove empty tags
-	while (($new_text = preg_replace('/\[(b|u|s|ins|del|em|i|h|colou?r|quote|code|img|url|email|list|video)(?:\=[^\]]*)?\]\[\/\1\]/', '', $text)) !== false)
+	while (($new_text = preg_replace('/\[(b|u|s|ins|del|em|i|h|colou?r|quote|code|img|url|email|list|video|audio)(?:\=[^\]]*)?\]\[\/\1\]/', '', $text)) !== false)
 	{
 		if ($new_text != $text)
 			$text = $new_text;
@@ -705,6 +705,19 @@ function do_bbcode($text, $is_signature = false)
 			'</div><p>', $text);
 	}
 
+	if (strpos($text, '[audio') !== false)
+	{
+		$text = preg_replace('#\[audio\](http.*mp3)\[/audio\]#U',
+			'</p><div class="bbvideo"><p><a href="$1">$1</a></p>'.
+			'<object type="application/x-shockwave-flash" data="swf/mp3player.swf" id="audioplayer1" height="24" width="290">'.
+			'<param name="movie" value="swf/mp3player.swf">'.
+			'<param name="FlashVars" value="playerID=audioplayer1&soundFile=$1">'.
+			'<param name="quality" value="high">'.
+			'<param name="menu" value="false">'.
+			'<param name="wmode" value="transparent">'.
+			'</object> </div><p>', $text);
+	}
+
 	if (!$is_signature)
 	{
 		$pattern[] = $re_list;
@@ -771,8 +784,8 @@ function do_clickable($text)
 {
 	$text = ' '.$text;
 
-	$text = preg_replace('#(?<=[\s\]\)])(<)?(\[)?(\()?([\'"]?)(https?|ftp|news){1}://([\w\-]+\.([\w\-]+\.)*\w+(:[0-9]+)?(/[^\s\[]*[^\s.,?!\[;:-])?)\4(?(3)(\)))(?(2)(\]))(?(1)(>))(?![^\s]*\[/(?:url|img|video)\])#ie', 'stripslashes(\'$1$2$3$4\').handle_url_tag(\'$5://$6\', \'$5://$6\', true).stripslashes(\'$4$10$11$12\')', $text);
-	$text = preg_replace('#(?<=[\s\]\)])(<)?(\[)?(\()?([\'"]?)(www|ftp)\.(([\w\-]+\.)*\w+(:[0-9]+)?(/[^\s\[]*[^\s.,?!\[;:-])?)\4(?(3)(\)))(?(2)(\]))(?(1)(>))(?![^\s]*\[/(?:url|img|video)\])#ie', 'stripslashes(\'$1$2$3$4\').handle_url_tag(\'$5.$6\', \'$5.$6\', true).stripslashes(\'$4$10$11$12\')', $text);
+	$text = preg_replace('#(?<=[\s\]\)])(<)?(\[)?(\()?([\'"]?)(https?|ftp|news){1}://([\w\-]+\.([\w\-]+\.)*\w+(:[0-9]+)?(/[^\s\[]*[^\s.,?!\[;:-])?)\4(?(3)(\)))(?(2)(\]))(?(1)(>))(?![^\s]*\[/(?:url|img|video|audio)\])#ie', 'stripslashes(\'$1$2$3$4\').handle_url_tag(\'$5://$6\', \'$5://$6\', true).stripslashes(\'$4$10$11$12\')', $text);
+	$text = preg_replace('#(?<=[\s\]\)])(<)?(\[)?(\()?([\'"]?)(www|ftp)\.(([\w\-]+\.)*\w+(:[0-9]+)?(/[^\s\[]*[^\s.,?!\[;:-])?)\4(?(3)(\)))(?(2)(\]))(?(1)(>))(?![^\s]*\[/(?:url|img|video|audio)\])#ie', 'stripslashes(\'$1$2$3$4\').handle_url_tag(\'$5.$6\', \'$5.$6\', true).stripslashes(\'$4$10$11$12\')', $text);
 
 	return substr($text, 1);
 }
