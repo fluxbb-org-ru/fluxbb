@@ -13,6 +13,7 @@ echo <<<EOT
 <a href="#" title="b"		onclick="return insert_text('[b]','[/b]')"><img src="{$btndir}b.png" alt="[b]" /></a>
 <a href="#" title="i"		onclick="return insert_text('[i]','[/i]')"><img src="{$btndir}i.png" alt="[i]" /></a>
 <a href="#" title="u"		onclick="return insert_text('[u]','[/u]')"><img src="{$btndir}u.png" alt="[u]" /></a>
+<a href="#" title="s"		onclick="return insert_text('[s]','[/s]')"><img src="{$btndir}s.png" alt="[s]" /></a>
 <a href="#" title="url"		onclick="return insert_text('[url]','[/url]')"><img src="{$btndir}url.png" alt="[url]" /></a>
 <a href="#" title="email"	onclick="return insert_text('[email]','[/email]')"><img src="{$btndir}email.png" alt="[email]" /></a>
 <a href="#" title="img"		onclick="return insert_text('[img]','[/img]')"><img src="{$btndir}img.png" alt="[img]" /></a>
