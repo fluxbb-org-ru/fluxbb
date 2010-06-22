@@ -105,7 +105,7 @@ $is_admmod = ($pun_user['g_id'] == PUN_ADMIN || ($pun_user['g_moderator'] == '1'
 if ($cur_topic['closed'] == '0')
 {
 	if (($cur_topic['post_replies'] == '' && $pun_user['g_post_replies'] == '1') || $cur_topic['post_replies'] == '1' || $is_admmod)
-		$post_link = "\t\t".'<p class="postlink conr"><a href="post.php?tid='.$id.'">'.$lang_topic['Post reply'].'</a></p>'."\n";
+		$post_link = "\t\t\t".'<p class="postlink conr"><a href="post.php?tid='.$id.'">'.$lang_topic['Post reply'].'</a></p>'."\n";
 	else
 		$post_link = '';
 }
@@ -116,7 +116,7 @@ else
 	if ($is_admmod)
 		$post_link .= ' / <a href="post.php?tid='.$id.'">'.$lang_topic['Post reply'].'</a>';
 
-	$post_link = "\t\t".'<p class="postlink conr">'.$post_link.'</p>'."\n";
+	$post_link = "\t\t\t".'<p class="postlink conr">'.$post_link.'</p>'."\n";
 }
 
 
@@ -179,11 +179,13 @@ require PUN_ROOT.'header.php';
 	<div class="inbox crumbsplus">
 		<ul class="crumbs">
 			<li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li>
-			<li><span>&raquo;&#160;</span><a href="viewforum.php?id=<?php echo $cur_topic['forum_id'] ?>"><?php echo pun_htmlspecialchars($cur_topic['forum_name']) ?></a></li>
-			<li><span>&raquo;&#160;</span><strong><?php echo pun_htmlspecialchars($cur_topic['subject']) ?></strong></li>
+			<li><span>»&#160;</span><a href="viewforum.php?id=<?php echo $cur_topic['forum_id'] ?>"><?php echo pun_htmlspecialchars($cur_topic['forum_name']) ?></a></li>
+			<li><span>»&#160;</span><strong><?php echo pun_htmlspecialchars($cur_topic['subject']) ?></strong></li>
 		</ul>
-		<p class="pagelink conl"><?php echo $paging_links ?></p>
+		<div class="pagepost">
+			<p class="pagelink conl"><?php echo $paging_links ?></p>
 <?php echo $post_link ?>
+		</div>
 		<div class="clearer"></div>
 	</div>
 </div>
@@ -195,8 +197,15 @@ require PUN_ROOT.'include/parser.php';
 
 $post_count = 0; // Keep track of post numbers
 
+// Retrieve a list of post IDs, LIMIT is (really) expensive so we only fetch the IDs here then later fetch the remaining data
+$result = $db->query('SELECT id FROM '.$db->prefix.'posts WHERE topic_id='.$id.' ORDER BY id LIMIT '.$start_from.','.$pun_user['disp_posts']) or error('Unable to fetch post IDs', __FILE__, __LINE__, $db->error());
+
+$post_ids = array();
+for ($i = 0;$cur_post_id = $db->result($result, $i);$i++)
+	$post_ids[] = $cur_post_id;
+
 // Retrieve the posts (and their respective poster/online status)
-$result = $db->query('SELECT u.email, u.title, u.url, u.location, u.signature, u.email_setting, u.num_posts, u.registered, u.admin_note, p.id, p.poster AS username, p.poster_id, p.poster_ip, p.poster_email, p.message, p.hide_smilies, p.posted, p.edited, p.edited_by, g.g_id, g.g_user_title, o.user_id AS is_online FROM '.$db->prefix.'posts AS p INNER JOIN '.$db->prefix.'users AS u ON u.id=p.poster_id INNER JOIN '.$db->prefix.'groups AS g ON g.g_id=u.group_id LEFT JOIN '.$db->prefix.'online AS o ON (o.user_id=u.id AND o.user_id!=1 AND o.idle=0) WHERE p.topic_id='.$id.' ORDER BY p.id LIMIT '.$start_from.','.$pun_user['disp_posts'], true) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
+$result = $db->query('SELECT u.email, u.title, u.url, u.location, u.signature, u.email_setting, u.num_posts, u.registered, u.admin_note, p.id, p.poster AS username, p.poster_id, p.poster_ip, p.poster_email, p.message, p.hide_smilies, p.posted, p.edited, p.edited_by, g.g_id, g.g_user_title, o.user_id AS is_online FROM '.$db->prefix.'posts AS p INNER JOIN '.$db->prefix.'users AS u ON u.id=p.poster_id INNER JOIN '.$db->prefix.'groups AS g ON g.g_id=u.group_id LEFT JOIN '.$db->prefix.'online AS o ON (o.user_id=u.id AND o.user_id!=1 AND o.idle=0) WHERE p.id IN ('.implode(',', $post_ids).') ORDER BY p.id', true) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
 while ($cur_post = $db->fetch_assoc($result))
 {
 	$post_count++;
@@ -239,13 +248,13 @@ while ($cur_post = $db->fetch_assoc($result))
 				if ($pun_config['o_censoring'] == '1')
 					$cur_post['location'] = censor_words($cur_post['location']);
 
-				$user_info[] = '<dd>'.$lang_topic['From'].' '.pun_htmlspecialchars($cur_post['location']);
+				$user_info[] = '<dd><span>'.$lang_topic['From'].' '.pun_htmlspecialchars($cur_post['location']).'</span></dd>';
 			}
 
-			$user_info[] = '<dd>'.$lang_topic['Registered'].' '.format_time($cur_post['registered'], true);
+			$user_info[] = '<dd><span>'.$lang_topic['Registered'].' '.format_time($cur_post['registered'], true).'</span></dd>';
 
 			if ($pun_config['o_show_post_count'] == '1' || $pun_user['is_admmod'])
-				$user_info[] = '<dd>'.$lang_topic['Posts'].' '.forum_number_format($cur_post['num_posts']);
+				$user_info[] = '<dd><span>'.$lang_topic['Posts'].' '.forum_number_format($cur_post['num_posts']).'</span></dd>';
 
 			// Now let's deal with the contact links (Email and URL)
 			if ((($cur_post['email_setting'] == '0' && !$pun_user['is_guest']) || $pun_user['is_admmod']) && $pun_user['g_send_email'] == '1')
@@ -259,10 +268,10 @@ while ($cur_post = $db->fetch_assoc($result))
 
 		if ($pun_user['is_admmod'])
 		{
-			$user_info[] = '<dd>'.$lang_topic['IP'].' <a href="moderate.php?get_host='.$cur_post['id'].'">'.$cur_post['poster_ip'].'</a>';
+			$user_info[] = '<dd><span><a href="moderate.php?get_host='.$cur_post['id'].'" title="'.$cur_post['poster_ip'].'">'.$lang_topic['IP address logged'].'</a></span></dd>';
 
 			if ($cur_post['admin_note'] != '')
-				$user_info[] = '<dd>'.$lang_topic['Note'].' <strong>'.pun_htmlspecialchars($cur_post['admin_note']).'</strong>';
+				$user_info[] = '<dd><span>'.$lang_topic['Note'].' <strong>'.pun_htmlspecialchars($cur_post['admin_note']).'</strong></span></dd>';
 		}
 	}
 	// If the poster is a guest (or a user that has been deleted)
@@ -272,7 +281,7 @@ while ($cur_post = $db->fetch_assoc($result))
 		$user_title = get_title($cur_post);
 
 		if ($pun_user['is_admmod'])
-			$user_info[] = '<dd>'.$lang_topic['IP'].' <a href="moderate.php?get_host='.$cur_post['id'].'">'.$cur_post['poster_ip'].'</a>';
+			$user_info[] = '<dd><span><a href="moderate.php?get_host='.$cur_post['id'].'" title="'.$cur_post['poster_ip'].'">'.$lang_topic['IP address logged'].'</a></span></dd>';
 
 		if ($pun_config['o_show_user_info'] == '1' && $cur_post['poster_email'] != '' && !$pun_user['is_guest'] && $pun_user['g_send_email'] == '1')
 			$user_contacts[] = '<span class="email"><a href="mailto:'.$cur_post['poster_email'].'">'.$lang_common['Email'].'</a></span>';
@@ -282,28 +291,28 @@ while ($cur_post = $db->fetch_assoc($result))
 	if (!$is_admmod)
 	{
 		if (!$pun_user['is_guest'])
-			$post_actions[] = '<li class="postreport"><a href="misc.php?report='.$cur_post['id'].'">'.$lang_topic['Report'].'</a></li>';
+			$post_actions[] = '<li class="postreport"><span><a href="misc.php?report='.$cur_post['id'].'">'.$lang_topic['Report'].'</a></span></li>';
 
 		if ($cur_topic['closed'] == '0')
 		{
 			if ($cur_post['poster_id'] == $pun_user['id'])
 			{
 				if ((($start_from + $post_count) == 1 && $pun_user['g_delete_topics'] == '1') || (($start_from + $post_count) > 1 && $pun_user['g_delete_posts'] == '1'))
-					$post_actions[] = '<li class="postdelete"><a href="delete.php?id='.$cur_post['id'].'">'.$lang_topic['Delete'].'</a></li>';
+					$post_actions[] = '<li class="postdelete"><span><a href="delete.php?id='.$cur_post['id'].'">'.$lang_topic['Delete'].'</a></span></li>';
 				if ($pun_user['g_edit_posts'] == '1')
-					$post_actions[] = '<li class="postedit"><a href="edit.php?id='.$cur_post['id'].'">'.$lang_topic['Edit'].'</a></li>';
+					$post_actions[] = '<li class="postedit"><span><a href="edit.php?id='.$cur_post['id'].'">'.$lang_topic['Edit'].'</a></span></li>';
 			}
 
 			if (($cur_topic['post_replies'] == '' && $pun_user['g_post_replies'] == '1') || $cur_topic['post_replies'] == '1')
-				$post_actions[] = '<li class="postquote"><a href="post.php?tid='.$id.'&amp;qid='.$cur_post['id'].'">'.$lang_topic['Quote'].'</a></li>';
+				$post_actions[] = '<li class="postquote"><span><a href="post.php?tid='.$id.'&amp;qid='.$cur_post['id'].'">'.$lang_topic['Quote'].'</a></span></li>';
 		}
 	}
 	else
 	{
-		$post_actions[] = '<li class="postreport"><a href="misc.php?report='.$cur_post['id'].'">'.$lang_topic['Report'].'</a></li>';
-		$post_actions[] = '<li class="postdelete"><a href="delete.php?id='.$cur_post['id'].'">'.$lang_topic['Delete'].'</a></li>';
-		$post_actions[] = '<li class="postedit"><a href="edit.php?id='.$cur_post['id'].'">'.$lang_topic['Edit'].'</a></li>';
-		$post_actions[] = '<li class="postquote"><a href="post.php?tid='.$id.'&amp;qid='.$cur_post['id'].'">'.$lang_topic['Quote'].'</a></li>';
+		$post_actions[] = '<li class="postreport"><span><a href="misc.php?report='.$cur_post['id'].'">'.$lang_topic['Report'].'</a></span></li>';
+		$post_actions[] = '<li class="postdelete"><span><a href="delete.php?id='.$cur_post['id'].'">'.$lang_topic['Delete'].'</a></span></li>';
+		$post_actions[] = '<li class="postedit"><span><a href="edit.php?id='.$cur_post['id'].'">'.$lang_topic['Edit'].'</a></span></li>';
+		$post_actions[] = '<li class="postquote"><span><a href="post.php?tid='.$id.'&amp;qid='.$cur_post['id'].'">'.$lang_topic['Quote'].'</a></span></li>';
 	}
 
 	// Perform the main parsing of the message (BBCode, smilies, censor words etc)
@@ -332,7 +341,7 @@ while ($cur_post = $db->fetch_assoc($result))
 						<dt><strong><?php echo $username ?></strong><a href="#req_message" onclick="return insert_text('', '[b]<?php echo pun_htmlspecialchars($cur_post['username']) ?>[/b], ')">&nbsp;&darr;&nbsp;</a></dt>
 						<dd class="usertitle"><strong><?php echo $user_title ?></strong></dd>
 <?php if ($user_avatar != '') echo "\t\t\t\t\t\t".'<dd class="postavatar">'.$user_avatar.'</dd>'."\n"; ?>
-<?php if (count($user_info)) echo "\t\t\t\t\t\t".implode('</dd>'."\n\t\t\t\t\t\t", $user_info).'</dd>'."\n"; ?>
+<?php if (count($user_info)) echo "\t\t\t\t\t\t".implode("\n\t\t\t\t\t\t", $user_info)."\n"; ?>
 <?php if (count($user_contacts)) echo "\t\t\t\t\t\t".'<dd class="usercontacts">'.implode(' ', $user_contacts).'</dd>'."\n"; ?>
 					</dl>
 				</div>
@@ -362,12 +371,14 @@ while ($cur_post = $db->fetch_assoc($result))
 ?>
 <div class="postlinksb">
 	<div class="inbox crumbsplus">
-		<p class="pagelink conl"><?php echo $paging_links ?></p>
+		<div class="pagepost">
+			<p class="pagelink conl"><?php echo $paging_links ?></p>
 <?php echo $post_link ?>
+		</div>
 		<ul class="crumbs">
 			<li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li>
-			<li><span>&raquo;&#160;</span><a href="viewforum.php?id=<?php echo $cur_topic['forum_id'] ?>"><?php echo pun_htmlspecialchars($cur_topic['forum_name']) ?></a></li>
-			<li><span>&raquo;&#160;</span><strong><?php echo pun_htmlspecialchars($cur_topic['subject']) ?></strong></li>
+			<li><span>»&#160;</span><a href="viewforum.php?id=<?php echo $cur_topic['forum_id'] ?>"><?php echo pun_htmlspecialchars($cur_topic['forum_name']) ?></a></li>
+			<li><span>»&#160;</span><strong><?php echo pun_htmlspecialchars($cur_topic['subject']) ?></strong></li>
 		</ul>
 <?php echo $subscraction ?>
 		<div class="clearer"></div>
@@ -395,9 +406,9 @@ if ($quickpost)
 <?php if ($pun_config['o_subscriptions'] == '1' && ($pun_user['auto_notify'] == '1' || $cur_topic['is_subscribed'])): ?>						<input type="hidden" name="subscribe" value="1" />
 <?php endif; ?>						<label><textarea name="req_message" rows="7" cols="75" tabindex="1"></textarea></label>
 						<ul class="bblinks">
-							<li><a href="help.php#bbcode" onclick="window.open(this.href); return false;"><?php echo $lang_common['BBCode'] ?></a> <?php echo ($pun_config['p_message_bbcode'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
-							<li><a href="help.php#img" onclick="window.open(this.href); return false;"><?php echo $lang_common['img tag'] ?></a> <?php echo ($pun_config['p_message_img_tag'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
-							<li><a href="help.php#smilies" onclick="window.open(this.href); return false;"><?php echo $lang_common['Smilies'] ?></a> <?php echo ($pun_config['o_smilies'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
+							<li><span><a href="help.php#bbcode" onclick="window.open(this.href); return false;"><?php echo $lang_common['BBCode'] ?></a> <?php echo ($pun_config['p_message_bbcode'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></span></li>
+							<li><span><a href="help.php#img" onclick="window.open(this.href); return false;"><?php echo $lang_common['img tag'] ?></a> <?php echo ($pun_config['p_message_img_tag'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></span></li>
+							<li><span><a href="help.php#smilies" onclick="window.open(this.href); return false;"><?php echo $lang_common['Smilies'] ?></a> <?php echo ($pun_config['o_smilies'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></span></li>
 						</ul>
 					</div>
 				</fieldset>

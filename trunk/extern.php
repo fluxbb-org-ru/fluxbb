@@ -100,7 +100,7 @@ function output_rss($feed)
 	global $lang_common, $pun_config;
 
 	// Send XML/no cache headers
-	header('Content-Type: text/xml; charset=utf-8');
+	header('Content-Type: application/xml; charset=utf-8');
 	header('Expires: '.gmdate('D, d M Y H:i:s').' GMT');
 	header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
 	header('Pragma: public');
@@ -144,7 +144,7 @@ function output_atom($feed)
 	global $lang_common, $pun_config;
 
 	// Send XML/no cache headers
-	header('Content-Type: text/xml; charset=utf-8');
+	header('Content-Type: application/atom+xml; charset=utf-8');
 	header('Expires: '.gmdate('D, d M Y H:i:s').' GMT');
 	header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
 	header('Pragma: public');
@@ -200,7 +200,7 @@ function output_xml($feed)
 	global $lang_common, $pun_config;
 
 	// Send XML/no cache headers
-	header('Content-Type: text/xml; charset=utf-8');
+	header('Content-Type: application/xml; charset=utf-8');
 	header('Expires: '.gmdate('D, d M Y H:i:s').' GMT');
 	header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
 	header('Pragma: public');
@@ -252,7 +252,7 @@ function output_html($feed)
 	foreach ($feed['items'] as $item)
 	{
 		if (utf8_strlen($item['title']) > FORUM_EXTERN_MAX_SUBJECT_LENGTH)
-			$subject_truncated = pun_htmlspecialchars(pun_trim(utf8_substr($item['title'], 0, (FORUM_EXTERN_MAX_SUBJECT_LENGTH - 5)))).' &hellip;';
+			$subject_truncated = pun_htmlspecialchars(pun_trim(utf8_substr($item['title'], 0, (FORUM_EXTERN_MAX_SUBJECT_LENGTH - 5)))).' …';
 		else
 			$subject_truncated = pun_htmlspecialchars($item['title']);
 
@@ -345,7 +345,7 @@ if ($action == 'feed')
 			$fids = array_map('intval', $fids);
 
 			if (!empty($fids))
-				$forum_sql = ' AND t.forum_id IN('.implode(',', $fids).')';
+				$forum_sql .= ' AND t.forum_id IN('.implode(',', $fids).')';
 
 			if (count($fids) == 1)
 			{
@@ -363,7 +363,7 @@ if ($action == 'feed')
 			$nfids = array_map('intval', $nfids);
 
 			if (!empty($nfids))
-				$forum_sql = ' AND t.forum_id NOT IN('.implode(',', $nfids).')';
+				$forum_sql .= ' AND t.forum_id NOT IN('.implode(',', $nfids).')';
 		}
 
 		// Setup the feed
@@ -444,12 +444,12 @@ else if ($action == 'online' || $action == 'online_full')
 	header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
 	header('Pragma: public');
 
-	echo $lang_index['Guests online'].': '.forum_number_format($num_guests).'<br />'."\n";
+	echo sprintf($lang_index['Guests online'], forum_number_format($num_guests)).'<br />'."\n";
 
 	if ($action == 'online_full' && !empty($users))
-		echo $lang_index['Users online'].': '.implode(', ', $users).'<br />'."\n";
+		echo sprintf($lang_index['Users online'], implode(', ', $users)).'<br />'."\n";
 	else
-		echo $lang_index['Users online'].': '.forum_number_format($num_users).'<br />'."\n";
+		echo sprintf($lang_index['Users online'], forum_number_format($num_users)).'<br />'."\n";
 
 	exit;
 }
@@ -476,10 +476,10 @@ else if ($action == 'stats')
 	header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
 	header('Pragma: public');
 
-	echo $lang_index['No of users'].': '.forum_number_format($stats['total_users']).'<br />'."\n";
-	echo $lang_index['Newest user'].': '.(($pun_user['g_view_users'] == '1') ? '<a href="'.$pun_config['o_base_url'].'/profile.php?id='.$stats['last_user']['id'].'">'.pun_htmlspecialchars($stats['last_user']['username']).'</a>' : pun_htmlspecialchars($stats['last_user']['username'])).'<br />'."\n";
-	echo $lang_index['No of topics'].': '.forum_number_format($stats['total_topics']).'<br />'."\n";
-	echo $lang_index['No of posts'].': '.forum_number_format($stats['total_posts']).'<br />'."\n";
+	echo sprintf($lang_index['No of users'], forum_number_format($stats['total_users'])).'<br />'."\n";
+	echo sprintf($lang_index['Newest user'], (($pun_user['g_view_users'] == '1') ? '<a href="'.$pun_config['o_base_url'].'/profile.php?id='.$stats['last_user']['id'].'">'.pun_htmlspecialchars($stats['last_user']['username']).'</a>' : pun_htmlspecialchars($stats['last_user']['username']))).'<br />'."\n";
+	echo sprintf($lang_index['No of topics'], forum_number_format($stats['total_topics'])).'<br />'."\n";
+	echo sprintf($lang_index['No of posts'], forum_number_format($stats['total_posts'])).'<br />'."\n";
 
 	exit;
 }

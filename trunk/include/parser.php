@@ -78,7 +78,7 @@ function preparse_bbcode($text, &$errors, $is_signature = false)
 	if (strpos($text, '[code]') !== false && strpos($text, '[/code]') !== false)
 	{
 		list($inside, $outside) = split_text($text, '[code]', '[/code]', $errors);
-		$text = implode("\0", $outside);
+		$text = implode("\1", $outside);
 	}
 
 	// Tidy up lists
@@ -96,7 +96,7 @@ function preparse_bbcode($text, &$errors, $is_signature = false)
 	// If we split up the message before we have to concatenate it together again (code tags)
 	if (isset($inside))
 	{
-		$outside = explode("\0", $text);
+		$outside = explode("\1", $text);
 		$text = '';
 
 		$num_tokens = count($outside);
@@ -108,6 +108,7 @@ function preparse_bbcode($text, &$errors, $is_signature = false)
 				$text .= '[code]'.$inside[$i].'[/code]';
 		}
 	}
+	unset($inside);
 
 	$temp_text = false;
 	if (empty($errors))
@@ -117,7 +118,7 @@ function preparse_bbcode($text, &$errors, $is_signature = false)
 		$text = $temp_text;
 
 	// Remove empty tags
-	while (($new_text = preg_replace('/\[(b|u|s|ins|del|em|i|h|colou?r|quote|code|img|url|email|list|video|audio)(?:\=[^\]]*)?\]\[\/\1\]/', '', $text)) !== false)
+	while (($new_text = strip_empty_bbcode($text, $errors)) !== false)
 	{
 		if ($new_text != $text)
 			$text = $new_text;
@@ -126,6 +127,55 @@ function preparse_bbcode($text, &$errors, $is_signature = false)
 	}
 
 	return pun_trim($text);
+}
+
+
+//
+// Strip empty bbcode tags from some text
+//
+function strip_empty_bbcode($text, &$errors)
+{
+	// If the message contains a code tag we have to split it up (empty tags within [code][/code] are fine)
+	if (strpos($text, '[code]') !== false && strpos($text, '[/code]') !== false)
+	{
+		list($inside, $outside) = split_text($text, '[code]', '[/code]', $errors);
+		$text = implode("\1", $outside);
+	}
+
+	// Remove empty tags
+	while (($new_text = preg_replace('/\[(b|u|s|ins|del|em|i|h|colou?r|quote|img|url|email|list|video|audio)(?:\=[^\]]*)?\]\s*\[\/\1\]/', '', $text)) !== false)
+	{
+		if ($new_text != $text)
+			$text = $new_text;
+		else
+			break;
+	}
+
+	// If we split up the message before we have to concatenate it together again (code tags)
+	if (isset($inside))
+	{
+		$outside = explode("\1", $text);
+		$text = '';
+
+		$num_tokens = count($outside);
+		for ($i = 0; $i < $num_tokens; ++$i)
+		{
+			$text .= $outside[$i];
+			if (isset($inside[$i]))
+				$text .= '[code]'.$inside[$i].'[/code]';
+		}
+	}
+
+	// Remove empty code tags
+	while (($new_text = preg_replace('/\[(code)\]\s*\[\/\1\]/', '', $text)) !== false)
+	{
+		if ($new_text != $text)
+			$text = $new_text;
+		else
+			break;
+	}
+
+	return $text;
 }
 
 
@@ -139,7 +189,7 @@ function preparse_tags($text, &$errors, $is_signature = false)
 	// Start off by making some arrays of bbcode tags and what we need to do with each one
 
 	// List of all the tags
-	$tags = array('quote', 'code', 'b', 'i', 'u', 'color', 'colour', 'url', 'email', 'img', 'list', '*', 'h');
+	$tags = array('quote', 'code', 'b', 'i', 'u', 's', 'ins', 'del', 'em', 'color', 'colour', 'url', 'email', 'img', 'list', '*', 'h', 'audio', 'video');
 	// List of tags that we need to check are open (You could not put b,i,u in here then illegal nesting like [b][i][/b][/i] would be allowed)
 	$tags_opened = $tags;
 	// and tags we need to check are closed (the same as above, added it just in case)
@@ -151,21 +201,22 @@ function preparse_tags($text, &$errors, $is_signature = false)
 	// Block tags, block tags can only go within another block tag, they cannot be in a normal tag
 	$tags_block = array('quote', 'code', 'list', 'h', '*');
 	// Inline tags, we do not allow new lines in these
-	$tags_inline = array('b', 'i', 'u', 'color', 'colour', 'h');
+	$tags_inline = array('b', 'i', 'u', 's', 'ins', 'del', 'em', 'color', 'colour', 'h');
 	// Tags we trim interior space
 	$tags_trim = array('img');
 	// Tags we remove quotes from the argument
-	$tags_quotes = array('url', 'email', 'img');
+	$tags_quotes = array('url', 'email', 'img', 'audio', 'video');
 	// Tags we limit bbcode in
 	$tags_limit_bbcode = array(
-		'*' 	=> array('b', 'i', 'u', 'color', 'colour', 'url', 'email', 'list', 'img'),
+		'*' 	=> array('b', 'i', 'u', 's', 'ins', 'del', 'em', 'color', 'colour', 'url', 'email', 'list', 'img', 'code'),
 		'list' 	=> array('*'),
-		'url' 	=> array('b', 'i', 'u', 'color', 'colour', 'img'),
-		'email' => array('b', 'i', 'u', 'color', 'colour', 'img'),
-		'img' 	=> array()
+		'url' 	=> array('b', 'i', 'u', 's', 'ins', 'del', 'em', 'color', 'colour', 'img'),
+		'email' => array('b', 'i', 'u', 's', 'ins', 'del', 'em', 'color', 'colour', 'img'),
+		'img' 	=> array(),
+		'h'		=> array('b', 'i', 'u', 's', 'ins', 'del', 'em', 'color', 'colour', 'url', 'email'),
 	);
 	// Tags we can automatically fix bad nesting
-	$tags_fix = array('quote', 'b', 'i', 'u', 'color', 'colour', 'url', 'email', 'h');
+	$tags_fix = array('quote', 'b', 'i', 'u', 's', 'ins', 'del', 'em', 'color', 'colour', 'url', 'email', 'h');
 
 	$split_text = preg_split("/(\[[\*a-zA-Z0-9-\/]*?(?:=.*?)?\])/", $text, -1, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY);
 
@@ -608,9 +659,6 @@ function handle_url_tag($url, $link = '', $bbcode = false)
 		$full_url = 'http://'.$full_url;
 
 	// Ok, not very pretty :-)
-	if (!$bbcode)
-		$link = ($link == '' || $link == $url) ? ((utf8_strlen($url) > 55) ? utf8_substr($url, 0 , 39).' &#133; '.utf8_substr($url, -10) : $url) : stripslashes($link);
-
 	if ($bbcode)
 	{
 		if ($full_url == $link)
@@ -619,7 +667,18 @@ function handle_url_tag($url, $link = '', $bbcode = false)
 			return '[url='.$full_url.']'.$link.'[/url]';
 	}
 	else
+	{
+		if ($link == '' || $link == $url)
+		{
+			$url = pun_htmlspecialchars_decode($url);
+			$link = utf8_strlen($url) > 55 ? utf8_substr($url, 0 , 39).' … '.utf8_substr($url, -10) : $url;
+			$link = pun_htmlspecialchars($link);
+		}
+		else
+			$link = stripslashes($link);
+
 		return '<a href="'.$full_url.'">'.$link.'</a>';
+	}
 }
 
 
@@ -631,14 +690,14 @@ function handle_img_tag($url, $is_signature = false, $alt = null)
 	global $lang_common, $pun_user;
 
 	if ($alt == null)
-		$alt = $url;
+		$alt = basename($url);
 
-	$img_tag = '<a href="'.$url.'">&lt;'.$lang_common['Image link'].'&gt;</a>';
+	$img_tag = '<a href="'.$url.'">&lt;'.$lang_common['Image link'].' - '.$alt.'&gt;</a>';
 
 	if ($is_signature && $pun_user['show_img_sig'] != '0')
-		$img_tag = '<img class="sigimage" src="'.$url.'" alt="'.pun_htmlspecialchars($alt).'" />';
+		$img_tag = '<img class="sigimage" src="'.$url.'" alt="'.$alt.'" />';
 	else if (!$is_signature && $pun_user['show_img'] != '0')
-		$img_tag = '<span class="postimg"><img src="'.$url.'" alt="'.pun_htmlspecialchars($alt).'" /></span>';
+		$img_tag = '<span class="postimg"><img src="'.$url.'" alt="'.$alt.'" /></span>';
 
 	return $img_tag;
 }
@@ -827,7 +886,7 @@ function parse_message($text, $hide_smilies)
 	if (strpos($text, '[code]') !== false && strpos($text, '[/code]') !== false)
 	{
 		list($inside, $outside) = split_text($text, '[code]', '[/code]', $errors);
-		$text = implode("\0", $outside);
+		$text = implode("\1", $outside);
 	}
 
 	if ($pun_config['p_message_bbcode'] == '1' && strpos($text, '[') !== false && strpos($text, ']') !== false)
@@ -838,13 +897,13 @@ function parse_message($text, $hide_smilies)
 
 	// Deal with newlines, tabs and multiple spaces
 	$pattern = array("\n", "\t", '  ', '  ');
-	$replace = array('<br />', '&nbsp; &nbsp; ', '&nbsp; ', ' &nbsp;');
+	$replace = array('<br />', '&#160; &#160; ', '&#160; ', ' &#160;');
 	$text = str_replace($pattern, $replace, $text);
 
 	// If we split up the message before we have to concatenate it together again (code tags)
 	if (isset($inside))
 	{
-		$outside = explode("\0", $text);
+		$outside = explode("\1", $text);
 		$text = '';
 
 		$num_tokens = count($outside);
@@ -892,7 +951,7 @@ function parse_signature($text)
 
 	// Deal with newlines, tabs and multiple spaces
 	$pattern = array("\n", "\t", '  ', '  ');
-	$replace = array('<br />', '&nbsp; &nbsp; ', '&nbsp; ', ' &nbsp;');
+	$replace = array('<br />', '&#160; &#160; ', '&#160; ', ' &#160;');
 	$text = str_replace($pattern, $replace, $text);
 
 	// Add paragraph tag around post, but make sure there are no empty paragraphs

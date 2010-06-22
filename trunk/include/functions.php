@@ -103,6 +103,10 @@ function check_cookie(&$pun_user)
 
 				$idle_sql = ($pun_user['idle'] == '1') ? ', idle=0' : '';
 				$db->query('UPDATE '.$db->prefix.'online SET logged='.$now.$idle_sql.' WHERE user_id='.$pun_user['id']) or error('Unable to update online list', __FILE__, __LINE__, $db->error());
+
+				// Update tracked topics with the current expire time
+				if (isset($_COOKIE[$cookie_name.'_track']))
+					forum_setcookie($cookie_name.'_track', $_COOKIE[$cookie_name.'_track'], $now + $pun_config['o_timeout_visit']);
 			}
 		}
 		else
@@ -340,7 +344,7 @@ function check_username($username, $exclude_id = null)
 		$errors[] = $lang_prof_reg['Username IP'];
 	else if ((strpos($username, '[') !== false || strpos($username, ']') !== false) && strpos($username, '\'') !== false && strpos($username, '"') !== false)
 		$errors[] = $lang_prof_reg['Username reserved chars'];
-	else if (preg_match('/(?:\[\/?(?:b|u|i|h|colou?r|quote|code|img|url|email|list|\*)\]|\[(?:img|url|quote|list)=)/i', $username))
+	else if (preg_match('/(?:\[\/?(?:b|u|s|ins|del|em|i|h|colou?r|quote|code|img|url|email|list|\*)\]|\[(?:img|url|quote|list)=)/i', $username))
 		$errors[] = $lang_prof_reg['Username BBCode'];
 
 	// Check username for any censored words
@@ -424,8 +428,6 @@ function generate_navlinks()
 
 		$links[] = '<li id="navregister"'.((PUN_ACTIVE_PAGE == 'register') ? ' class="isactive"' : '').'><a href="register.php">'.$lang_common['Register'].'</a></li>';
 		$links[] = '<li id="navlogin"'.((PUN_ACTIVE_PAGE == 'login') ? ' class="isactive"' : '').'><a href="login.php">'.$lang_common['Login'].'</a></li>';
-
-		$info = $lang_common['Not logged in'];
 	}
 	else
 	{
@@ -714,7 +716,7 @@ function forum_clear_cache()
 	$d = dir(FORUM_CACHE_DIR);
 	while (($entry = $d->read()) !== false)
 	{
-		if (substr($entry, strlen($entry)-4) == '.php')
+		if (substr($entry, -4) == '.php')
 			@unlink(FORUM_CACHE_DIR.$entry);
 	}
 	$d->close();
@@ -847,7 +849,7 @@ function paginate($num_pages, $cur_page, $link)
 			$pages[] = '<a'.(empty($pages) ? ' class="item1"' : '').' href="'.$link.'&amp;p=1">1</a>';
 
 			if ($cur_page > 5)
-				$pages[] = '<span>'.$lang_common['Spacer'].'</span>';
+				$pages[] = '<span class="spacer">'.$lang_common['Spacer'].'</span>';
 		}
 
 		// Don't ask me how the following works. It just does, OK? :-)
@@ -864,7 +866,7 @@ function paginate($num_pages, $cur_page, $link)
 		if ($cur_page <= ($num_pages-3))
 		{
 			if ($cur_page != ($num_pages-3) && $cur_page != ($num_pages-4))
-				$pages[] = '<span>'.$lang_common['Spacer'].'</span>';
+				$pages[] = '<span class="spacer">'.$lang_common['Spacer'].'</span>';
 
 			$pages[] = '<a'.(empty($pages) ? ' class="item1"' : '').' href="'.$link.'&amp;p='.$num_pages.'">'.forum_number_format($num_pages).'</a>';
 		}
@@ -1059,6 +1061,26 @@ function pun_htmlspecialchars($str)
 
 
 //
+// Calls htmlspecialchars_decode with a few options already set
+//
+function pun_htmlspecialchars_decode($str)
+{
+	if (function_exists('htmlspecialchars_decode'))
+		return htmlspecialchars_decode($str, ENT_QUOTES);
+
+	static $translations;
+	if (!isset($translations))
+	{
+		$translations = get_html_translation_table(HTML_SPECIALCHARS, ENT_QUOTES);
+		$translations['&#039;'] = '\''; // get_html_translation_table doesn't include &#039; which is what htmlspecialchars translates ' to, but apparently that is okay?! http://bugs.php.net/bug.php?id=25927
+		$translations = array_flip($translations);
+	}
+
+	return strtr($str, $translations);
+}
+
+
+//
 // A wrapper for utf8_strlen for compatibility
 //
 function pun_strlen($str)
@@ -1127,7 +1149,7 @@ function maintenance_message()
 
 	// Deal with newlines, tabs and multiple spaces
 	$pattern = array("\t", '  ', '  ');
-	$replace = array('&nbsp; &nbsp; ', '&nbsp; ', ' &nbsp;');
+	$replace = array('&#160; &#160; ', '&#160; ', ' &#160;');
 	$message = str_replace($pattern, $replace, $pun_config['o_maintenance_message']);
 
 
@@ -1149,12 +1171,15 @@ function maintenance_message()
 
 	foreach ($pun_includes as $cur_include)
 	{
-		if (!file_exists($tpl_inc_dir.$cur_include[1].'.'.$cur_include[2]))
-			error(sprintf($lang_common['Pun include error'], htmlspecialchars($cur_include[0]), basename($tpl_file), $tpl_inc_dir));
-
 		ob_start();
 
-		require $tpl_inc_dir.$cur_include[1].'.'.$cur_include[2];
+		// Allow for overriding user includes, too.
+		if (file_exists($tpl_inc_dir.$cur_include[1].'.'.$cur_include[2]))
+			require $tpl_inc_dir.$cur_include[1].'.'.$cur_include[2];
+		else if (file_exists(PUN_ROOT.'include/user/'.$cur_include[1].'.'.$cur_include[2]))
+			require PUN_ROOT.'include/user/'.$cur_include[1].'.'.$cur_include[2];
+		else
+			error(sprintf($lang_common['Pun include error'], htmlspecialchars($cur_include[0]), basename($tpl_file)));
 
 		$tpl_temp = ob_get_contents();
 		$tpl_maint = str_replace($cur_include[0], $tpl_temp, $tpl_maint);
@@ -1204,7 +1229,7 @@ function maintenance_message()
 <?php
 
 	$tpl_temp = trim(ob_get_contents());
-	$tpl_redir = str_replace('<pun_maint_main>', $tpl_temp, $tpl_main);
+	$tpl_maint = str_replace('<pun_maint_main>', $tpl_temp, $tpl_maint);
 	ob_end_clean();
 	// END SUBST - <pun_maint_main>
 
@@ -1238,6 +1263,14 @@ function redirect($destination_url, $message)
 	if ($pun_config['o_redirect_delay'] == '0')
 		header('Location: '.str_replace('&amp;', '&', $destination_url));
 
+	// Send no-cache headers
+	header('Expires: Thu, 21 Jul 1977 07:30:00 GMT'); // When yours truly first set eyes on this world! :)
+	header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
+	header('Cache-Control: post-check=0, pre-check=0', false);
+	header('Pragma: no-cache'); // For HTTP/1.0 compatibility
+
+	// Send the Content-type header in case the web server is setup to send something else
+	header('Content-type: text/html; charset=utf-8');
 
 	if (file_exists(PUN_ROOT.'style/'.$pun_user['style'].'/redirect.tpl'))
 	{
@@ -1257,12 +1290,15 @@ function redirect($destination_url, $message)
 
 	foreach ($pun_includes as $cur_include)
 	{
-		if (!file_exists($tpl_inc_dir.$cur_include[1].'.'.$cur_include[2]))
-			error(sprintf($lang_common['Pun include error'], htmlspecialchars($cur_include[0]), basename($tpl_file), $tpl_inc_dir));
-
 		ob_start();
 
-		require $tpl_inc_dir.$cur_include[1].'.'.$cur_include[2];
+		// Allow for overriding user includes, too.
+		if (file_exists($tpl_inc_dir.$cur_include[1].'.'.$cur_include[2]))
+			require $tpl_inc_dir.$cur_include[1].'.'.$cur_include[2];
+		else if (file_exists(PUN_ROOT.'include/user/'.$cur_include[1].'.'.$cur_include[2]))
+			require PUN_ROOT.'include/user/'.$cur_include[1].'.'.$cur_include[2];
+		else
+			error(sprintf($lang_common['Pun include error'], htmlspecialchars($cur_include[0]), basename($tpl_file)));
 
 		$tpl_temp = ob_get_contents();
 		$tpl_redir = str_replace($cur_include[0], $tpl_temp, $tpl_redir);
@@ -1373,6 +1409,15 @@ function error($message, $file = null, $line = null, $db_error = false)
 	if ($pun_config['o_gzip'] && extension_loaded('zlib'))
 		ob_start('ob_gzhandler');
 
+	// Send no-cache headers
+	header('Expires: Thu, 21 Jul 1977 07:30:00 GMT'); // When yours truly first set eyes on this world! :)
+	header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
+	header('Cache-Control: post-check=0, pre-check=0', false);
+	header('Pragma: no-cache'); // For HTTP/1.0 compatibility
+
+	// Send the Content-type header in case the web server is setup to send something else
+	header('Content-type: text/html; charset=utf-8');
+
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" dir="ltr">
@@ -1433,7 +1478,7 @@ H2 {MARGIN: 0; COLOR: #FFFFFF; BACKGROUND-COLOR: #B84623; FONT-SIZE: 1.1em; PADD
 function forum_unregister_globals()
 {
 	$register_globals = ini_get('register_globals');
-	if ($register_globals === "" || $register_globals === "0" || strtolower($register_globals) === "off")
+	if ($register_globals === '' || $register_globals === '0' || strtolower($register_globals) === 'off')
 		return;
 
 	// Prevent script.php?GLOBALS[foo]=bar
@@ -1478,7 +1523,6 @@ function remove_bad_characters($array)
 	if (!isset($bad_utf8_chars))
 	{
 		$bad_utf8_chars = array(
-			"\0"			=> '',		// NULL									0000	*
 			"\xcc\xb7"		=> '',		// COMBINING SHORT SOLIDUS OVERLAY		0337	*
 			"\xcc\xb8"		=> '',		// COMBINING LONG SOLIDUS OVERLAY		0338	*
 			"\xe1\x85\x9F"	=> '',		// HANGUL CHOSEONG FILLER				115F	*
@@ -1530,6 +1574,9 @@ function remove_bad_characters($array)
 	// Strip out any invalid characters
 	$array = utf8_bad_strip($array);
 
+	// Remove control characters
+	$array = preg_replace('/[\x{00}-\x{08}\x{0b}-\x{0c}\x{0e}-\x{1f}]/', '', $array);
+
 	// Replace some "bad" characters
 	$array = str_replace(array_keys($bad_utf8_chars), array_values($bad_utf8_chars), $array);
 
@@ -1550,6 +1597,80 @@ function file_size($size)
 	return round($size, 2).' '.$units[$i];
 }
 
+
+//
+// Fetch a list of available styles
+//
+function forum_list_styles()
+{
+	$styles = array();
+
+	$d = dir(PUN_ROOT.'style');
+	while (($entry = $d->read()) !== false)
+	{
+		if ($entry{0} == '.')
+			continue;
+
+		if (substr($entry, -4) == '.css')
+			$styles[] = substr($entry, 0, -4);
+	}
+	$d->close();
+
+	natcasesort($styles);
+
+	return $styles;
+}
+
+
+//
+// Fetch a list of available language packs
+//
+function forum_list_langs()
+{
+	$languages = array();
+
+	$d = dir(PUN_ROOT.'lang');
+	while (($entry = $d->read()) !== false)
+	{
+		if ($entry{0} == '.')
+			continue;
+
+		if (is_dir(PUN_ROOT.'lang/'.$entry) && file_exists(PUN_ROOT.'lang/'.$entry.'/common.php'))
+			$languages[] = $entry;
+	}
+	$d->close();
+
+	natcasesort($languages);
+
+	return $languages;
+}
+
+
+//
+// Fetch a list of available admin plugins
+//
+function forum_list_plugins($is_admin)
+{
+	$plugins = array();
+
+	$d = dir(PUN_ROOT.'plugins');
+	while (($entry = $d->read()) !== false)
+	{
+		if ($entry{0} == '.')
+			continue;
+
+		$prefix = substr($entry, 0, strpos($entry, '_'));
+		$suffix = substr($entry, strlen($entry) - 4);
+
+		if ($suffix == '.php' && ((!$is_admin && $prefix == 'AMP') || ($is_admin && ($prefix == 'AP' || $prefix == 'AMP'))))
+			$plugins[] = array(substr($entry, strpos($entry, '_') + 1, -4), $entry);
+	}
+	$d->close();
+
+	natcasesort($plugins);
+
+	return $plugins;
+}
 
 // DEBUG FUNCTIONS BELOW
 
@@ -1586,7 +1707,7 @@ function display_saved_queries()
 
 ?>
 				<tr>
-					<td class="tcl"><?php echo ($cur_query[1] != 0) ? $cur_query[1] : '&nbsp;' ?></td>
+					<td class="tcl"><?php echo ($cur_query[1] != 0) ? $cur_query[1] : '&#160;' ?></td>
 					<td class="tcr"><?php echo pun_htmlspecialchars($cur_query[0]) ?></td>
 				</tr>
 <?php

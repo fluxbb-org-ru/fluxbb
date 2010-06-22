@@ -34,7 +34,7 @@ $sort_dir = isset($_GET['sort_dir']) && $_GET['sort_dir'] == 'DESC' ? 'DESC' : '
 $where_sql = array();
 $like_command = ($db_type == 'pgsql') ? 'ILIKE' : 'LIKE';
 
-if ($pun_user['g_search_users'] == '1' && $username != '')
+if ($username != '')
 	$where_sql[] = 'u.username '.$like_command.' \''.$db->escape(str_replace('*', '%', $username)).'\'';
 if ($show_group > -1)
 	$where_sql[] = 'u.group_id='.$show_group;
@@ -102,7 +102,7 @@ while ($cur_group = $db->fetch_assoc($result))
 							<option value="DESC"<?php if ($sort_dir == 'DESC') echo ' selected="selected"' ?>><?php echo $lang_search['Descending'] ?></option>
 						</select>
 						<br /></label>
-						<p class="clearb"><?php echo $lang_ul['User search info'] ?></p>
+						<p class="clearb"><?php echo ($pun_user['g_search_users'] == '1' ? $lang_ul['User search info'].' ' : '').$lang_ul['User sort info']; ?></p>
 					</div>
 				</fieldset>
 			</div>

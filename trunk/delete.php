@@ -25,6 +25,9 @@ if (!$db->num_rows($result))
 
 $cur_post = $db->fetch_assoc($result);
 
+if ($pun_config['o_censoring'] == '1')
+	$cur_post['subject'] = censor_words($cur_post['subject']);
+
 // Sort out who the moderators are and if we are currently a moderator (or an admin)
 $mods_array = ($cur_post['moderators'] != '') ? unserialize($cur_post['moderators']) : array();
 $is_admmod = ($pun_user['g_id'] == PUN_ADMIN || ($pun_user['g_moderator'] == '1' && array_key_exists($pun_user['username'], $mods_array))) ? true : false;
@@ -81,9 +84,9 @@ $cur_post['message'] = parse_message($cur_post['message'], $cur_post['hide_smili
 	<div class="inbox">
 		<ul class="crumbs">
 			<li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li>
-			<li><span>&raquo;&#160;</span><a href="viewforum.php?id=<?php echo $cur_post['fid'] ?>"><?php echo pun_htmlspecialchars($cur_post['forum_name']) ?></a></li>
-			<li><span>&raquo;&#160;</span><a href="viewtopic.php?pid=<?php echo $id ?>#p<?php echo $id ?>"><?php echo pun_htmlspecialchars($cur_post['subject']) ?></a></li>
-			<li><span>&raquo;&#160;</span><strong><?php echo $lang_delete['Delete post'] ?></strong></li>
+			<li><span>»&#160;</span><a href="viewforum.php?id=<?php echo $cur_post['fid'] ?>"><?php echo pun_htmlspecialchars($cur_post['forum_name']) ?></a></li>
+			<li><span>»&#160;</span><a href="viewtopic.php?pid=<?php echo $id ?>#p<?php echo $id ?>"><?php echo pun_htmlspecialchars($cur_post['subject']) ?></a></li>
+			<li><span>»&#160;</span><strong><?php echo $lang_delete['Delete post'] ?></strong></li>
 		</ul>
 	</div>
 </div>
@@ -93,17 +96,36 @@ $cur_post['message'] = parse_message($cur_post['message'], $cur_post['hide_smili
 	<div class="box">
 		<form method="post" action="delete.php?id=<?php echo $id ?>">
 			<div class="inform">
-				<p><strong><?php echo $lang_delete['Warning'] ?></strong></p>
-				<p><strong><?php printf($lang_delete['Author'], '</strong>'.pun_htmlspecialchars($cur_post['poster'])) ?></p>
-				<p><strong><?php echo $lang_common['Message'] ?></strong></p>
-				<div class="deletemsg">
-					<div class="postmsg">
-						<?php echo $cur_post['message']."\n" ?>
-					</div>
+				<div class="forminfo">
+					<h3><span><?php printf($is_topic_post ? $lang_delete['Topic by'] : $lang_delete['Reply by'], '<strong>'.pun_htmlspecialchars($cur_post['poster']).'</strong>', format_time($cur_post['posted'])) ?></span></h3>
+					<p><?php echo ($is_topic_post) ? '<strong>'.$lang_delete['Topic warning'].'</strong>' : '<strong>'.$lang_delete['Warning'].'</strong>' ?><br /><?php echo $lang_delete['Delete info'] ?></p>
 				</div>
 			</div>
 			<p class="buttons"><input type="submit" name="delete" value="<?php echo $lang_delete['Delete'] ?>" /> <a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
 		</form>
+	</div>
+</div>
+
+<div id="postreview">
+	<div class="blockpost">
+		<div class="box<?php echo ($post_count % 2 == 0) ? ' roweven' : ' rowodd' ?>">
+			<div class="inbox">
+				<div class="postbody">
+					<div class="postleft">
+						<dl>
+							<dt><strong><?php echo pun_htmlspecialchars($cur_post['poster']) ?></strong></dt>
+							<dd><span><?php echo format_time($cur_post['posted']) ?></span></dd>
+						</dl>
+					</div>
+					<div class="postright">
+						<div class="postmsg">
+							<?php echo $cur_post['message']."\n" ?>
+						</div>
+					</div>
+				</div>
+				<div class="clearer"></div>
+			</div>
+		</div>
 	</div>
 </div>
 <?php

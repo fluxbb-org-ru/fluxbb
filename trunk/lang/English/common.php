@@ -1,29 +1,5 @@
 <?php
 
-/*
-// Determine what locale to use
-switch (PHP_OS)
-{
-	case 'WINNT':
-	case 'WIN32':
-		$locale = 'english';
-		break;
-
-	case 'FreeBSD':
-	case 'NetBSD':
-	case 'OpenBSD':
-		$locale = 'en_US.US-ASCII';
-		break;
-
-	default:
-		$locale = 'en_US';
-		break;
-}
-
-// Attempt to set the locale
-setlocale(LC_CTYPE, $locale);
-*/
-
 // Language definitions for frequently used strings
 $lang_common = array(
 
@@ -41,7 +17,7 @@ $lang_common = array(
 'No permission'						=>	'You do not have permission to access this page.',
 'Bad referrer'						=>	'Bad HTTP_REFERER. You were referred to this page from an unauthorized source. If the problem persists please make sure that \'Base URL\' is correctly set in Admin/Options and that you are visiting the forum by navigating to that URL. More information regarding the referrer check can be found in the FluxBB documentation.',
 'No cookie'							=>	'You appear to have logged in successfully, however a cookie has not been set. Please check your settings and if applicable, enable cookies for this website.',
-'Pun include error'					=>	'Unable to process user include %s from template %s. There is no such file in %s.',
+'Pun include error'					=>	'Unable to process user include %s from template %s. There is no such file in neither the template directory nor in the user include directory.',
 
 // Miscellaneous
 'Announcement'						=>	'Announcement',

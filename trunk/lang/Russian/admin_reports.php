@@ -8,7 +8,6 @@ $lang_admin_reports = array(
 'Deleted user'				=>	'Пользователь удалён',
 'Deleted'					=>	'Удалено',
 'Report subhead'			=>	'Сигнал подан %s',
-'Location seperator'		=>	' » ',
 'Reported by'				=>	'Просигналил %s',
 'Reason'					=>	'Причина',
 'Zap'						=>	'Рассмотрено',

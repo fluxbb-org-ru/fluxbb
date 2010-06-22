@@ -22,14 +22,15 @@ require PUN_ROOT.'lang/'.$admin_language.'/admin_prune.php';
 
 if (isset($_GET['action']) || isset($_POST['prune']) || isset($_POST['prune_comply']))
 {
+	$prune_from = trim($_POST['prune_from']);
+	$prune_sticky = intval($_POST['prune_sticky']);
+
 	if (isset($_POST['prune_comply']))
 	{
 		confirm_referrer('admin_prune.php');
 
-		$prune_from = $_POST['prune_from'];
-		$prune_sticky = isset($_POST['prune_sticky']) ? '1' : '0';
 		$prune_days = intval($_POST['prune_days']);
-		$prune_date = ($prune_days) ? time() - ($prune_days*86400) : -1;
+		$prune_date = ($prune_days) ? time() - ($prune_days * 86400) : -1;
 
 		@set_time_limit(0);
 
@@ -72,13 +73,12 @@ if (isset($_GET['action']) || isset($_POST['prune']) || isset($_POST['prune_comp
 	if ($prune_days == '' || preg_match('/[^0-9]/', $prune_days))
 		message($lang_admin_prune['Must be integer message']);
 
-	$prune_date = time() - ($prune_days*86400);
-	$prune_from = $_POST['prune_from'];
+	$prune_date = time() - ($prune_days * 86400);
 
 	// Concatenate together the query for counting number of topics to prune
 	$sql = 'SELECT COUNT(id) FROM '.$db->prefix.'topics WHERE last_post<'.$prune_date.' AND moved_to IS NULL';
 
-	if (!$prune_sticky)
+	if ($prune_sticky == '0')
 		$sql .= ' AND sticky=\'0\'';
 
 	if ($prune_from != 'all')
@@ -166,7 +166,7 @@ else
 								<tr>
 									<th scope="row"><?php echo $lang_admin_prune['Prune sticky label'] ?></th>
 									<td>
-										<input type="radio" name="prune_sticky" value="1" tabindex="2" checked="checked" />&nbsp;<strong><?php echo $lang_admin_common['Yes'] ?></strong>&nbsp;&nbsp;&nbsp;<input type="radio" name="prune_sticky" value="0" />&nbsp;<strong><?php echo $lang_admin_common['No'] ?></strong>
+										<input type="radio" name="prune_sticky" value="1" tabindex="2" checked="checked" />&#160;<strong><?php echo $lang_admin_common['Yes'] ?></strong>&#160;&#160;&#160;<input type="radio" name="prune_sticky" value="0" />&#160;<strong><?php echo $lang_admin_common['No'] ?></strong>
 										<span><?php echo $lang_admin_prune['Prune sticky help'] ?></span>
 									</td>
 								</tr>

@@ -264,11 +264,13 @@ if (isset($_GET['tid']))
 	<div class="inbox crumbsplus">
 		<ul class="crumbs">
 			<li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li>
-			<li><span>&raquo;&#160;</span><a href="viewforum.php?id=<?php echo $fid ?>"><?php echo pun_htmlspecialchars($cur_topic['forum_name']) ?></a></li>
-			<li><span>&raquo;&#160;</span><a href="viewtopic.php?id=<?php echo $tid ?>"><?php echo pun_htmlspecialchars($cur_topic['subject']) ?></a></li>
-			<li><span>&raquo;&#160;</span><strong><?php echo $lang_misc['Moderate'] ?></strong></li>
+			<li><span>»&#160;</span><a href="viewforum.php?id=<?php echo $fid ?>"><?php echo pun_htmlspecialchars($cur_topic['forum_name']) ?></a></li>
+			<li><span>»&#160;</span><a href="viewtopic.php?id=<?php echo $tid ?>"><?php echo pun_htmlspecialchars($cur_topic['subject']) ?></a></li>
+			<li><span>»&#160;</span><strong><?php echo $lang_misc['Moderate'] ?></strong></li>
 		</ul>
-		<p class="pagelink conl"><?php echo $paging_links ?></p>
+		<div class="pagepost">
+			<p class="pagelink conl"><?php echo $paging_links ?></p>
+		</div>
 		<div class="clearer"></div>
 	</div>
 </div>
@@ -280,8 +282,15 @@ if (isset($_GET['tid']))
 
 	$post_count = 0; // Keep track of post numbers
 
+	// Retrieve a list of post IDs, LIMIT is (really) expensive so we only fetch the IDs here then later fetch the remaining data
+	$result = $db->query('SELECT id FROM '.$db->prefix.'posts WHERE topic_id='.$tid.' ORDER BY id LIMIT '.$start_from.','.$pun_user['disp_posts']) or error('Unable to fetch post IDs', __FILE__, __LINE__, $db->error());
+
+	$post_ids = array();
+	for ($i = 0;$cur_post_id = $db->result($result, $i);$i++)
+		$post_ids[] = $cur_post_id;
+
 	// Retrieve the posts (and their respective poster)
-	$result = $db->query('SELECT u.title, u.num_posts, g.g_id, g.g_user_title, p.id, p.poster, p.poster_id, p.message, p.hide_smilies, p.posted, p.edited, p.edited_by FROM '.$db->prefix.'posts AS p INNER JOIN '.$db->prefix.'users AS u ON u.id=p.poster_id INNER JOIN '.$db->prefix.'groups AS g ON g.g_id=u.group_id WHERE p.topic_id='.$tid.' ORDER BY p.id LIMIT '.$start_from.','.$pun_user['disp_posts'], true) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
+	$result = $db->query('SELECT u.title, u.num_posts, g.g_id, g.g_user_title, p.id, p.poster, p.poster_id, p.message, p.hide_smilies, p.posted, p.edited, p.edited_by FROM '.$db->prefix.'posts AS p INNER JOIN '.$db->prefix.'users AS u ON u.id=p.poster_id INNER JOIN '.$db->prefix.'groups AS g ON g.g_id=u.group_id WHERE p.id IN ('.implode(',', $post_ids).') ORDER BY p.id', true) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
 
 	while ($cur_post = $db->fetch_assoc($result))
 	{
@@ -349,9 +358,10 @@ if (isset($_GET['tid']))
 ?>
 <div class="postlinksb">
 	<div class="inbox">
-		<p class="pagelink conl"><?php echo $paging_links ?></p>
-		<p class="conr modbuttons"><input type="submit" name="split_posts" value="<?php echo $lang_misc['Split'] ?>"<?php echo $button_status ?> /> <input type="submit" name="delete_posts" value="<?php echo $lang_misc['Delete'] ?>"<?php echo $button_status ?> /></p>
-		<div class="clearer"></div>
+		<div class="pagepost">
+			<p class="pagelink conl"><?php echo $paging_links ?></p>
+			<p class="conr modbuttons"><input type="submit" name="split_posts" value="<?php echo $lang_misc['Split'] ?>"<?php echo $button_status ?> /> <input type="submit" name="delete_posts" value="<?php echo $lang_misc['Delete'] ?>"<?php echo $button_status ?> /></p>
+		</div>
 	</div>
 </div>
 </form>
@@ -752,10 +762,12 @@ require PUN_ROOT.'header.php';
 	<div class="inbox crumbsplus">
 		<ul class="crumbs">
 			<li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li>
-			<li><span>&raquo;&#160;</span><a href="viewforum.php?id=<?php echo $fid ?>"><?php echo pun_htmlspecialchars($cur_forum['forum_name']) ?></a></li>
-			<li><span>&raquo;&#160;</span><strong><?php echo $lang_misc['Moderate'] ?></strong></li>
+			<li><span>»&#160;</span><a href="viewforum.php?id=<?php echo $fid ?>"><?php echo pun_htmlspecialchars($cur_forum['forum_name']) ?></a></li>
+			<li><span>»&#160;</span><strong><?php echo $lang_misc['Moderate'] ?></strong></li>
 		</ul>
-		<p class="pagelink conl"><?php echo $paging_links ?></p>
+		<div class="pagepost">
+			<p class="pagelink conl"><?php echo $paging_links ?></p>
+		</div>
 		<div class="clearer"></div>
 	</div>
 </div>
@@ -891,9 +903,10 @@ else
 
 <div class="linksb">
 	<div class="inbox">
-		<p class="pagelink conl"><?php echo $paging_links ?></p>
-		<p class="conr modbuttons"><input type="submit" name="move_topics" value="<?php echo $lang_misc['Move'] ?>"<?php echo $button_status ?> /> <input type="submit" name="delete_topics" value="<?php echo $lang_misc['Delete'] ?>"<?php echo $button_status ?> /> <input type="submit" name="merge_topics" value="<?php echo $lang_misc['Merge'] ?>"<?php echo $button_status ?> /> <input type="submit" name="open" value="<?php echo $lang_misc['Open'] ?>"<?php echo $button_status ?> /> <input type="submit" name="close" value="<?php echo $lang_misc['Close'] ?>"<?php echo $button_status ?> /></p>
-		<div class="clearer"></div>
+		<div class="pagepost">
+			<p class="pagelink conl"><?php echo $paging_links ?></p>
+			<p class="conr modbuttons"><input type="submit" name="move_topics" value="<?php echo $lang_misc['Move'] ?>"<?php echo $button_status ?> /> <input type="submit" name="delete_topics" value="<?php echo $lang_misc['Delete'] ?>"<?php echo $button_status ?> /> <input type="submit" name="merge_topics" value="<?php echo $lang_misc['Merge'] ?>"<?php echo $button_status ?> /> <input type="submit" name="open" value="<?php echo $lang_misc['Open'] ?>"<?php echo $button_status ?> /> <input type="submit" name="close" value="<?php echo $lang_misc['Close'] ?>"<?php echo $button_status ?> /></p>
+		</div>
 	</div>
 </div>
 </form>

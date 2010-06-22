@@ -56,17 +56,7 @@ function generate_admin_menu($page = '')
 <?php
 
 	// See if there are any plugins
-	$plugins = array();
-	$d = dir(PUN_ROOT.'plugins');
-	while (($entry = $d->read()) !== false)
-	{
-		$prefix = substr($entry, 0, strpos($entry, '_'));
-		$suffix = substr($entry, strlen($entry) - 4);
-
-		if ($suffix == '.php' && ((!$is_admin && $prefix == 'AMP') || ($is_admin && ($prefix == 'AP' || $prefix == 'AMP'))))
-			$plugins[] = array(substr($entry, strpos($entry, '_') + 1, -4), $entry);
-	}
-	$d->close();
+	$plugins = forum_list_plugins($is_admin);
 
 	// Did we find any plugins?
 	if (!empty($plugins))
@@ -79,7 +69,7 @@ function generate_admin_menu($page = '')
 				<ul>
 <?php
 
-		while (list(, $cur_plugin) = @each($plugins))
+		foreach ($plugins as $cur_plugin)
 			echo "\t\t\t\t\t".'<li'.(($page == $cur_plugin[1]) ? ' class="isactive"' : '').'><a href="admin_loader.php?plugin='.$cur_plugin[1].'">'.str_replace('_', ' ', $cur_plugin[0]).'</a></li>'."\n";
 
 ?>

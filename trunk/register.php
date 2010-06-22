@@ -72,7 +72,7 @@ if (isset($_POST['form_sent']))
 		message($lang_register['Registration flood']);
 
 
-	$username = pun_trim($_POST['req_username']);
+	$username = pun_trim($_POST['req_user']);
 	$email1 = strtolower(trim($_POST['req_email1']));
 
 	$not_robot = (isset($_POST['csrf_token']) && $_POST['csrf_token'] == pun_hash('1'.pun_hash(get_remote_address())) &&
@@ -232,8 +232,8 @@ if (isset($_POST['form_sent']))
 
 
 $page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_register['Register']);
-$required_fields = array('req_username' => $lang_common['Username'], 'req_password1' => $lang_common['Password'], 'req_password2' => $lang_prof_reg['Confirm pass'], 'req_email1' => $lang_common['Email'], 'req_email2' => $lang_common['Email'].' 2');
-$focus_element = array('register', 'req_username');
+$required_fields = array('req_user' => $lang_common['Username'], 'req_password1' => $lang_common['Password'], 'req_password2' => $lang_prof_reg['Confirm pass'], 'req_email1' => $lang_common['Email'], 'req_email2' => $lang_common['Email'].' 2');
+$focus_element = array('register', 'req_user');
 define('PUN_ACTIVE_PAGE', 'register');
 require PUN_ROOT.'header.php';
 
@@ -272,8 +272,7 @@ if (!empty($errors))
 <div id="regform" class="blockform">
 	<h2><span><?php echo $lang_register['Register'] ?></span></h2>
 	<div class="box">
-<!--		<form id="register" method="post" action="register.php?action=register" onsubmit="this.register.disabled=true;if(process_form(this)){return true;}else{this.register.disabled=false;return false;}"> -->
-		<form id="register" method="post" action="register.php?action=register" onsubmit="if(process_form(this)){return true;}else{return false;}">
+		<form id="register" method="post" action="register.php?action=register" onsubmit="this.register.disabled=true;if(process_form(this)){return true;}else{this.register.disabled=false;return false;}">
 			<div class="inform">
 				<div class="forminfo">
 					<h3><?php echo $lang_common['Important information'] ?></h3>
@@ -286,7 +285,7 @@ if (!empty($errors))
 					<legend><?php echo $lang_register['Username legend'] ?></legend>
 					<div class="infldset">
 						<input type="hidden" name="form_sent" value="1" />
-						<label class="required"><strong><?php echo $lang_common['Username'] ?> <span><?php echo $lang_common['Required'] ?></span></strong><br /><input type="text" name="req_username" value="<?php if (isset($_POST['req_username'])) echo pun_htmlspecialchars($_POST['req_username']); ?>" size="25" maxlength="25" /><br /></label>
+						<label class="required"><strong><?php echo $lang_common['Username'] ?> <span><?php echo $lang_common['Required'] ?></span></strong><br /><input type="text" name="req_user" value="<?php if (isset($_POST['req_user'])) echo pun_htmlspecialchars($_POST['req_user']); ?>" size="25" maxlength="25" /><br /></label>
 					</div>
 				</fieldset>
 			</div>
@@ -321,8 +320,6 @@ if (!empty($errors))
 						<p class="clearb"><?php echo $lang_prof_reg['Robot info'] ?></p>
 					</div>
 				</fieldset>
-			</div>
-			<div class="inform">
 				<fieldset>
 					<legend><?php echo $lang_prof_reg['Localisation legend'] ?></legend>
 					<div class="infldset">
@@ -376,14 +373,7 @@ if (!empty($errors))
 						</div>
 <?php
 
-		$languages = array();
-		$d = dir(PUN_ROOT.'lang');
-		while (($entry = $d->read()) !== false)
-		{
-			if ($entry != '.' && $entry != '..' && is_dir(PUN_ROOT.'lang/'.$entry) && file_exists(PUN_ROOT.'lang/'.$entry.'/common.php'))
-				$languages[] = $entry;
-		}
-		$d->close();
+		$languages = forum_list_langs();
 
 		// Only display the language selection box if there's more than one language available
 		if (count($languages) > 1)

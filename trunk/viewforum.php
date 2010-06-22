@@ -36,15 +36,12 @@ if ($cur_forum['redirect_url'] != '')
 }
 
 // Sort out who the moderators are and if we are currently a moderator (or an admin)
-$mods_array = array();
-if ($cur_forum['moderators'] != '')
-	$mods_array = unserialize($cur_forum['moderators']);
-
+$mods_array = ($cur_forum['moderators'] != '') ? unserialize($cur_forum['moderators']) : array();
 $is_admmod = ($pun_user['g_id'] == PUN_ADMIN || ($pun_user['g_moderator'] == '1' && array_key_exists($pun_user['username'], $mods_array))) ? true : false;
 
 // Can we or can we not post new topics?
 if (($cur_forum['post_topics'] == '' && $pun_user['g_post_topics'] == '1') || $cur_forum['post_topics'] == '1' || $is_admmod)
-	$post_link = "\t\t".'<p class="postlink conr"><a href="post.php?fid='.$id.'">'.$lang_forum['Post topic'].'</a></p>'."\n";
+	$post_link = "\t\t\t".'<p class="postlink conr"><a href="post.php?fid='.$id.'">'.$lang_forum['Post topic'].'</a></p>'."\n";
 else
 	$post_link = '';
 
@@ -78,10 +75,12 @@ require PUN_ROOT.'header.php';
 	<div class="inbox crumbsplus">
 		<ul class="crumbs">
 			<li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li>
-			<li><span>&raquo;&#160;</span><strong><?php echo pun_htmlspecialchars($cur_forum['forum_name']) ?></strong></li>
+			<li><span>»&#160;</span><strong><?php echo pun_htmlspecialchars($cur_forum['forum_name']) ?></strong></li>
 		</ul>
-		<p class="pagelink conl"><?php echo $paging_links ?></p>
+		<div class="pagepost">
+			<p class="pagelink conl"><?php echo $paging_links ?></p>
 <?php echo $post_link ?>
+		</div>
 		<div class="clearer"></div>
 	</div>
 </div>
@@ -189,7 +188,7 @@ if ($db->num_rows($result))
 		{
 			if ($cur_topic['has_posted'] == $pun_user['id'])
 			{
-				$subject = '<strong class="ipost">&middot;&#160;</strong>'.$subject;
+				$subject = '<strong class="ipost">·&#160;</strong>'.$subject;
 				$item_status .= ' iposted';
 			}
 		}
@@ -254,11 +253,13 @@ else
 
 <div class="linksb">
 	<div class="inbox crumbsplus">
-		<p class="pagelink conl"><?php echo $paging_links ?></p>
+		<div class="pagepost">
+			<p class="pagelink conl"><?php echo $paging_links ?></p>
 <?php echo $post_link ?>
+		</div>
 		<ul class="crumbs">
 			<li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li>
-			<li><span>&raquo;&#160;</span><strong><?php echo pun_htmlspecialchars($cur_forum['forum_name']) ?></strong></li>
+			<li><span>»&#160;</span><strong><?php echo pun_htmlspecialchars($cur_forum['forum_name']) ?></strong></li>
 		</ul>
 		<div class="clearer"></div>
 	</div>

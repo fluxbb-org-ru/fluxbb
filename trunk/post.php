@@ -39,6 +39,9 @@ if ($cur_posting['redirect_url'] != '')
 $mods_array = ($cur_posting['moderators'] != '') ? unserialize($cur_posting['moderators']) : array();
 $is_admmod = ($pun_user['g_id'] == PUN_ADMIN || ($pun_user['g_moderator'] == '1' && array_key_exists($pun_user['username'], $mods_array))) ? true : false;
 
+if ($pun_config['o_censoring'] == '1')
+	$cur_posting['subject'] = censor_words($cur_posting['subject']);
+
 // Do we have permission to post?
 if ((($tid && (($cur_posting['post_replies'] == '' && $pun_user['g_post_replies'] == '0') || $cur_posting['post_replies'] == '0')) ||
 	($fid && (($cur_posting['post_topics'] == '' && $pun_user['g_post_topics'] == '0') || $cur_posting['post_topics'] == '0')) ||
@@ -340,6 +343,10 @@ if ($tid)
 
 		$q_message = preg_replace('%\[img(?:=.*?)?\]%', '[url]', $q_message);
 		$q_message = str_replace('[/img]', '[/url]', $q_message);
+
+		if ($pun_config['o_censoring'] == '1')
+			$q_message = censor_words($q_message);
+
 		$q_message = pun_htmlspecialchars($q_message);
 
 		if ($pun_config['p_message_bbcode'] == '1')
@@ -400,9 +407,9 @@ require PUN_ROOT.'header.php';
 	<div class="inbox">
 		<ul class="crumbs">
 			<li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li>
-			<li><span>&raquo;&#160;</span><a href="viewforum.php?id=<?php echo $cur_posting['id'] ?>"><?php echo pun_htmlspecialchars($cur_posting['forum_name']) ?></a></li>
-<?php if (isset($cur_posting['subject'])): ?>			<li><span>&raquo;&#160;</span><a href="viewtopic.php?id=<?php echo $tid ?>"><?php echo pun_htmlspecialchars($cur_posting['subject']) ?></a></li>
-<?php endif; ?>			<li><span>&raquo;&#160;</span><strong><?php echo $action ?></strong></li>
+			<li><span>»&#160;</span><a href="viewforum.php?id=<?php echo $cur_posting['id'] ?>"><?php echo pun_htmlspecialchars($cur_posting['forum_name']) ?></a></li>
+<?php if (isset($cur_posting['subject'])): ?>			<li><span>»&#160;</span><a href="viewtopic.php?id=<?php echo $tid ?>"><?php echo pun_htmlspecialchars($cur_posting['subject']) ?></a></li>
+<?php endif; ?>			<li><span>»&#160;</span><strong><?php echo $action ?></strong></li>
 		</ul>
 	</div>
 </div>
@@ -493,9 +500,9 @@ if ($fid): ?>
 <?php endif; ?>						<label class="required"><strong><?php echo $lang_common['Message'] ?> <span><?php echo $lang_common['Required'] ?></span></strong><br />
 						<textarea name="req_message" rows="20" cols="95" tabindex="<?php echo $cur_index++ ?>"><?php echo isset($_POST['req_message']) ? pun_htmlspecialchars($message) : (isset($quote) ? $quote : ''); ?></textarea><br /></label>
 						<ul class="bblinks">
-							<li><a href="help.php#bbcode" onclick="window.open(this.href); return false;"><?php echo $lang_common['BBCode'] ?></a> <?php echo ($pun_config['p_message_bbcode'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
-							<li><a href="help.php#img" onclick="window.open(this.href); return false;"><?php echo $lang_common['img tag'] ?></a> <?php echo ($pun_config['p_message_img_tag'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
-							<li><a href="help.php#smilies" onclick="window.open(this.href); return false;"><?php echo $lang_common['Smilies'] ?></a> <?php echo ($pun_config['o_smilies'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
+							<li><span><a href="help.php#bbcode" onclick="window.open(this.href); return false;"><?php echo $lang_common['BBCode'] ?></a> <?php echo ($pun_config['p_message_bbcode'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></span></li>
+							<li><span><a href="help.php#img" onclick="window.open(this.href); return false;"><?php echo $lang_common['img tag'] ?></a> <?php echo ($pun_config['p_message_img_tag'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></span></li>
+							<li><span><a href="help.php#smilies" onclick="window.open(this.href); return false;"><?php echo $lang_common['Smilies'] ?></a> <?php echo ($pun_config['o_smilies'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></span></li>
 						</ul>
 					</div>
 				</fieldset>
@@ -584,7 +591,7 @@ if ($tid && $pun_config['o_topic_review'] != '0')
 					<div class="postleft">
 						<dl>
 							<dt><strong><?php echo pun_htmlspecialchars($cur_post['poster']) ?></strong></dt>
-							<dd><?php echo format_time($cur_post['posted']) ?></dd>
+							<dd><span><?php echo format_time($cur_post['posted']) ?></span></dd>
 						</dl>
 					</div>
 					<div class="postright">

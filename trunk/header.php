@@ -45,12 +45,15 @@ preg_match_all('#<pun_include "([^/\\\\]*?)\.(php[45]?|inc|html?|txt)">#', $tpl_
 
 foreach ($pun_includes as $cur_include)
 {
-	if (!file_exists($tpl_inc_dir.$cur_include[1].'.'.$cur_include[2]))
-		error(sprintf($lang_common['Pun include error'], htmlspecialchars($cur_include[0]), basename($tpl_file), $tpl_inc_dir));
-
 	ob_start();
 
-	require $tpl_inc_dir.$cur_include[1].'.'.$cur_include[2];
+	// Allow for overriding user includes, too.
+	if (file_exists($tpl_inc_dir.$cur_include[1].'.'.$cur_include[2]))
+		require $tpl_inc_dir.$cur_include[1].'.'.$cur_include[2];
+	else if (file_exists(PUN_ROOT.'include/user/'.$cur_include[1].'.'.$cur_include[2]))
+		require PUN_ROOT.'include/user/'.$cur_include[1].'.'.$cur_include[2];
+	else
+		error(sprintf($lang_common['Pun include error'], htmlspecialchars($cur_include[0]), basename($tpl_file)));
 
 	$tpl_temp = ob_get_contents();
 	$tpl_main = str_replace($cur_include[0], $tpl_temp, $tpl_main);
@@ -106,7 +109,7 @@ function process_form(the_form)
 
 	// Output a JavaScript array with localised field names
 	foreach ($required_fields as $elem_orig => $elem_trans)
-		echo "\t".'element_names["'.$elem_orig.'"] = "'.addslashes(str_replace('&nbsp;', ' ', $elem_trans)).'"'."\n";
+		echo "\t".'element_names["'.$elem_orig.'"] = "'.addslashes(str_replace('&#160;', ' ', $elem_trans)).'"'."\n";
 
 ?>
 
@@ -139,7 +142,7 @@ function process_form(the_form)
 echo '<!--[if lte IE 6]><script type="text/javascript" src="style/imports/minmax.js"></script><![endif]-->'."\n";
 
 if (in_array(basename($_SERVER['PHP_SELF']), array('viewtopic.php', 'post.php', 'edit.php')))
-    echo '<script type="text/javascript" src="js/post.js"></script>';
+	echo '<script type="text/javascript" src="js/post.js"></script>';
 
 if (isset($page_head))
 	echo implode("\n", $page_head)."\n";
@@ -184,7 +187,7 @@ if ($pun_user['is_guest'])
 	$tpl_temp = '<div id="brdwelcome" class="inbox">'."\n\t\t\t".'<p>'.$lang_common['Not logged in'].'</p>'."\n\t\t".'</div>';
 else
 {
-	$tpl_temp = '<div id="brdwelcome" class="inbox">'."\n\t\t\t".'<ul class="conl">'."\n\t\t\t\t".'<li>'.$lang_common['Logged in as'].' <strong>'.pun_htmlspecialchars($pun_user['username']).'</strong></li>'."\n\t\t\t\t".'<li>'.sprintf($lang_common['Last visit'], format_time($pun_user['last_visit'])).'</li>';
+	$tpl_temp = '<div id="brdwelcome" class="inbox">'."\n\t\t\t".'<ul class="conl">'."\n\t\t\t\t".'<li><span>'.$lang_common['Logged in as'].' <strong>'.pun_htmlspecialchars($pun_user['username']).'</strong></span></li>'."\n\t\t\t\t".'<li><span>'.sprintf($lang_common['Last visit'], format_time($pun_user['last_visit'])).'</span></li>';
 
 	if ($pun_user['is_admmod'])
 	{
@@ -193,17 +196,17 @@ else
 			$result_header = $db->query('SELECT 1 FROM '.$db->prefix.'reports WHERE zapped IS NULL') or error('Unable to fetch reports info', __FILE__, __LINE__, $db->error());
 
 			if ($db->result($result_header))
-				$tpl_temp .= "\n\t\t\t\t".'<li class="reportlink"><strong><a href="admin_reports.php">'.$lang_common['New reports'].'</a></strong></li>';
+				$tpl_temp .= "\n\t\t\t\t".'<li class="reportlink"><span><strong><a href="admin_reports.php">'.$lang_common['New reports'].'</a></strong></span></li>';
 		}
 
 		if ($pun_config['o_maintenance'] == '1')
-			$tpl_temp .= "\n\t\t\t\t".'<li class="maintenancelink"><strong><a href="admin_options.php#maintenance">'.$lang_common['Maintenance mode enabled'].'</a></strong></li>';
+			$tpl_temp .= "\n\t\t\t\t".'<li class="maintenancelink"><span><strong><a href="admin_options.php#maintenance">'.$lang_common['Maintenance mode enabled'].'</a></strong></span></li>';
 	}
 
 	if (in_array(basename($_SERVER['PHP_SELF']), array('index.php', 'search.php')))
-		$tpl_temp .= "\n\t\t\t".'</ul>'."\n\t\t\t".'<ul class="conr">'.($pun_user['g_search'] == '1' ? "\n\t\t\t\t".'<li><a href="search.php?action=show_new">'.$lang_common['Show new posts'].'</a></li>' : '')."\n\t\t\t\t".'<li><a href="misc.php?action=markread">'.$lang_common['Mark all as read'].'</a></li>'."\n\t\t\t".'</ul>'."\n\t\t\t".'<div class="clearer"></div>'."\n\t\t".'</div>';
+		$tpl_temp .= "\n\t\t\t".'</ul>'."\n\t\t\t".'<ul class="conr">'.($pun_user['g_search'] == '1' ? "\n\t\t\t\t".'<li><span><a href="search.php?action=show_new">'.$lang_common['Show new posts'].'</a></span></li>' : '')."\n\t\t\t\t".'<li><span><a href="misc.php?action=markread">'.$lang_common['Mark all as read'].'</a></span></li>'."\n\t\t\t".'</ul>'."\n\t\t\t".'<div class="clearer"></div>'."\n\t\t".'</div>';
 	else if (basename($_SERVER['PHP_SELF']) == 'viewforum.php')
-		$tpl_temp .= "\n\t\t\t".'</ul>'."\n\t\t\t".'<ul class="conr">'."\n\t\t\t\t".'<li><a href="misc.php?action=markforumread&amp;fid='.$id.'">'.$lang_common['Mark forum read'].'</a></li>'."\n\t\t\t".'</ul>'."\n\t\t\t".'<div class="clearer"></div>'."\n\t\t".'</div>';
+		$tpl_temp .= "\n\t\t\t".'</ul>'."\n\t\t\t".'<ul class="conr">'."\n\t\t\t\t".'<li><span><a href="misc.php?action=markforumread&amp;fid='.$id.'">'.$lang_common['Mark forum read'].'</a></span></li>'."\n\t\t\t".'</ul>'."\n\t\t\t".'<div class="clearer"></div>'."\n\t\t".'</div>';
 	else
 		$tpl_temp .= "\n\t\t\t".'</ul>'."\n\t\t\t".'<div class="clearer"></div>'."\n\t\t".'</div>';
 }

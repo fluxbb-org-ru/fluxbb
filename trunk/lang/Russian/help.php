@@ -15,9 +15,13 @@ $lang_help = array(
 'Bold text'				=>	'Полужирный',
 'Underlined text'		=>	'Подчеркнутый',
 'Italic text'			=>	'Курсив',
+'Strike-through text'	=>	'Зачёркнутый',
 'Red text'				=>	'Красный',
 'Blue text'				=>	'Синий',
 'Heading text'			=>	'Заголовок',
+'Deleted text'			=>	'Удалённый',
+'Inserted text'			=>	'Вставленный',
+'Emphasised text'		=>	'Выделенный',
 
 'Links and images'		=>	'Ссылки и картинки',
 'Links info'			=>	'Вы можете давать ссылки на другие документы или адреса e-mail с помощью этих тегов:',

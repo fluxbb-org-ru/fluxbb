@@ -49,10 +49,12 @@ if (isset($_GET['ip_stats']))
 	<div class="inbox crumbsplus">
 		<ul class="crumbs">
 			<li><a href="admin_index.php"><?php echo $lang_admin_common['Admin'].' '.$lang_admin_common['Index'] ?></a></li>
-			<li><span>&raquo;&#160;</span><a href="admin_users.php"><?php echo $lang_admin_common['Users'] ?></a></li>
-			<li><span>&raquo;&#160;</span><strong><?php echo $lang_admin_users['Results head'] ?></strong></li>
+			<li><span>»&#160;</span><a href="admin_users.php"><?php echo $lang_admin_common['Users'] ?></a></li>
+			<li><span>»&#160;</span><strong><?php echo $lang_admin_users['Results head'] ?></strong></li>
 		</ul>
-		<p class="pagelink"><?php echo $paging_links ?></p>
+		<div class="pagepost">
+			<p class="pagelink"><?php echo $paging_links ?></p>
+		</div>
 		<div class="clearer"></div>
 	</div>
 </div>
@@ -102,11 +104,13 @@ if (isset($_GET['ip_stats']))
 
 <div class="linksb">
 	<div class="inbox crumbsplus">
-		<p class="pagelink"><?php echo $paging_links ?></p>
+		<div class="pagepost">
+			<p class="pagelink"><?php echo $paging_links ?></p>
+		</div>
 		<ul class="crumbs">
 			<li><a href="admin_index.php"><?php echo $lang_admin_common['Admin'].' '.$lang_admin_common['Index'] ?></a></li>
-			<li><span>&raquo;&#160;</span><a href="admin_users.php"><?php echo $lang_admin_common['Users'] ?></a></li>
-			<li><span>&raquo;&#160;</span><strong><?php echo $lang_admin_users['Results head'] ?></strong></li>
+			<li><span>»&#160;</span><a href="admin_users.php"><?php echo $lang_admin_common['Users'] ?></a></li>
+			<li><span>»&#160;</span><strong><?php echo $lang_admin_users['Results head'] ?></strong></li>
 		</ul>
 		<div class="clearer"></div>
 	</div>
@@ -146,10 +150,12 @@ if (isset($_GET['show_users']))
 	<div class="inbox crumbsplus">
 		<ul class="crumbs">
 			<li><a href="admin_index.php"><?php echo $lang_admin_common['Admin'].' '.$lang_admin_common['Index'] ?></a></li>
-			<li><span>&raquo;&#160;</span><a href="admin_users.php"><?php echo $lang_admin_common['Users'] ?></a></li>
-			<li><span>&raquo;&#160;</span><strong><?php echo $lang_admin_users['Results head'] ?></strong></li>
+			<li><span>»&#160;</span><a href="admin_users.php"><?php echo $lang_admin_common['Users'] ?></a></li>
+			<li><span>»&#160;</span><strong><?php echo $lang_admin_users['Results head'] ?></strong></li>
 		</ul>
-		<p class="pagelink"><?php echo $paging_links ?></p>
+		<div class="pagepost">
+			<p class="pagelink"><?php echo $paging_links ?></p>
+		</div>
 		<div class="clearer"></div>
 	</div>
 </div>
@@ -196,7 +202,7 @@ if (isset($_GET['show_users']))
 					<td class="tc2"><a href="mailto:<?php echo $user_data['email'] ?>"><?php echo $user_data['email'] ?></a></td>
 					<td class="tc3"><?php echo $user_title ?></td>
 					<td class="tc4"><?php echo forum_number_format($user_data['num_posts']) ?></td>
-					<td class="tc5"><?php echo ($user_data['admin_note'] != '') ? pun_htmlspecialchars($user_data['admin_note']) : '&nbsp;' ?></td>
+					<td class="tc5"><?php echo ($user_data['admin_note'] != '') ? pun_htmlspecialchars($user_data['admin_note']) : '&#160;' ?></td>
 					<td class="tcr"><?php echo $actions ?></td>
 				</tr>
 <?php
@@ -208,11 +214,11 @@ if (isset($_GET['show_users']))
 ?>
 				<tr>
 					<td class="tcl"><?php echo pun_htmlspecialchars($poster) ?></td>
-					<td class="tc2">&nbsp;</td>
+					<td class="tc2">&#160;</td>
 					<td class="tc3"><?php echo $lang_admin_users['Results guest'] ?></td>
-					<td class="tc4">&nbsp;</td>
-					<td class="tc5">&nbsp;</td>
-					<td class="tcr">&nbsp;</td>
+					<td class="tc4">&#160;</td>
+					<td class="tc5">&#160;</td>
+					<td class="tcr">&#160;</td>
 				</tr>
 <?php
 
@@ -231,11 +237,13 @@ if (isset($_GET['show_users']))
 
 <div class="linksb">
 	<div class="inbox crumbsplus">
-		<p class="pagelink"><?php echo $paging_links ?></p>
+		<div class="pagepost">
+			<p class="pagelink"><?php echo $paging_links ?></p>
+		</div>
 		<ul class="crumbs">
 			<li><a href="admin_index.php"><?php echo $lang_admin_common['Admin'].' '.$lang_admin_common['Index'] ?></a></li>
-			<li><span>&raquo;&#160;</span><a href="admin_users.php"><?php echo $lang_admin_common['Users'] ?></a></li>
-			<li><span>&raquo;&#160;</span><strong><?php echo $lang_admin_users['Results head'] ?></strong></li>
+			<li><span>»&#160;</span><a href="admin_users.php"><?php echo $lang_admin_common['Users'] ?></a></li>
+			<li><span>»&#160;</span><strong><?php echo $lang_admin_users['Results head'] ?></strong></li>
 		</ul>
 		<div class="clearer"></div>
 	</div>
@@ -313,7 +321,7 @@ else if (isset($_GET['find_user']))
 	}
 
 	$like_command = ($db_type == 'pgsql') ? 'ILIKE' : 'LIKE';
-	while (list($key, $input) = @each($form))
+	foreach ($form as $key => $input)
 	{
 		if ($input != '' && in_array($key, array('username', 'email', 'title', 'realname', 'url', 'jabber', 'icq', 'msn', 'aim', 'yahoo', 'location', 'signature', 'admin_note')))
 		{
@@ -358,10 +366,12 @@ else if (isset($_GET['find_user']))
 	<div class="inbox crumbsplus">
 		<ul class="crumbs">
 			<li><a href="admin_index.php"><?php echo $lang_admin_common['Admin'].' '.$lang_admin_common['Index'] ?></a></li>
-			<li><span>&raquo;&#160;</span><a href="admin_users.php"><?php echo $lang_admin_common['Users'] ?></a></li>
-			<li><span>&raquo;&#160;</span><strong><?php echo $lang_admin_users['Results head'] ?></strong></li>
+			<li><span>»&#160;</span><a href="admin_users.php"><?php echo $lang_admin_common['Users'] ?></a></li>
+			<li><span>»&#160;</span><strong><?php echo $lang_admin_users['Results head'] ?></strong></li>
 		</ul>
-		<p class="pagelink"><?php echo $paging_links ?></p>
+		<div class="pagepost">
+			<p class="pagelink"><?php echo $paging_links ?></p>
+		</div>
 		<div class="clearer"></div>
 	</div>
 </div>
@@ -404,7 +414,7 @@ else if (isset($_GET['find_user']))
 					<td class="tc2"><a href="mailto:<?php echo $user_data['email'] ?>"><?php echo $user_data['email'] ?></a></td>
 					<td class="tc3"><?php echo $user_title ?></td>
 					<td class="tc4"><?php echo forum_number_format($user_data['num_posts']) ?></td>
-					<td class="tc5"><?php echo ($user_data['admin_note'] != '') ? pun_htmlspecialchars($user_data['admin_note']) : '&nbsp;' ?></td>
+					<td class="tc5"><?php echo ($user_data['admin_note'] != '') ? pun_htmlspecialchars($user_data['admin_note']) : '&#160;' ?></td>
 					<td class="tcr"><?php echo $actions ?></td>
 				</tr>
 <?php
@@ -423,11 +433,13 @@ else if (isset($_GET['find_user']))
 
 <div class="linksb">
 	<div class="inbox crumbsplus">
-		<p class="pagelink"><?php echo $paging_links ?></p>
+		<div class="pagepost">
+			<p class="pagelink"><?php echo $paging_links ?></p>
+		</div>
 		<ul class="crumbs">
 			<li><a href="admin_index.php"><?php echo $lang_admin_common['Admin'].' '.$lang_admin_common['Index'] ?></a></li>
-			<li><span>&raquo;&#160;</span><a href="admin_users.php"><?php echo $lang_admin_common['Users'] ?></a></li>
-			<li><span>&raquo;&#160;</span><strong><?php echo $lang_admin_users['Results head'] ?></strong></li>
+			<li><span>»&#160;</span><a href="admin_users.php"><?php echo $lang_admin_common['Users'] ?></a></li>
+			<li><span>»&#160;</span><strong><?php echo $lang_admin_users['Results head'] ?></strong></li>
 		</ul>
 		<div class="clearer"></div>
 	</div>
@@ -548,7 +560,7 @@ else
 											<option value="num_posts"><?php echo $lang_admin_users['Order by posts'] ?></option>
 											<option value="last_post"><?php echo $lang_admin_users['Order by last post'] ?></option>
 											<option value="registered"><?php echo $lang_admin_users['Order by registered'] ?></option>
-										</select>&nbsp;&nbsp;&nbsp;<select name="direction" tabindex="22">
+										</select>&#160;&#160;&#160;<select name="direction" tabindex="22">
 											<option value="ASC" selected="selected"><?php echo $lang_admin_users['Ascending'] ?></option>
 											<option value="DESC"><?php echo $lang_admin_users['Descending'] ?></option>
 										</select>

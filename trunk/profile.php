@@ -48,14 +48,14 @@ if ($action == 'change_pass')
 
 		$key = $_GET['key'];
 
-		$result = $db->query('SELECT activate_string, activate_key FROM '.$db->prefix.'users WHERE id='.$id) or error('Unable to fetch new password', __FILE__, __LINE__, $db->error());
-		list($new_password_hash, $new_password_key) = $db->fetch_row($result);
+		$result = $db->query('SELECT * FROM '.$db->prefix.'users WHERE id='.$id) or error('Unable to fetch new password', __FILE__, __LINE__, $db->error());
+		$cur_user = $db->fetch_assoc($result);
 
-		if ($key == '' || $key != $new_password_key)
+		if ($key == '' || $key != $cur_user['activate_key'])
 			message($lang_profile['Pass key bad'].' <a href="mailto:'.$pun_config['o_admin_email'].'">'.$pun_config['o_admin_email'].'</a>.');
 		else
 		{
-			$db->query('UPDATE '.$db->prefix.'users SET password=\''.$new_password_hash.'\', activate_string=NULL, activate_key=NULL WHERE id='.$id) or error('Unable to update password', __FILE__, __LINE__, $db->error());
+			$db->query('UPDATE '.$db->prefix.'users SET password=\''.$cur_user['activate_string'].'\', activate_string=NULL, activate_key=NULL'.(!empty($cur_user['salt']) ? ', salt=NULL' : '').' WHERE id='.$id) or error('Unable to update password', __FILE__, __LINE__, $db->error());
 
 			message($lang_profile['Pass updated'], true);
 		}
@@ -93,21 +93,16 @@ if ($action == 'change_pass')
 		if (pun_strlen($new_password1) < 4)
 			message($lang_prof_reg['Pass too short']);
 
-		$result = $db->query('SELECT password FROM '.$db->prefix.'users WHERE id='.$id) or error('Unable to fetch password', __FILE__, __LINE__, $db->error());
-		list($db_password_hash) = $db->fetch_row($result);
+		$result = $db->query('SELECT * FROM '.$db->prefix.'users WHERE id='.$id) or error('Unable to fetch password', __FILE__, __LINE__, $db->error());
+		$cur_user = $db->fetch_assoc($result);
 
 		$authorized = false;
 
-		if (!empty($db_password_hash))
+		if (!empty($cur_user['password']))
 		{
-			$sha1_in_db = (strlen($db_password_hash) == 40) ? true : false;
-			$sha1_available = (function_exists('sha1') || function_exists('mhash')) ? true : false;
+			$old_password_hash = pun_hash($old_password);
 
-			$old_password_hash = pun_hash($old_password); // This could result in either an SHA-1 or an MD5 hash
-
-			if (($sha1_in_db && $sha1_available && $db_password_hash == $old_password_hash) ||
-				(!$sha1_in_db && $db_password_hash == md5($old_password)) ||
-				$pun_user['is_admmod'])
+			if ($cur_user['password'] == $old_password_hash || $pun_user['is_admmod'])
 				$authorized = true;
 		}
 
@@ -116,12 +111,10 @@ if ($action == 'change_pass')
 
 		$new_password_hash = pun_hash($new_password1);
 
-		$db->query('UPDATE '.$db->prefix.'users SET password=\''.$new_password_hash.'\' WHERE id='.$id) or error('Unable to update password', __FILE__, __LINE__, $db->error());
+		$db->query('UPDATE '.$db->prefix.'users SET password=\''.$new_password_hash.'\''.(!empty($cur_user['salt']) ? ', salt=NULL' : '').' WHERE id='.$id) or error('Unable to update password', __FILE__, __LINE__, $db->error());
 
 		if ($pun_user['id'] == $id)
-		{
 			pun_setcookie($pun_user['id'], $new_password_hash, time() + $pun_config['o_timeout_visit']);
-		}
 
 		redirect('profile.php?section=essentials&amp;id='.$id, $lang_profile['Pass updated redirect']);
 	}
@@ -729,8 +722,8 @@ else if (isset($_POST['form_sent']))
 				'location'		=> pun_trim($_POST['form']['location']),
 			);
 
-			// Add http:// if the URL doesn't contain it already
-			if ($form['url'] != '' && strpos(strtolower($form['url']), 'http://') !== 0)
+			// Add http:// if the URL doesn't contain it already (while allowing https://, too)
+			if ($form['url'] != '' && !preg_match('#^https?://#i', $form['url']))
 				$form['url'] = 'http://'.$form['url'];
 
 			if ($pun_user['g_id'] == PUN_ADMIN)
@@ -1090,11 +1083,11 @@ else
 
 		$posts_field = '';
 		if ($pun_user['g_id'] == PUN_ADMIN)
-			$posts_field = '<label>'.$lang_common['Posts'].'<br /><input type="text" name="num_posts" value="'.$user['num_posts'].'" size="8" maxlength="8" /><br /></label><p><a href="search.php?action=show_user&amp;user_id='.$id.'">'.$lang_profile['Show posts'].'</a></p>'."\n";
+			$posts_field = '<label>'.$lang_common['Posts'].'<br /><input type="text" name="num_posts" value="'.$user['num_posts'].'" size="8" maxlength="8" /><br /></label><p class="actions"><span><a href="search.php?action=show_user&amp;user_id='.$id.'">'.$lang_profile['Show posts'].'</a></span></p>'."\n";
 		else if ($pun_config['o_show_post_count'] == '1' || $pun_user['is_admmod'])
 			$posts_field = '<p>'.sprintf($lang_profile['Posts info'], forum_number_format($user['num_posts']).($pun_user['g_search'] == '1' ? ' - <a href="search.php?action=show_user&amp;user_id='.$id.'">'.$lang_profile['Show posts'].'</a>' : '')).'</p>'."\n";
 		else if ($pun_user['g_search'] == '1')
-			$posts_field = '<p><a href="search.php?action=show_user&amp;user_id='.$id.'">'.$lang_profile['Show posts'].'</a></p>'."\n";
+			$posts_field = '<p class="actions"><span><a href="search.php?action=show_user&amp;user_id='.$id.'">'.$lang_profile['Show posts'].'</a></span></p>'."\n";
 
 
 		$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_common['Profile'], $lang_profile['Section essentials']);
@@ -1115,7 +1108,7 @@ else
 						<div class="infldset">
 							<input type="hidden" name="form_sent" value="1" />
 							<?php echo $username_field ?>
-<?php if ($pun_user['id'] == $id || $pun_user['g_id'] == PUN_ADMIN || ($user['g_moderator'] == '0' && $pun_user['g_mod_change_passwords'] == '1')): ?>							<p><a href="profile.php?action=change_pass&amp;id=<?php echo $id ?>"><?php echo $lang_profile['Change pass'] ?></a></p>
+<?php if ($pun_user['id'] == $id || $pun_user['g_id'] == PUN_ADMIN || ($user['g_moderator'] == '0' && $pun_user['g_mod_change_passwords'] == '1')): ?>							<p class="actions"><span><a href="profile.php?action=change_pass&amp;id=<?php echo $id ?>"><?php echo $lang_profile['Change pass'] ?></a></span></p>
 <?php endif; ?>						</div>
 					</fieldset>
 				</div>
@@ -1216,19 +1209,11 @@ else
 
 <?php
 
-		$languages = array();
-		$d = dir(PUN_ROOT.'lang');
-		while (($entry = $d->read()) !== false)
-		{
-			if ($entry{0} != '.' && is_dir(PUN_ROOT.'lang/'.$entry) && file_exists(PUN_ROOT.'lang/'.$entry.'/common.php'))
-				$languages[] = $entry;
-		}
-		$d->close();
+		$languages = forum_list_langs();
 
 		// Only display the language selection box if there's more than one language available
 		if (count($languages) > 1)
 		{
-			natsort($languages);
 
 ?>
 							<label><?php echo $lang_prof_reg['Language'] ?>
@@ -1393,9 +1378,9 @@ else
 								<textarea name="signature" rows="4" cols="65"><?php echo pun_htmlspecialchars($user['signature']) ?></textarea><br /></label>
 							</div>
 							<ul class="bblinks">
-								<li><a href="help.php#bbcode" onclick="window.open(this.href); return false;"><?php echo $lang_common['BBCode'] ?></a> <?php echo ($pun_config['p_sig_bbcode'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
-								<li><a href="help.php#img" onclick="window.open(this.href); return false;"><?php echo $lang_common['img tag'] ?></a> <?php echo ($pun_config['p_sig_img_tag'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
-								<li><a href="help.php#smilies" onclick="window.open(this.href); return false;"><?php echo $lang_common['Smilies'] ?></a> <?php echo ($pun_config['o_smilies_sig'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
+								<li><span><a href="help.php#bbcode" onclick="window.open(this.href); return false;"><?php echo $lang_common['BBCode'] ?></a> <?php echo ($pun_config['p_sig_bbcode'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></span></li>
+								<li><span><a href="help.php#img" onclick="window.open(this.href); return false;"><?php echo $lang_common['img tag'] ?></a> <?php echo ($pun_config['p_sig_img_tag'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></span></li>
+								<li><span><a href="help.php#smilies" onclick="window.open(this.href); return false;"><?php echo $lang_common['Smilies'] ?></a> <?php echo ($pun_config['o_smilies_sig'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></span></li>
 							</ul>
 							<?php echo $signature_preview ?>
 						</div>
@@ -1424,21 +1409,13 @@ else
 				<div><input type="hidden" name="form_sent" value="1" /></div>
 <?php
 
-		$styles = array();
-		$d = dir(PUN_ROOT.'style');
-		while (($entry = $d->read()) !== false)
-		{
-			if (substr($entry, strlen($entry)-4) == '.css')
-				$styles[] = substr($entry, 0, strlen($entry)-4);
-		}
-		$d->close();
+		$styles = forum_list_styles();
 
 		// Only display the style selection box if there's more than one style available
 		if (count($styles) == 1)
 			echo "\t\t\t".'<div><input type="hidden" name="form[style]" value="'.$styles[0].'" /></div>'."\n";
 		else if (count($styles) > 1)
 		{
-			natsort($styles);
 
 ?>
 				<div class="inform">

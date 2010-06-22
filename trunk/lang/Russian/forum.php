@@ -8,6 +8,7 @@ $lang_forum = array(
 'Moved'			=>	'Перенесено',
 'Sticky'		=>	'Выделено',
 'Closed'		=>	'Закрыто:',
-'Empty forum'	=>	'Доска пуста.'
+'Empty forum'	=>	'Доска пуста.',
+'Mod controls'	=>	'Операции модерирования'
 
 );

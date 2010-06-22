@@ -241,6 +241,9 @@ else if (isset($_GET['report']))
 
 	$cur_post = $db->fetch_assoc($result);
 
+	if ($pun_config['o_censoring'] == '1')
+		$cur_post['subject'] = censor_words($cur_post['subject']);
+
 	$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_misc['Report post']);
 	$required_fields = array('req_reason' => $lang_misc['Reason']);
 	$focus_element = array('report', 'req_reason');
@@ -252,9 +255,9 @@ else if (isset($_GET['report']))
 	<div class="inbox">
 		<ul class="crumbs">
 			<li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li>
-			<li><span>&raquo;&#160;</span><a href="viewforum.php?id=<?php echo $cur_post['fid'] ?>"><?php echo pun_htmlspecialchars($cur_post['forum_name']) ?></a></li>
-			<li><span>&raquo;&#160;</span><a href="viewtopic.php?pid=<?php echo $post_id ?>#p<?php echo $post_id ?>"><?php echo pun_htmlspecialchars($cur_post['subject']) ?></a></li>
-			<li><span>&raquo;&#160;</span><strong><?php echo $lang_misc['Report post'] ?></strong></li>
+			<li><span>»&#160;</span><a href="viewforum.php?id=<?php echo $cur_post['fid'] ?>"><?php echo pun_htmlspecialchars($cur_post['forum_name']) ?></a></li>
+			<li><span>»&#160;</span><a href="viewtopic.php?pid=<?php echo $post_id ?>#p<?php echo $post_id ?>"><?php echo pun_htmlspecialchars($cur_post['subject']) ?></a></li>
+			<li><span>»&#160;</span><strong><?php echo $lang_misc['Report post'] ?></strong></li>
 		</ul>
 	</div>
 </div>
