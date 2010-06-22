@@ -272,7 +272,8 @@ if (!empty($errors))
 <div id="regform" class="blockform">
 	<h2><span><?php echo $lang_register['Register'] ?></span></h2>
 	<div class="box">
-		<form id="register" method="post" action="register.php?action=register" onsubmit="this.register.disabled=true;if(process_form(this)){return true;}else{this.register.disabled=false;return false;}">
+<!--		<form id="register" method="post" action="register.php?action=register" onsubmit="this.register.disabled=true;if(process_form(this)){return true;}else{this.register.disabled=false;return false;}"> -->
+		<form id="register" method="post" action="register.php?action=register" onsubmit="if(process_form(this)){return true;}else{return false;}">
 			<div class="inform">
 				<div class="forminfo">
 					<h3><?php echo $lang_common['Important information'] ?></h3>
