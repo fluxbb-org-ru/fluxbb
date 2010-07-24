@@ -10,6 +10,7 @@ Yes, it is valid CSS 3, but unfortunately border-radius doesn't seem to work cor
 
 /* Limited Reset
 ----------------------------------------------------------------*/
+@import url(imports/extra.css);
 
 .pun table, .pun div, .pun form, .pun p, .pun h1, .pun h2, .pun h3,
 .pun h4, .pun h5, .pun pre, .pun blockquote, .pun ul, .pun ol, .pun li, .pun dl,
@@ -1333,24 +1334,3 @@ body {
 .pun .imoved .icon {
 	background-image:url(Technetium/icon-moved.png);
 	}
-
-/* ---------- BBCODE TOOLBAR ------------- */
-#bbcodewrapper IMG {
-	border: 0;
-}
-#bbcodewrapper {
-	padding: 0 2em 0 0;
-	position: relative;
-	overflow: hidden;
-}
-#bbcodewrapper A {
-	display: block;
-	float: left;
-	padding-right: 4px;
-}
-#bbcodebuttons {
-	float: left;
-}
-#bbcodesmilies {
-	float: right;
-}
