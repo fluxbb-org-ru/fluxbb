@@ -10,6 +10,7 @@ $lang_admin_forums = array(
 'Perms reverted redirect'	=>	'Права сброшены в значения по умолчанию. Переадресация …',
 'Must enter name message'	=>	'Необходимо ввести имя доски.',
 'Must be integer message'	=>	'Позиция должна быть неотрицательным целым числом.',
+'New forum'					=>	'Новый форум',
 
 // Entry page
 'Add forum head'			=>	'Добавление доски',
