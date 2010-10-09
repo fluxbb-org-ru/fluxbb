@@ -20,6 +20,10 @@ if ($pun_user['g_id'] != PUN_ADMIN)
 // Load the admin_forums.php language file
 require PUN_ROOT.'lang/'.$admin_language.'/admin_forums.php';
 
+$kind = isset($_GET['kind']) ? intval($_GET['kind']) : PUN_KIND_FORUM;
+if ($kind < PUN_KIND_FORUM || $kind > PUN_KIND_BLOG)
+	$kind = PUN_KIND_FORUM;
+
 // Add a "default" forum
 if (isset($_POST['add_forum']))
 {
@@ -29,7 +33,7 @@ if (isset($_POST['add_forum']))
 	if ($add_to_cat < 1)
 		message($lang_common['Bad request']);
 
-	$db->query('INSERT INTO '.$db->prefix.'forums (forum_name, cat_id) VALUES(\''.$db->escape($lang_admin_forums['New forum']).'\', '.$add_to_cat.')') or error('Unable to create forum', __FILE__, __LINE__, $db->error());
+	$db->query('INSERT INTO '.$db->prefix.'forums (forum_name, cat_id, kind) VALUES(\''.$db->escape($lang_admin_forums['New forum']).'\', '.$add_to_cat.', '.$kind.')') or error('Unable to create forum', __FILE__, __LINE__, $db->error());
 
 	// Regenerate the quick jump cache
 	if (!defined('FORUM_CACHE_FUNCTIONS_LOADED'))
@@ -37,7 +41,7 @@ if (isset($_POST['add_forum']))
 
 	generate_quickjump_cache();
 
-	redirect('admin_forums.php', $lang_admin_forums['Forum added redirect']);
+	redirect('admin_forums.php?kind='.$kind, $lang_admin_forums['Forum added redirect']);
 }
 
 // Delete a forum
@@ -52,6 +56,9 @@ else if (isset($_GET['del_forum']))
 	if (isset($_POST['del_forum_comply'])) // Delete a forum with all posts
 	{
 		@set_time_limit(0);
+
+		// Get board kind to redirect
+		$kind = intval($_POST['forum_kind']);
 
 		// Prune all posts and topics
 		prune($forum_id, 1, -1);
@@ -78,12 +85,15 @@ else if (isset($_GET['del_forum']))
 
 		generate_quickjump_cache();
 
-		redirect('admin_forums.php', $lang_admin_forums['Forum deleted redirect']);
+		redirect('admin_forums.php?kind='.$kind, $lang_admin_forums['Forum deleted redirect']);
 	}
 	else // If the user hasn't confirmed the delete
 	{
-		$result = $db->query('SELECT forum_name FROM '.$db->prefix.'forums WHERE id='.$forum_id) or error('Unable to fetch forum info', __FILE__, __LINE__, $db->error());
-		$forum_name = pun_htmlspecialchars($db->result($result));
+		$result = $db->query('SELECT kind, forum_name FROM '.$db->prefix.'forums WHERE id='.$forum_id) or error('Unable to fetch forum info', __FILE__, __LINE__, $db->error());
+		$cur_forum = $db->fetch_assoc($result);
+
+		$kind = $cur_forum['kind'];
+		$forum_name = pun_htmlspecialchars($cur_forum['forum_name']);
 
 		$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_admin_common['Admin'], $lang_admin_common['Forums']);
 		define('PUN_ACTIVE_PAGE', 'admin');
@@ -95,7 +105,8 @@ else if (isset($_GET['del_forum']))
 	<div class="blockform">
 		<h2><span><?php echo $lang_admin_forums['Confirm delete head'] ?></span></h2>
 		<div class="box">
-			<form method="post" action="admin_forums.php?del_forum=<?php echo $forum_id ?>">
+			<form method="post" action="admin_forums.php?del_forum=<?php echo $forum_id ?>&amp;kind=<?php echo $kind ?>">
+				<input type="hidden" name="forum_kind" value="<?php echo $kind ?>" />
 				<div class="inform">
 					<fieldset>
 						<legend><?php echo $lang_admin_forums['Confirm delete subhead'] ?></legend>
@@ -137,7 +148,7 @@ else if (isset($_POST['update_positions']))
 
 	generate_quickjump_cache();
 
-	redirect('admin_forums.php', $lang_admin_forums['Forums updated redirect']);
+	redirect('admin_forums.php?kind='.$kind, $lang_admin_forums['Forums updated redirect']);
 }
 
 else if (isset($_GET['edit_forum']))
@@ -152,6 +163,7 @@ else if (isset($_GET['edit_forum']))
 		confirm_referrer('admin_forums.php');
 
 		// Start with the forum details
+		$kind = intval($_POST['forum_kind']);
 		$forum_name = pun_trim($_POST['forum_name']);
 		$forum_desc = pun_linebreaks(pun_trim($_POST['forum_desc']));
 		$cat_id = intval($_POST['cat_id']);
@@ -202,7 +214,7 @@ else if (isset($_GET['edit_forum']))
 
 		generate_quickjump_cache();
 
-		redirect('admin_forums.php', $lang_admin_forums['Forum updated redirect']);
+		redirect('admin_forums.php?kind='.$kind, $lang_admin_forums['Forum updated redirect']);
 	}
 	else if (isset($_POST['revert_perms']))
 	{
@@ -220,11 +232,12 @@ else if (isset($_GET['edit_forum']))
 	}
 
 	// Fetch forum info
-	$result = $db->query('SELECT id, forum_name, forum_desc, redirect_url, num_topics, sort_by, cat_id FROM '.$db->prefix.'forums WHERE id='.$forum_id) or error('Unable to fetch forum info', __FILE__, __LINE__, $db->error());
+	$result = $db->query('SELECT kind, id, forum_name, forum_desc, redirect_url, num_topics, sort_by, cat_id FROM '.$db->prefix.'forums WHERE id='.$forum_id) or error('Unable to fetch forum info', __FILE__, __LINE__, $db->error());
 	if (!$db->num_rows($result))
 		message($lang_common['Bad request']);
 
 	$cur_forum = $db->fetch_assoc($result);
+	$kind = $cur_forum['kind'];
 
 	$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_admin_common['Admin'], $lang_admin_common['Forums']);
 	define('PUN_ACTIVE_PAGE', 'admin');
@@ -237,6 +250,7 @@ else if (isset($_GET['edit_forum']))
 		<h2><span><?php echo $lang_admin_forums['Edit forum head'] ?></span></h2>
 		<div class="box">
 			<form id="edit_forum" method="post" action="admin_forums.php?edit_forum=<?php echo $forum_id ?>">
+				<input type="hidden" name="forum_kind" value="<?php echo $kind ?>" />
 				<p class="submittop"><input type="submit" name="save" value="<?php echo $lang_admin_common['Save changes'] ?>" tabindex="6" /></p>
 				<div class="inform">
 					<fieldset>
@@ -257,7 +271,7 @@ else if (isset($_GET['edit_forum']))
 										<select name="cat_id" tabindex="3">
 <?php
 
-	$result = $db->query('SELECT id, cat_name FROM '.$db->prefix.'categories ORDER BY disp_position') or error('Unable to fetch category list', __FILE__, __LINE__, $db->error());
+	$result = $db->query('SELECT id, cat_name FROM '.$db->prefix.'categories WHERE kind='.$kind.' ORDER BY disp_position') or error('Unable to fetch category list', __FILE__, __LINE__, $db->error());
 	while ($cur_cat = $db->fetch_assoc($result))
 	{
 		$selected = ($cur_cat['id'] == $cur_forum['cat_id']) ? ' selected="selected"' : '';
@@ -354,6 +368,13 @@ else if (isset($_GET['edit_forum']))
 	require PUN_ROOT.'footer.php';
 }
 
+$kinds = array();
+foreach ($lang_common['Boards kind'] as $k => $v) 
+{
+	$kinds[] = ($k == $kind) ? ('<strong>'.$v.'</strong>') : ('<a href="admin_forums.php?kind='.$k.'">'.$v.'</a>');
+}
+$kinds = implode(' | ', $kinds);
+
 $page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_admin_common['Admin'], $lang_admin_common['Forums']);
 define('PUN_ACTIVE_PAGE', 'admin');
 require PUN_ROOT.'header.php';
@@ -362,9 +383,19 @@ generate_admin_menu('forums');
 
 ?>
 	<div class="blockform">
+		<h2><span><?php echo $lang_common['Boards kind'][$kind] . ' / ' . $lang_admin_common['Forums'] ?></span></h2>
+		<div id="adintro" class="box">
+				<div class="inbox">
+				<p>
+					<?php echo $lang_admin_common['Kind intro'] ?><br /><br />
+					<?php echo sprintf($lang_admin_common['Choose kind'], $kinds) ?>
+
+				</p>
+				</div>
+		</div>
 		<h2><span><?php echo $lang_admin_forums['Add forum head'] ?></span></h2>
 		<div class="box">
-			<form method="post" action="admin_forums.php?action=adddel">
+			<form method="post" action="admin_forums.php?action=adddel&amp;kind=<?php echo $kind ?>">
 				<div class="inform">
 					<fieldset>
 						<legend><?php echo $lang_admin_forums['Create new subhead'] ?></legend>
@@ -376,7 +407,7 @@ generate_admin_menu('forums');
 										<select name="add_to_cat" tabindex="1">
 <?php
 
-	$result = $db->query('SELECT id, cat_name FROM '.$db->prefix.'categories ORDER BY disp_position') or error('Unable to fetch category list', __FILE__, __LINE__, $db->error());
+	$result = $db->query('SELECT id, cat_name FROM '.$db->prefix.'categories WHERE kind='.$kind.' ORDER BY disp_position') or error('Unable to fetch category list', __FILE__, __LINE__, $db->error());
 	if ($db->num_rows($result) > 0)
 	{
 		while ($cur_cat = $db->fetch_assoc($result))
@@ -399,7 +430,7 @@ generate_admin_menu('forums');
 <?php
 
 // Display all the categories and forums
-$result = $db->query('SELECT c.id AS cid, c.cat_name, f.id AS fid, f.forum_name, f.disp_position FROM '.$db->prefix.'categories AS c INNER JOIN '.$db->prefix.'forums AS f ON c.id=f.cat_id ORDER BY c.disp_position, c.id, f.disp_position') or error('Unable to fetch category/forum list', __FILE__, __LINE__, $db->error());
+$result = $db->query('SELECT c.id AS cid, c.cat_name, f.id AS fid, f.forum_name, f.disp_position FROM '.$db->prefix.'categories AS c INNER JOIN '.$db->prefix.'forums AS f ON c.id=f.cat_id WHERE f.kind='.$kind.' ORDER BY c.disp_position, c.id, f.disp_position') or error('Unable to fetch category/forum list', __FILE__, __LINE__, $db->error());
 
 if ($db->num_rows($result) > 0)
 {
@@ -407,7 +438,7 @@ if ($db->num_rows($result) > 0)
 ?>
 		<h2 class="block2"><span><?php echo $lang_admin_forums['Edit forums head'] ?></span></h2>
 		<div class="box">
-			<form id="edforum" method="post" action="admin_forums.php?action=edit">
+			<form id="edforum" method="post" action="admin_forums.php?action=edit&amp;kind=<?php echo $kind ?>">
 				<p class="submittop"><input type="submit" name="update_positions" value="<?php echo $lang_admin_forums['Update positions'] ?>" tabindex="3" /></p>
 <?php
 

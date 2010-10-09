@@ -1411,7 +1411,7 @@ html, body, .pun {
 	color: #ddd;
 }
 
-#brdmenu a:hover, #brdmenu a:active, #brdmenu a:focus {
+#brdmenu li.isactive a, #brdmenu a:hover, #brdmenu a:active, #brdmenu a:focus {
 	background: #f60;
 	border-color: #fff;
 	color: #fff;

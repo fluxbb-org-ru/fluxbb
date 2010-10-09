@@ -412,8 +412,12 @@ function generate_navlinks()
 {
 	global $pun_config, $lang_common, $pun_user;
 
+	$kind = isset($GLOBALS['kind']) ? $GLOBALS['kind'] : -1;
 	// Index and Userlist should always be displayed
-	$links[] = '<li id="navindex"'.((PUN_ACTIVE_PAGE == 'index') ? ' class="isactive"' : '').'><a href="index.php">'.$lang_common['Index'].'</a></li>';
+	foreach ($lang_common['Boards kind'] as $k => $v) 
+	{
+		$links[] = '<li id="navindex-'.$k.'"'.((PUN_ACTIVE_PAGE == 'index' && $kind == $k) ? ' class="isactive"' : '').'><a href="index.php?kind='.$k.'">'.$v.'</a></li>';
+	}
 
 	if ($pun_user['g_read_board'] == '1' && $pun_user['g_view_users'] == '1')
 		$links[] = '<li id="navuserlist"'.((PUN_ACTIVE_PAGE == 'userlist') ? ' class="isactive"' : '').'><a href="userlist.php">'.$lang_common['User list'].'</a></li>';

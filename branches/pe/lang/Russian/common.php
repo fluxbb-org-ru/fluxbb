@@ -90,6 +90,18 @@ $lang_common = array(
 
 // Stuff for the navigator (top of every page)
 'Index'					=>	'Форум',
+'Board kind'			=>	array(
+							PUN_KIND_FORUM	 => 'Форум',
+							PUN_KIND_ARTICLE => 'Статья',
+							PUN_KIND_GALLERY => 'Галерея',
+							PUN_KIND_BLOG	 => 'Блог',
+							),
+'Boards kind'			=>	array(
+							PUN_KIND_FORUM	 => 'Форумы',
+							PUN_KIND_ARTICLE => 'Статьи',
+							PUN_KIND_GALLERY => 'Галереи',
+							PUN_KIND_BLOG	 => 'Блоги',
+							),
 'User list'				=>	'Пользователи',
 'Rules'					=>  'Правила',
 'Search'				=>  'Поиск',

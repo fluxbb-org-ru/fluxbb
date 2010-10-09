@@ -9,7 +9,7 @@ $lang_admin_common = array(
 'Moderator menu'		=>	'Moderator menu',
 'Index'					=>	'Index',
 'Categories'			=>	'Categories',
-'Forums'				=>	'Forums',
+'Forums'				=>	'Boards',
 'Users'					=>	'Users',
 'User groups'			=>	'User groups',
 'Options'				=>	'Options',
@@ -40,5 +40,9 @@ $lang_admin_common = array(
 // Admin loader
 'No plugin message'		=>	'There is no plugin called %s in the plugin directory.',
 'Plugin failed message'	=>	'Loading of the plugin - <strong>%s</strong> - failed.',
+
+// Board Kinds
+'Kind intro'			=>	'All boards and categories are divided by "kinds" or "supercategories". You have to choose appropriate one.',
+'Choose kind'			=>	'Choose board kind: %s',
 
 );

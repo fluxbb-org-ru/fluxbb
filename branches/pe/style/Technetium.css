@@ -1263,7 +1263,7 @@ body {
 	color: #1F2E3D;
 	}
 
-#brdmenu li a:hover {
+#brdmenu li.isactive a, #brdmenu li a:hover {
 	color: #000;
 	text-shadow: #8895A2 1px -1px 0.4em;
 	}

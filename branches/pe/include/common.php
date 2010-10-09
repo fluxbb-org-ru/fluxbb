@@ -34,6 +34,12 @@ if (isset($_SERVER['HTTP_X_MOZ']) && $_SERVER['HTTP_X_MOZ'] == 'prefetch')
 if (file_exists(PUN_ROOT.'config.php'))
 	require PUN_ROOT.'config.php';
 
+// Define some kind of boards
+define('PUN_KIND_FORUM',   0);
+define('PUN_KIND_ARTICLE', 1);
+define('PUN_KIND_GALLERY', 2);
+define('PUN_KIND_BLOG',    3);
+
 // If we have the 1.3-legacy constant defined, define the proper 1.4 constant so we don't get an incorrect "need to install" message
 if (defined('FORUM'))
 	define('PUN', FORUM);

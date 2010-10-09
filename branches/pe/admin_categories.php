@@ -20,6 +20,10 @@ if ($pun_user['g_id'] != PUN_ADMIN)
 // Load the admin_categories.php language file
 require PUN_ROOT.'lang/'.$admin_language.'/admin_categories.php';
 
+$kind = isset($_GET['kind']) ? intval($_GET['kind']) : PUN_KIND_FORUM;
+if ($kind < PUN_KIND_FORUM || $kind > PUN_KIND_BLOG)
+	$kind = PUN_KIND_FORUM;
+
 // Add a new category
 if (isset($_POST['add_cat']))
 {
@@ -29,9 +33,9 @@ if (isset($_POST['add_cat']))
 	if ($new_cat_name == '')
 		message($lang_admin_categories['Must enter name message']);
 
-	$db->query('INSERT INTO '.$db->prefix.'categories (cat_name) VALUES(\''.$db->escape($new_cat_name).'\')') or error('Unable to create category', __FILE__, __LINE__, $db->error());
+	$db->query('INSERT INTO '.$db->prefix.'categories (cat_name, kind) VALUES(\''.$db->escape($new_cat_name).'\', '.$kind.')') or error('Unable to create category', __FILE__, __LINE__, $db->error());
 
-	redirect('admin_categories.php', $lang_admin_categories['Category added redirect']);
+	redirect('admin_categories.php?kind='.$kind, $lang_admin_categories['Category added redirect']);
 }
 
 // Delete a category
@@ -82,7 +86,7 @@ else if (isset($_POST['del_cat']) || isset($_POST['del_cat_comply']))
 
 		generate_quickjump_cache();
 
-		redirect('admin_categories.php', $lang_admin_categories['Category deleted redirect']);
+		redirect('admin_categories.php?kind='.$kind, $lang_admin_categories['Category deleted redirect']);
 	}
 	else // If the user hasn't comfirmed the delete
 	{
@@ -99,7 +103,7 @@ else if (isset($_POST['del_cat']) || isset($_POST['del_cat_comply']))
 	<div class="blockform">
 		<h2><span><?php echo $lang_admin_categories['Delete category head'] ?></span></h2>
 		<div class="box">
-			<form method="post" action="admin_categories.php">
+			<form method="post" action="admin_categories.php?kind=<?php echo $kind ?>">
 				<div class="inform">
 				<input type="hidden" name="cat_to_delete" value="<?php echo $cat_to_delete ?>" />
 					<fieldset>
@@ -129,7 +133,7 @@ else if (isset($_POST['update'])) // Change position and name of the categories
 	$cat_order = array_map('trim', $_POST['cat_order']);
 	$cat_name = array_map('pun_trim', $_POST['cat_name']);
 
-	$result = $db->query('SELECT id, disp_position FROM '.$db->prefix.'categories ORDER BY disp_position') or error('Unable to fetch category list', __FILE__, __LINE__, $db->error());
+	$result = $db->query('SELECT id, disp_position FROM '.$db->prefix.'categories WHERE kind='.$kind.' ORDER BY disp_position') or error('Unable to fetch category list', __FILE__, __LINE__, $db->error());
 	$num_cats = $db->num_rows($result);
 
 	for ($i = 0; $i < $num_cats; ++$i)
@@ -151,11 +155,18 @@ else if (isset($_POST['update'])) // Change position and name of the categories
 
 	generate_quickjump_cache();
 
-	redirect('admin_categories.php', $lang_admin_categories['Categories updated redirect']);
+	redirect('admin_categories.php?kind='.$kind, $lang_admin_categories['Categories updated redirect']);
 }
 
 // Generate an array with all categories
-$result = $db->query('SELECT id, cat_name, disp_position FROM '.$db->prefix.'categories ORDER BY disp_position') or error('Unable to fetch category list', __FILE__, __LINE__, $db->error());
+$kinds = array();
+foreach ($lang_common['Boards kind'] as $k => $v) 
+{
+	$kinds[] = ($k == $kind) ? ('<strong>'.$v.'</strong>') : ('<a href="admin_categories.php?kind='.$k.'">'.$v.'</a>');
+}
+$kinds = implode(' | ', $kinds);
+
+$result = $db->query('SELECT id, cat_name, disp_position FROM '.$db->prefix.'categories WHERE kind='.$kind.' ORDER BY disp_position') or error('Unable to fetch category list', __FILE__, __LINE__, $db->error());
 $num_cats = $db->num_rows($result);
 
 for ($i = 0; $i < $num_cats; ++$i)
@@ -169,9 +180,19 @@ generate_admin_menu('categories');
 
 ?>
 	<div class="blockform">
+		<h2><span><?php echo $lang_common['Boards kind'][$kind] . ' / ' . $lang_admin_common['Categories'] ?></span></h2>
+		<div id="adintro" class="box">
+				<div class="inbox">
+				<p>
+					<?php echo $lang_admin_common['Kind intro'] ?><br /><br />
+					<?php echo sprintf($lang_admin_common['Choose kind'], $kinds) ?>
+
+				</p>
+				</div>
+		</div>
 		<h2><span><?php echo $lang_admin_categories['Add categories head'] ?></span></h2>
 		<div class="box">
-			<form method="post" action="admin_categories.php?action=foo">
+			<form method="post" action="admin_categories.php?action=foo&amp;kind=<?php echo $kind ?>">
 				<div class="inform">
 					<fieldset>
 						<legend><?php echo $lang_admin_categories['Add categories subhead'] ?></legend>
@@ -193,7 +214,7 @@ generate_admin_menu('categories');
 
 <?php if ($num_cats): ?>		<h2 class="block2"><span><?php echo $lang_admin_categories['Delete categories head'] ?></span></h2>
 		<div class="box">
-			<form method="post" action="admin_categories.php?action=foo">
+			<form method="post" action="admin_categories.php?action=foo&amp;kind=<?php echo $kind ?>">
 				<div class="inform">
 					<fieldset>
 						<legend><?php echo $lang_admin_categories['Delete categories subhead'] ?></legend>
@@ -223,7 +244,7 @@ generate_admin_menu('categories');
 
 <?php if ($num_cats): ?>		<h2 class="block2"><span><?php echo $lang_admin_categories['Edit categories head'] ?></span></h2>
 		<div class="box">
-			<form method="post" action="admin_categories.php?action=foo">
+			<form method="post" action="admin_categories.php?action=foo&amp;kind=<?php echo $kind ?>">
 				<div class="inform">
 					<fieldset>
 						<legend><?php echo $lang_admin_categories['Edit categories subhead'] ?></legend>

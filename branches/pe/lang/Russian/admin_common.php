@@ -41,4 +41,8 @@ $lang_admin_common = array(
 'No plugin message'		=>	'Нет плагина с именем %s в директории плагинов.',
 'Plugin failed message'	=>	'Загрузить плагин <strong>%s</strong> не удалось.',
 
+// Board Kinds
+'Kind intro'			=>	'Все доски и категории сгруппированы по "видам" или "суперкатегориям". Вам необходимо выбрать один из них.',
+'Choose kind'			=>	'Виды досок: %s',
+
 );

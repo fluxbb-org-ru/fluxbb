@@ -624,6 +624,11 @@ else
 
 	$schema = array(
 		'FIELDS'		=> array(
+			'kind'	=> array(
+				'datatype'		=> 'TINYINT(1)',
+				'allow_null'	=> false,
+				'default'		=> '0'
+			),
 			'id'			=> array(
 				'datatype'		=> 'SERIAL',
 				'allow_null'	=> false
@@ -722,6 +727,11 @@ else
 
 	$schema = array(
 		'FIELDS'		=> array(
+			'kind'	=> array(
+				'datatype'		=> 'TINYINT(1)',
+				'allow_null'	=> false,
+				'default'		=> '0'
+			),
 			'id'			=> array(
 				'datatype'		=> 'SERIAL',
 				'allow_null'	=> false
