@@ -27,6 +27,13 @@ if ($pun_config['o_regs_allow'] == '0')
 	message($lang_register['No new regs']);
 
 
+// Load reCAPTCHA if it set
+if (!empty($pun_config['o_recaptcha_pubkey']))
+{
+	require PUN_ROOT.'include/recaptcha.php';
+	$recaptcha = new Recaptcha(array('publicKey' => $pun_config['o_recaptcha_pubkey'], 'privateKey' => $pun_config['o_recaptcha_privkey']));
+}
+
 // User pressed the cancel button
 if (isset($_GET['cancel']))
 	redirect('index.php', $lang_register['Reg cancel redirect']);
@@ -75,9 +82,6 @@ if (isset($_POST['form_sent']))
 	$username = pun_trim($_POST['req_user']);
 	$email1 = strtolower(trim($_POST['req_email1']));
 
-	$not_robot = (isset($_POST['csrf_token']) && $_POST['csrf_token'] == pun_hash('1'.pun_hash(get_remote_address())) &&
-	              isset($_POST['not_robot'])) ? $_POST['not_robot'] : '0';
-
 	if ($pun_config['o_regs_verify'] == '1')
 	{
 		$email2 = strtolower(trim($_POST['req_email2']));
@@ -106,8 +110,6 @@ if (isset($_POST['form_sent']))
 		$errors[] = $lang_common['Invalid email'];
 	else if ($pun_config['o_regs_verify'] == '1' && $email1 != $email2)
 		$errors[] = $lang_register['Email not match'];
-	else if ($not_robot != '1')
-		message($lang_prof_reg['You are robot']);
 
 	// Check if it's a banned email address
 	if (is_banned_email($email1))
@@ -150,6 +152,12 @@ if (isset($_POST['form_sent']))
 	$email_setting = intval($_POST['email_setting']);
 	if ($email_setting < 0 || $email_setting > 2)
 		$email_setting = $pun_config['o_default_email_setting'];
+
+	if (isset($recaptcha))
+	{
+		if (!$recaptcha->checkAnswer($_POST['recaptcha_challenge_field'], $_POST['recaptcha_response_field']))
+			$errors[] = $lang_common['reCaptcha error'];
+	}
 
 	// Did everything go according to plan?
 	if (empty($errors))
@@ -314,14 +322,6 @@ if (!empty($errors))
 			</div>
 			<div class="inform">
 				<fieldset>
-					<legend><?php echo $lang_prof_reg['Robot test'] ?></legend>
-					<div class="infldset">
-						<input type="hidden" name="csrf_token" value="<?php echo pun_hash('1'.pun_hash(get_remote_address())) ?>" />
-						<label><input type="checkbox" name="not_robot" value="1" />&nbsp;<?php echo $lang_prof_reg['Not robot'] ?><br /></label>
-						<p class="clearb"><?php echo $lang_prof_reg['Robot info'] ?></p>
-					</div>
-				</fieldset>
-				<fieldset>
 					<legend><?php echo $lang_prof_reg['Localisation legend'] ?></legend>
 					<div class="infldset">
 						<p><?php echo $lang_prof_reg['Time zone info'] ?></p>
@@ -416,6 +416,28 @@ if (!empty($errors))
 					</div>
 				</fieldset>
 			</div>
+<?php
+
+if (isset($recaptcha))
+{
+
+?>
+<!-- start reCaptcha -->
+			<div class="inform">
+				<fieldset>
+					<legend><?php echo $lang_common['reCaptcha legend'] ?></legend>
+					<div class="infldset">
+						<p><?php echo $lang_common['reCaptcha info'] ?></p>
+						<?php echo $recaptcha->getHtml()."\n"; ?>
+					</div>
+				</fieldset>
+			</div>
+<!-- end reCaptcha -->
+<?php
+
+}
+
+?>
 			<p class="buttons"><input type="submit" name="register" value="<?php echo $lang_register['Register'] ?>" /></p>
 		</form>
 	</div>

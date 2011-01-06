@@ -62,8 +62,8 @@ $lang_misc = array(
 'Open topics redirect'		=>	'Темы открыты. Переадресация &hellip;',
 'Close topic redirect'		=>	'Тема закрыта. Переадресация &hellip;',
 'Close topics redirect'		=>	'Темы закрыты. Переадресация &hellip;',
-'No topics selected'		=>	'Вы должны выбрать хотябы одну тему для переноса/удаления/открытия/закрытия.',
-'Not enough topics selected'	=>	'Вы должны выбрать хотябы две темы для склейки.',
+'No topics selected'		=>	'Вы должны выбрать хотя бы одну тему для переноса/удаления/открытия/закрытия.',
+'Not enough topics selected'	=>	'Вы должны выбрать хотя бы две темы для склейки.',
 'Stick topic redirect'		=>	'Тема выделена. Переадресация &hellip;',
 'Unstick topic redirect'	=>	'Тема отпущена. Переадресация &hellip;',
 'Merge topics'				=>	'Склеить темы',
@@ -82,7 +82,7 @@ $lang_misc = array(
 'Cannot select first'		=>	'Первое сообщение нельзя пометить на удаление.',
 'Delete posts comply'		=>	'Вы уверены, что хотите удалить выбранные сообщения?',
 'Delete posts redirect'		=>	'Сообщения удалены. Переадресация &hellip;',
-'No posts selected'			=>	'Вы должны выбрать хотябы одно сообщение для удаления.',
+'No posts selected'			=>	'Вы должны выбрать хотя бы одно сообщение для удаления.',
 
 // Get host
 'Host info 1'					=>	'IP адрес: %s',

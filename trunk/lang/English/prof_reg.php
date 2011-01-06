@@ -76,9 +76,4 @@ $lang_prof_reg = array(
 'UTC+13:00'					=>	'(UTC+13:00) Tonga, Phoenix Islands',
 'UTC+14:00'					=>	'(UTC+14:00) Line Islands',
 
-'Robot test'				=>	'Human verification',
-'Not robot'					=>	'I not robot',
-'Robot info'				=>	'We are trying to prevent automatic registration. Please check this field to help us.',
-'You are robot'				=>	'We think you\'re a robot. Please go back and check carefully all the fields.',
-
 );

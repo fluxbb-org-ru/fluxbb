@@ -52,6 +52,13 @@ if ((($tid && (($cur_posting['post_replies'] == '' && $pun_user['g_post_replies'
 // Load the post.php language file
 require PUN_ROOT.'lang/'.$pun_user['language'].'/post.php';
 
+// Load reCAPTCHA if it set
+if ($pun_user['is_guest'] && !empty($pun_config['o_recaptcha_pubkey']))
+{
+	require PUN_ROOT.'include/recaptcha.php';
+	$recaptcha = new Recaptcha(array('publicKey' => $pun_config['o_recaptcha_pubkey'], 'privateKey' => $pun_config['o_recaptcha_privkey']));
+}
+
 // Start with a clean slate
 $errors = array();
 
@@ -137,6 +144,12 @@ if (isset($_POST['form_sent']))
 
 	if ($message == '')
 		$errors[] = $lang_post['No message'];
+
+	if (isset($recaptcha))
+	{
+		if (!$recaptcha->checkAnswer($_POST['recaptcha_challenge_field'], $_POST['recaptcha_response_field']))
+			$errors[] = $lang_common['reCaptcha error'];
+	}
 
 	$hide_smilies = isset($_POST['hide_smilies']) ? '1' : '0';
 	$subscribe = isset($_POST['subscribe']) ? '1' : '0';
@@ -555,6 +568,28 @@ if (!empty($checkboxes))
 
 ?>
 			</div>
+<?php
+
+if (isset($recaptcha))
+{
+
+?>
+<!-- start reCaptcha -->
+			<div class="inform">
+				<fieldset>
+					<legend><?php echo $lang_common['reCaptcha legend'] ?></legend>
+					<div class="infldset">
+						<p><?php echo $lang_common['reCaptcha info'] ?></p>
+						<?php echo $recaptcha->getHtml()."\n"; ?>
+					</div>
+				</fieldset>
+			</div>
+<!-- end reCaptcha -->
+<?php
+
+}
+
+?>
 			<p class="buttons"><input type="submit" name="submit" value="<?php echo $lang_common['Submit'] ?>" tabindex="<?php echo $cur_index++ ?>" accesskey="s" /> <input type="submit" name="preview" value="<?php echo $lang_post['Preview'] ?>" tabindex="<?php echo $cur_index++ ?>" accesskey="p" /> <a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
 		</form>
 	</div>
