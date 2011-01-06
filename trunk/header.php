@@ -145,12 +145,17 @@ if (in_array(basename($_SERVER['PHP_SELF']), array('viewtopic.php', 'post.php', 
 	echo '<script type="text/javascript" src="js/post.js"></script>';
 
 // Recaptcha customization
-if (isset($recaptcha) && !empty($pun_config['o_recaptcha_theme']))
+if (isset($recaptcha))
 {
+	// I don't know the correct way. This one works for Russian and English:
+	$la = utf8_strtolower(utf8_substr($pun_user['language'], 0, 2));
 
 ?>
 <script type="text/javascript">
-  var RecaptchaOptions = { theme : '<?php echo pun_htmlspecialchars($pun_config['o_recaptcha_theme']) ?>' };
+	var RecaptchaOptions = {
+		lang : '<?php echo $la ?>'<?php if (!empty($pun_config['o_recaptcha_theme'])): ?>,
+		theme : '<?php echo pun_htmlspecialchars($pun_config['o_recaptcha_theme']) ?>'<?php endif; ?>
+  };
 </script>
 <?php
 
