@@ -141,6 +141,9 @@ function process_form(the_form)
 // JavaScript tricks for IE6 and older
 echo '<!--[if lte IE 6]><script type="text/javascript" src="style/imports/minmax.js"></script><![endif]-->'."\n";
 
+if (in_array(basename($_SERVER['PHP_SELF']), array('viewtopic.php', 'post.php', 'edit.php')))
+	echo '<script type="text/javascript" src="js/post.js"></script>';
+
 // Recaptcha customization
 if (isset($recaptcha) && !empty($pun_config['o_recaptcha_theme']))
 {
