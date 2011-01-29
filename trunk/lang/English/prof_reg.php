@@ -74,6 +74,6 @@ $lang_prof_reg = array(
 'UTC+12:00'					=>	'(UTC+12:00) New Zealand, Fiji, Kamchatka',
 'UTC+12:45'					=>	'(UTC+12:45) Chatham Islands',
 'UTC+13:00'					=>	'(UTC+13:00) Tonga, Phoenix Islands',
-'UTC+14:00'					=>	'(UTC+14:00) Line Islands',
+'UTC+14:00'					=>	'(UTC+14:00) Line Islands'
 
 );

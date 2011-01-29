@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Copyright (C) 2008-2010 FluxBB
+ * Copyright (C) 2008-2011 FluxBB
  * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
  * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
  */
 
-define('PUN_ROOT', './');
+define('PUN_ROOT', dirname(__FILE__).'/');
 require PUN_ROOT.'include/common.php';
 
 
@@ -67,7 +67,11 @@ if (isset($_POST['delete']))
 		delete_post($id, $cur_post['tid']);
 		update_forum($cur_post['fid']);
 
-		redirect('viewtopic.php?id='.$cur_post['tid'], $lang_delete['Post del redirect']);
+		// Redirect towards the previous post
+		$result = $db->query('SELECT id FROM '.$db->prefix.'posts WHERE topic_id='.$cur_post['tid'].' AND id < '.$id.' ORDER BY id DESC LIMIT 1') or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
+		$post_id = $db->result($result);
+
+		redirect('viewtopic.php?pid='.$post_id.'#p'.$post_id, $lang_delete['Post del redirect']);
 	}
 }
 
@@ -108,7 +112,7 @@ $cur_post['message'] = parse_message($cur_post['message'], $cur_post['hide_smili
 
 <div id="postreview">
 	<div class="blockpost">
-		<div class="box<?php echo ($post_count % 2 == 0) ? ' roweven' : ' rowodd' ?>">
+		<div class="box">
 			<div class="inbox">
 				<div class="postbody">
 					<div class="postleft">
