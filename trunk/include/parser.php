@@ -70,7 +70,7 @@ function preparse_bbcode($text, &$errors, $is_signature = false)
 	{
 		global $lang_profile;
 
-		if (preg_match('%\[/?(?:quote|code|list|video|audio|h)\b[^\]]*\]%i', $text))
+		if (preg_match('%\[/?(?:quote|code|list|h|video|audio)\b[^\]]*\]%i', $text))
 			$errors[] = $lang_profile['Signature quote/code/list/h'];
 	}
 
@@ -106,6 +106,8 @@ function preparse_bbcode($text, &$errors, $is_signature = false)
 			if (isset($inside[$i]))
 				$text .= '[code]'.$inside[$i].'[/code]';
 		}
+
+		unset($inside);
 	}
 
 	$temp_text = false;
@@ -194,7 +196,7 @@ function preparse_tags($text, &$errors, $is_signature = false)
 	// Start off by making some arrays of bbcode tags and what we need to do with each one
 
 	// List of all the tags
-	$tags = array('quote', 'code', 'b', 'i', 'u', 's', 'ins', 'del', 'em', 'color', 'colour', 'url', 'email', 'img', 'list', '*', 'h', 'audio', 'video');
+	$tags = array('quote', 'code', 'b', 'i', 'u', 's', 'ins', 'del', 'em', 'color', 'colour', 'url', 'email', 'img', 'list', '*', 'h', 'video', 'audio');
 	// List of tags that we need to check are open (You could not put b,i,u in here then illegal nesting like [b][i][/b][/i] would be allowed)
 	$tags_opened = $tags;
 	// and tags we need to check are closed (the same as above, added it just in case)
@@ -210,7 +212,7 @@ function preparse_tags($text, &$errors, $is_signature = false)
 	// Tags we trim interior space
 	$tags_trim = array('img');
 	// Tags we remove quotes from the argument
-	$tags_quotes = array('url', 'email', 'img', 'audio', 'video');
+	$tags_quotes = array('url', 'email', 'img', 'video', 'audio');
 	// Tags we limit bbcode in
 	$tags_limit_bbcode = array(
 		'*' 	=> array('b', 'i', 'u', 's', 'ins', 'del', 'em', 'color', 'colour', 'url', 'email', 'list', 'img', 'code'),

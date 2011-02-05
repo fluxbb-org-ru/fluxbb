@@ -3,11 +3,11 @@
 // Language definitions used in admin-users.php
 $lang_admin_users = array(
 
-'Non numeric message'		=>	'You entered a non-numeric value into a numeric only column.',
-'Invalid date time message'	=>	'You entered an invalid date/time.',
-'Not verified'				=>	'Not verified',
+'Non numeric message'		=>	'Вы ввели не цифры в колонку с номером.',
+'Invalid date time message'	=>	'Вы ввели неверную дату/время.',
+'Not verified'				=>	'Не подтверждено',
 'User search head'			=>	'Поиск пользователей',
-'User search subhead'		=>	'Enter search criteria',
+'User search subhead'		=>	'Введите условия поиска',
 'User search info'			=>	'Поиск пользователей в базе. Вы можете указать сразу несколько условий. Маски в виде звёздочек (*) допускаются.',
 'Username label'			=>	'Имя пользователя',
 'E-mail address label'		=>	'Email адрес',

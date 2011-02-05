@@ -6,7 +6,7 @@ $lang_admin_common = array(
 // The menu
 'Admin menu'			=>	'Админка',
 'Plugins menu'			=>	'Плагины',
-'Moderator menu'		=>	'Moderator menu',
+'Moderator menu'		=>	'Меню модератора',
 'Index'					=>	'Главная',
 'Categories'			=>	'Категории',
 'Forums'				=>	'Доски',
