@@ -4,19 +4,19 @@
 
 $lang_update = array(
 
-'Update'						=>	'Îáíîâèòü FluxBB',
-'Update message'				=>	'Âàøà áàçà FluxBB óñòàğåëà è äîëæíà áûòü îáíîâëåíà ïåğåä òåì êàê ïğîäîëæèòü. Åñëè âû Àäìèí ıòîãî ôîğóìà, ïîæàëóéñòà ñëåäóéòå èíñòğóêöèÿì íèæå ÷òîáû çàâåğøèòü îáíîâëåíèå.',
-'Note'							=>	'Çàìå÷àíèå:',
-'Members message'				=>	'İòî äåéñòâèå òîëüêî äëÿ àäìèíèñòğàòîğîâ. Åñëè âû ïğîñòîé ïîëüçîâàòåëü, íå âîëíóéòåñü - ôîğóì âñêîğå ïğîäîëæèò ğàáîòó!',
-'Administrator only'			=>	'İòî äåéñòâèå òîëüêî äëÿ àäìèíèñòğàòîğîâ!',
-'Database password info'		=>	'×òîáû ïğîâåñòè îáíîâëåíèå áàçû ïîæàëóéñòà ââåäèòå ïàğîëü ñ êîòîğûì FluxBB áûë óñòàíîâëåí. Åñëè íå ïîìíèòå, îí ñîõğàíåí â \'config.php\'.',
-'Database password note'		=>	'Åñëè âû ğàáîòàåòå ïîä SQLite (è ïàğîëü íå èñïîëüçóåòñÿ) ïîæàëóéñòà ââåäèòå ïóòü äî áàçû. Îí äîëæåí â òî÷íîñòè ñîâïàñòü ñ òåì, ÷òî õğàíèòñÿ â âàøåì ôàéëå êîíôèãóğàöèè.',
-'Database password'				=>	'Ïàğîëü áàçû',
-'Next'							=>	'Äàëåå',
+'Update'						=>	'ĞĞ±Ğ½Ğ¾Ğ²Ğ¸Ñ‚ÑŒ FluxBB',
+'Update message'				=>	'Ğ’Ğ°ÑˆĞ° Ğ±Ğ°Ğ·Ğ° FluxBB ÑƒÑÑ‚Ğ°Ñ€ĞµĞ»Ğ° Ğ¸ Ğ´Ğ¾Ğ»Ğ¶Ğ½Ğ° Ğ±Ñ‹Ñ‚ÑŒ Ğ¾Ğ±Ğ½Ğ¾Ğ²Ğ»ĞµĞ½Ğ° Ğ¿ĞµÑ€ĞµĞ´ Ñ‚ĞµĞ¼ ĞºĞ°Ğº Ğ¿Ñ€Ğ¾Ğ´Ğ¾Ğ»Ğ¶Ğ¸Ñ‚ÑŒ. Ğ•ÑĞ»Ğ¸ Ğ²Ñ‹ ĞĞ´Ğ¼Ğ¸Ğ½ ÑÑ‚Ğ¾Ğ³Ğ¾ Ñ„Ğ¾Ñ€ÑƒĞ¼Ğ°, Ğ¿Ğ¾Ğ¶Ğ°Ğ»ÑƒĞ¹ÑÑ‚Ğ° ÑĞ»ĞµĞ´ÑƒĞ¹Ñ‚Ğµ Ğ¸Ğ½ÑÑ‚Ñ€ÑƒĞºÑ†Ğ¸ÑĞ¼ Ğ½Ğ¸Ğ¶Ğµ Ñ‡Ñ‚Ğ¾Ğ±Ñ‹ Ğ·Ğ°Ğ²ĞµÑ€ÑˆĞ¸Ñ‚ÑŒ Ğ¾Ğ±Ğ½Ğ¾Ğ²Ğ»ĞµĞ½Ğ¸Ğµ.',
+'Note'							=>	'Ğ—Ğ°Ğ¼ĞµÑ‡Ğ°Ğ½Ğ¸Ğµ:',
+'Members message'				=>	'Ğ­Ñ‚Ğ¾ Ğ´ĞµĞ¹ÑÑ‚Ğ²Ğ¸Ğµ Ñ‚Ğ¾Ğ»ÑŒĞºĞ¾ Ğ´Ğ»Ñ Ğ°Ğ´Ğ¼Ğ¸Ğ½Ğ¸ÑÑ‚Ñ€Ğ°Ñ‚Ğ¾Ñ€Ğ¾Ğ². Ğ•ÑĞ»Ğ¸ Ğ²Ñ‹ Ğ¿Ñ€Ğ¾ÑÑ‚Ğ¾Ğ¹ Ğ¿Ğ¾Ğ»ÑŒĞ·Ğ¾Ğ²Ğ°Ñ‚ĞµĞ»ÑŒ, Ğ½Ğµ Ğ²Ğ¾Ğ»Ğ½ÑƒĞ¹Ñ‚ĞµÑÑŒ - Ñ„Ğ¾Ñ€ÑƒĞ¼ Ğ²ÑĞºĞ¾Ñ€Ğµ Ğ¿Ñ€Ğ¾Ğ´Ğ¾Ğ»Ğ¶Ğ¸Ñ‚ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ñƒ!',
+'Administrator only'			=>	'Ğ­Ñ‚Ğ¾ Ğ´ĞµĞ¹ÑÑ‚Ğ²Ğ¸Ğµ Ñ‚Ğ¾Ğ»ÑŒĞºĞ¾ Ğ´Ğ»Ñ Ğ°Ğ´Ğ¼Ğ¸Ğ½Ğ¸ÑÑ‚Ñ€Ğ°Ñ‚Ğ¾Ñ€Ğ¾Ğ²!',
+'Database password info'		=>	'Ğ§Ñ‚Ğ¾Ğ±Ñ‹ Ğ¿Ñ€Ğ¾Ğ²ĞµÑÑ‚Ğ¸ Ğ¾Ğ±Ğ½Ğ¾Ğ²Ğ»ĞµĞ½Ğ¸Ğµ Ğ±Ğ°Ğ·Ñ‹ Ğ¿Ğ¾Ğ¶Ğ°Ğ»ÑƒĞ¹ÑÑ‚Ğ° Ğ²Ğ²ĞµĞ´Ğ¸Ñ‚Ğµ Ğ¿Ğ°Ñ€Ğ¾Ğ»ÑŒ Ñ ĞºĞ¾Ñ‚Ğ¾Ñ€Ñ‹Ğ¼ FluxBB Ğ±Ñ‹Ğ» ÑƒÑÑ‚Ğ°Ğ½Ğ¾Ğ²Ğ»ĞµĞ½. Ğ•ÑĞ»Ğ¸ Ğ½Ğµ Ğ¿Ğ¾Ğ¼Ğ½Ğ¸Ñ‚Ğµ, Ğ¾Ğ½ ÑĞ¾Ñ…Ñ€Ğ°Ğ½ĞµĞ½ Ğ² \'config.php\'.',
+'Database password note'		=>	'Ğ•ÑĞ»Ğ¸ Ğ²Ñ‹ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ğ°ĞµÑ‚Ğµ Ğ¿Ğ¾Ğ´ SQLite (Ğ¸ Ğ¿Ğ°Ñ€Ğ¾Ğ»ÑŒ Ğ½Ğµ Ğ¸ÑĞ¿Ğ¾Ğ»ÑŒĞ·ÑƒĞµÑ‚ÑÑ) Ğ¿Ğ¾Ğ¶Ğ°Ğ»ÑƒĞ¹ÑÑ‚Ğ° Ğ²Ğ²ĞµĞ´Ğ¸Ñ‚Ğµ Ğ¿ÑƒÑ‚ÑŒ Ğ´Ğ¾ Ğ±Ğ°Ğ·Ñ‹. ĞĞ½ Ğ´Ğ¾Ğ»Ğ¶ĞµĞ½ Ğ² Ñ‚Ğ¾Ñ‡Ğ½Ğ¾ÑÑ‚Ğ¸ ÑĞ¾Ğ²Ğ¿Ğ°ÑÑ‚ÑŒ Ñ Ñ‚ĞµĞ¼, Ñ‡Ñ‚Ğ¾ Ñ…Ñ€Ğ°Ğ½Ğ¸Ñ‚ÑÑ Ğ² Ğ²Ğ°ÑˆĞµĞ¼ Ñ„Ğ°Ğ¹Ğ»Ğµ ĞºĞ¾Ğ½Ñ„Ğ¸Ğ³ÑƒÑ€Ğ°Ñ†Ğ¸Ğ¸.',
+'Database password'				=>	'ĞŸĞ°Ñ€Ğ¾Ğ»ÑŒ Ğ±Ğ°Ğ·Ñ‹',
+'Next'							=>	'Ğ”Ğ°Ğ»ĞµĞµ',
 
-'You are running error'			=>	'Âû ğàáîòàåòå íà %1$s âåğñèÿ %2$s. FluxBB %3$s íåîáõîäèì õîòÿáû %1$s %4$s äëÿ êîğğåêòíîé ğàáîòû. Âàì íåîáõîäèìî îáíîâèòü óñòàíîâêó %1$s ÷òîáû ïğîäîëæèòü.',
-'Version mismatch error'		=>	'Âåğñèÿ íå ñîâïàäàåò. Áàçà \'%s\' êàæåòñÿ íå ñîäåğæèò ñõåìó FluxBB ñ êîòîğîé ìîæåò ğàáîòàòü ıòîò ñêğèïò.',
-'Invalid file error'			=>	'Íåïğàâèëüíîå èìÿ ôàéëà. When using SQLite the database file name must be entered exactly as it appears in your \'%s\'',
+'You are running error'			=>	'Ğ’Ñ‹ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ğ°ĞµÑ‚Ğµ Ğ½Ğ° %1$s Ğ²ĞµÑ€ÑĞ¸Ñ %2$s. FluxBB %3$s Ğ½ĞµĞ¾Ğ±Ñ…Ğ¾Ğ´Ğ¸Ğ¼ Ñ…Ğ¾Ñ‚ÑĞ±Ñ‹ %1$s %4$s Ğ´Ğ»Ñ ĞºĞ¾Ñ€Ñ€ĞµĞºÑ‚Ğ½Ğ¾Ğ¹ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ñ‹. Ğ’Ğ°Ğ¼ Ğ½ĞµĞ¾Ğ±Ñ…Ğ¾Ğ´Ğ¸Ğ¼Ğ¾ Ğ¾Ğ±Ğ½Ğ¾Ğ²Ğ¸Ñ‚ÑŒ ÑƒÑÑ‚Ğ°Ğ½Ğ¾Ğ²ĞºÑƒ %1$s Ñ‡Ñ‚Ğ¾Ğ±Ñ‹ Ğ¿Ñ€Ğ¾Ğ´Ğ¾Ğ»Ğ¶Ğ¸Ñ‚ÑŒ.',
+'Version mismatch error'		=>	'Ğ’ĞµÑ€ÑĞ¸Ñ Ğ½Ğµ ÑĞ¾Ğ²Ğ¿Ğ°Ğ´Ğ°ĞµÑ‚. Ğ‘Ğ°Ğ·Ğ° \'%s\' ĞºĞ°Ğ¶ĞµÑ‚ÑÑ Ğ½Ğµ ÑĞ¾Ğ´ĞµÑ€Ğ¶Ğ¸Ñ‚ ÑÑ…ĞµĞ¼Ñƒ FluxBB Ñ ĞºĞ¾Ñ‚Ğ¾Ñ€Ğ¾Ğ¹ Ğ¼Ğ¾Ğ¶ĞµÑ‚ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ğ°Ñ‚ÑŒ ÑÑ‚Ğ¾Ñ‚ ÑĞºÑ€Ğ¸Ğ¿Ñ‚.',
+'Invalid file error'			=>	'ĞĞµĞ¿Ñ€Ğ°Ğ²Ğ¸Ğ»ÑŒĞ½Ğ¾Ğµ Ğ¸Ğ¼Ñ Ñ„Ğ°Ğ¹Ğ»Ğ°. When using SQLite the database file name must be entered exactly as it appears in your \'%s\'',
 'Invalid password error'		=>	'Invalid database password. To upgrade FluxBB you must enter your database password exactly as it appears in your \'%s\'',
 'No password error'				=>	'No database password provided',
 'Script runs error'				=>	'It appears the update script is already being ran by someone else. If this is not the case, please manually delete the file \'%s\' and try again',
@@ -33,7 +33,7 @@ $lang_update = array(
 'Current character set info'	=>	'Accept default for English forums otherwise the character set of the primary language pack.',
 'Start update'					=>	'Start update',
 'Error converting users'		=>	'Error converting users',
-'Error info 1'					=>	'There was an error converting some users. This can occur when converting from FluxBB v1.2 if multiple users have registered with very similar usernames, for example "bob" and "bÃ¶b".',
+'Error info 1'					=>	'There was an error converting some users. This can occur when converting from FluxBB v1.2 if multiple users have registered with very similar usernames, for example "bob" and "bĞ“Â¶b".',
 'Error info 2'					=>	'Below is a list of users who failed to convert. Please choose a new username for each user. Users who are renamed will automatically be sent an email alerting them of the change.',
 'New username'					=>	'New username',
 'Required'						=>	'(Required)',
@@ -44,9 +44,9 @@ $lang_update = array(
 
 'Unable to lock error'			=>	'Unable to write update lock. Please make sure PHP has write access to the directory \'%s\' and no-one else is currently running the update script.',
 
-'Converting'					=>	'Converting %s â€¦',
-'Converting item'				=>	'Converting %1$s %2$s â€¦',
-'Preparsing item'				=>	'Preparsing %1$s %2$s â€¦',
+'Converting'					=>	'Converting %s Ğ²Ğ‚Â¦',
+'Converting item'				=>	'Converting %1$s %2$s Ğ²Ğ‚Â¦',
+'Preparsing item'				=>	'Preparsing %1$s %2$s Ğ²Ğ‚Â¦',
 'Rebuilding index item'			=>	'Rebuilding index for %1$s %2$s',
 
 'ban'							=>	'ban',
