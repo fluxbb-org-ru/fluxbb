@@ -4,8 +4,8 @@
 $lang_register = array(
 
 // Miscellaneous
-'No new regs'				=>	'This forum is not accepting new registrations.',
-'Reg cancel redirect'		=>	'Registration cancelled. Redirecting &hellip;',
+'No new regs'				=>	'На этом форуме запрещены новые регистрации.',
+'Reg cancel redirect'		=>	'Регистрация прервана. Переадресация …',
 'Forum rules'				=>	'Правила форума',
 'Rules legend'				=>	'Регистрация на форуме означает, что вы согласны соблюдать его правила:',
 'Registration flood'		=>	'В течении последнего часа с вашего IP адреса уже была регистрация нового пользователя. Чтобы предотвратить мусорные регистрации, должно пройти не менее одного часа. Извините за неудобства.',

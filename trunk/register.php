@@ -27,13 +27,6 @@ if ($pun_config['o_regs_allow'] == '0')
 	message($lang_register['No new regs']);
 
 
-// Load reCAPTCHA if it set
-if (!empty($pun_config['o_recaptcha_pubkey']))
-{
-	require PUN_ROOT.'include/recaptcha.php';
-	$recaptcha = new Recaptcha(array('publicKey' => $pun_config['o_recaptcha_pubkey'], 'privateKey' => $pun_config['o_recaptcha_privkey']));
-}
-
 // User pressed the cancel button
 if (isset($_GET['cancel']))
 	redirect('index.php', $lang_register['Reg cancel redirect']);
@@ -153,12 +146,6 @@ if (isset($_POST['form_sent']))
 	if ($email_setting < 0 || $email_setting > 2)
 		$email_setting = $pun_config['o_default_email_setting'];
 
-	if (isset($recaptcha))
-	{
-		if (!$recaptcha->checkAnswer($_POST['recaptcha_challenge_field'], $_POST['recaptcha_response_field']))
-			$errors[] = $lang_common['reCaptcha error'];
-	}
-
 	// Did everything go according to plan?
 	if (empty($errors))
 	{
@@ -231,6 +218,12 @@ if (isset($_POST['form_sent']))
 
 			message($lang_register['Reg email'].' <a href="mailto:'.$pun_config['o_admin_email'].'">'.$pun_config['o_admin_email'].'</a>.', true);
 		}
+
+		// Regenerate the users info cache
+		if (!defined('FORUM_CACHE_FUNCTIONS_LOADED'))
+			require PUN_ROOT.'include/cache.php';
+
+		generate_users_info_cache();
 
 		pun_setcookie($new_uid, $password_hash, time() + $pun_config['o_timeout_visit']);
 
@@ -415,28 +408,6 @@ if (!empty($errors))
 					</div>
 				</fieldset>
 			</div>
-<?php
-
-if (isset($recaptcha))
-{
-
-?>
-<!-- start reCaptcha -->
-			<div class="inform">
-				<fieldset>
-					<legend><?php echo $lang_common['reCaptcha legend'] ?></legend>
-					<div class="infldset">
-						<p><?php echo $lang_common['reCaptcha info'] ?></p>
-						<?php echo $recaptcha->getHtml()."\n"; ?>
-					</div>
-				</fieldset>
-			</div>
-<!-- end reCaptcha -->
-<?php
-
-}
-
-?>
 			<p class="buttons"><input type="submit" name="register" value="<?php echo $lang_register['Register'] ?>" /></p>
 		</form>
 	</div>

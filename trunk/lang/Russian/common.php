@@ -4,12 +4,12 @@
 $lang_common = array(
 
 // Text orientation and encoding
-'lang_direction'                    =>  'ltr', // ltr (Left-To-Right) or rtl (Right-To-Left)
-'lang_identifier'                   =>  'ru',
+'lang_direction'        =>  'ltr', // ltr (Left-To-Right) or rtl (Right-To-Left)
+'lang_identifier'       =>  'ru',
 
 // Number formatting
-'lang_decimal_point'                =>  '.',
-'lang_thousands_sep'                =>  ',',
+'lang_decimal_point'    =>  '.',
+'lang_thousands_sep'    =>  ',',
 
 // Notices
 'Bad request'           =>  'Неверный запрос. Ссылка ошибочная или устарела.',
@@ -18,7 +18,6 @@ $lang_common = array(
 'Bad referrer'          =>  'Плохой HTTP_REFERER. Вы перешли на эту страницу из неавторизованного источника. Если проблема постоянная, убедитесь, что \'Base URL\' верно прописан в Admin/Options и что вы посещаете форум именно по такому URL. Дополнительную информацию вы можете получить из документации FluxBB.',
 'No cookie'             =>  'Вы вошли, но куки не были установлены. Пожалуйста проверьте ваши настройки и, если возможно, разрешите куки для этого сайта.',
 'Pun include error'     =>  'Невозможно подключить файл %s из шаблона %s. Нет такого файла в %s.',
-'reCaptcha error'       =>  'Каптча введена неверно. Попробуйте ещё раз.',
 
 // Miscellaneous
 'Announcement'          =>  'Объявление',
@@ -72,8 +71,6 @@ $lang_common = array(
 'Next'                  =>  'Вперед',
 'Forum index'           =>  'Форум',
 'Spacer'                =>  '&hellip;', // Ellipsis for paginate
-'reCaptcha legend'      =>  'reCAPTCHA',
-'reCaptcha info'        =>  'Пожалуйста введите слова с картинки.',
 
 // Title
 'Title'                 =>  'Титул',

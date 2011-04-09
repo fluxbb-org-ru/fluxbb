@@ -7,6 +7,7 @@ $lang_admin_reports = array(
 'New reports head'			=>	'Новые синалы',
 'Deleted user'				=>	'Пользователь удалён',
 'Deleted'					=>	'Удалено',
+'Post ID'					=>	'Сообщение #%s',
 'Report subhead'			=>	'Сигнал подан %s',
 'Reported by'				=>	'Просигналил %s',
 'Reason'					=>	'Причина',
