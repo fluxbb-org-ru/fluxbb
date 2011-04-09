@@ -4,6 +4,8 @@ Technitium theme CSS
 Yes, it is valid CSS 3, but unfortunately border-radius doesn't seem to work correctly in my Firefox version so I have to give it the moz versions, which break the validator. Sorry.
 *****************************************************************/
 
+@import url(imports/extra.css);
+
 /*****************************************************************
 1. INITIAL SETTINGS
 *****************************************************************/
