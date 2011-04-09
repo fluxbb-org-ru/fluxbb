@@ -70,7 +70,7 @@ function preparse_bbcode($text, &$errors, $is_signature = false)
 	{
 		global $lang_profile;
 
-		if (preg_match('%\[/?(?:quote|code|list|h)\b[^\]]*\]%i', $text))
+		if (preg_match('%\[/?(?:quote|code|list|h|video|audio)\b[^\]]*\]%i', $text))
 			$errors[] = $lang_profile['Signature quote/code/list/h'];
 	}
 
@@ -150,7 +150,7 @@ function strip_empty_bbcode($text, &$errors)
 	}
 
 	// Remove empty tags
-	while (($new_text = preg_replace('/\[(b|u|s|ins|del|em|i|h|colou?r|quote|img|url|email|list)(?:\=[^\]]*)?\]\s*\[\/\1\]/', '', $text)) !== NULL)
+	while (($new_text = preg_replace('/\[(b|u|s|ins|del|em|i|h|colou?r|quote|img|url|email|list|video|audio)(?:\=[^\]]*)?\]\s*\[\/\1\]/', '', $text)) !== NULL)
 	{
 		if ($new_text != $text)
 			$text = $new_text;
@@ -196,7 +196,7 @@ function preparse_tags($text, &$errors, $is_signature = false)
 	// Start off by making some arrays of bbcode tags and what we need to do with each one
 
 	// List of all the tags
-	$tags = array('quote', 'code', 'b', 'i', 'u', 's', 'ins', 'del', 'em', 'color', 'colour', 'url', 'email', 'img', 'list', '*', 'h');
+	$tags = array('quote', 'code', 'b', 'i', 'u', 's', 'ins', 'del', 'em', 'color', 'colour', 'url', 'email', 'img', 'list', '*', 'h', 'audio', 'video');
 	// List of tags that we need to check are open (You could not put b,i,u in here then illegal nesting like [b][i][/b][/i] would be allowed)
 	$tags_opened = $tags;
 	// and tags we need to check are closed (the same as above, added it just in case)
@@ -212,7 +212,7 @@ function preparse_tags($text, &$errors, $is_signature = false)
 	// Tags we trim interior space
 	$tags_trim = array('img');
 	// Tags we remove quotes from the argument
-	$tags_quotes = array('url', 'email', 'img');
+	$tags_quotes = array('url', 'email', 'img', 'audio', 'video');
 	// Tags we limit bbcode in
 	$tags_limit_bbcode = array(
 		'*' 	=> array('b', 'i', 'u', 's', 'ins', 'del', 'em', 'color', 'colour', 'url', 'email', 'list', 'img', 'code'),
@@ -718,6 +718,37 @@ function do_bbcode($text, $is_signature = false)
 		$text = preg_replace('#\s*\[\/quote\]#S', '</p></div></blockquote></div><p>', $text);
 	}
 
+	if (strpos($text, '[video') !== false)
+	{
+		$text = preg_replace('#\[video\]http://www.youtube.com/watch\?v=(.*?)\[/video\]#U',
+			'</p><div class="bbvideo"><p><a href="http://www.youtube.com/watch?v=$1">http://www.youtube.com/watch?v=$1</a></p>'.
+			'<object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/$1"></param><embed src="http://www.youtube.com/v/$1" type="application/x-shockwave-flash" width="640" height="385"></embed></object>'.
+			'</div><p>', $text);
+
+		$text = preg_replace('#\[video\]http://rutube.ru/tracks/(.*?).html\?v=(.*?)\[/video\]#U',
+			'</p><div class="bbvideo"><p><a href="http://rutube.ru/tracks/$1.html?v=$2">http://rutube.ru/tracks/$1.html?v=$2</a></p>'.
+			'<object width="640" height="385"><param name="movie" value="http://video.rutube.ru/$2"></param><param name="wmode" value="window"></param><param name="allowFullScreen" value="true"></param><embed src="http://video.rutube.ru/$2" type="application/x-shockwave-flash" wmode="window" width="640" height="385" allowFullScreen="true" ></embed></object>'.
+			'</div><p>', $text);
+
+		$text = preg_replace('#\[video\]http://vimeo.com/(.*?)\[/video\]#U',
+			'</p><div class="bbvideo"><p><a href="http://vimeo.com/$1">http://vimeo.com/$1</a></p>'.
+			'<object width="640" height="385"><param name="allowfullscreen" value="true" /><param name="allowscriptaccess" value="always" /><param name="movie" value="http://vimeo.com/moogaloop.swf?clip_id=$1&amp;server=vimeo.com&amp;show_title=1&amp;show_byline=1&amp;show_portrait=0&amp;color=&amp;fullscreen=1" /><embed src="http://vimeo.com/moogaloop.swf?clip_id=$1&amp;server=vimeo.com&amp;show_title=1&amp;show_byline=1&amp;show_portrait=0&amp;color=&amp;fullscreen=1" type="application/x-shockwave-flash" allowfullscreen="true" allowscriptaccess="always" width="640" height="385"></embed></object>'.
+			'</div><p>', $text);
+	}
+
+	if (strpos($text, '[audio') !== false)
+	{
+		$text = preg_replace('#\[audio\](http.*mp3)\[/audio\]#U',
+			'</p><div class="bbvideo"><p><a href="$1">$1</a></p>'.
+			'<object type="application/x-shockwave-flash" data="swf/mp3player.swf" id="audioplayer1" height="24" width="290">'.
+			'<param name="movie" value="swf/mp3player.swf">'.
+			'<param name="FlashVars" value="playerID=audioplayer1&soundFile=$1">'.
+			'<param name="quality" value="high">'.
+			'<param name="menu" value="false">'.
+			'<param name="wmode" value="transparent">'.
+			'</object> </div><p>', $text);
+	}
+
 	if (!$is_signature)
 	{
 		$pattern[] = $re_list;
@@ -784,8 +815,8 @@ function do_clickable($text)
 {
 	$text = ' '.$text;
 
-	$text = ucp_preg_replace('#(?<=[\s\]\)])(<)?(\[)?(\()?([\'"]?)(https?|ftp|news){1}://([\p{L}\p{N}\-]+\.([\p{L}\p{N}\-]+\.)*[\p{L}\p{N}]+(:[0-9]+)?(/[^\s\[]*[^\s.,?!\[;:-])?)\4(?(3)(\)))(?(2)(\]))(?(1)(>))(?![^\s]*\[/(?:url|img)\])#uie', 'stripslashes(\'$1$2$3$4\').handle_url_tag(\'$5://$6\', \'$5://$6\', true).stripslashes(\'$4$10$11$12\')', $text);
-	$text = ucp_preg_replace('#(?<=[\s\]\)])(<)?(\[)?(\()?([\'"]?)(www|ftp)\.(([\p{L}\p{N}\-]+\.)*[\p{L}\p{N}]+(:[0-9]+)?(/[^\s\[]*[^\s.,?!\[;:-])?)\4(?(3)(\)))(?(2)(\]))(?(1)(>))(?![^\s]*\[/(?:url|img)\])#uie', 'stripslashes(\'$1$2$3$4\').handle_url_tag(\'$5.$6\', \'$5.$6\', true).stripslashes(\'$4$10$11$12\')', $text);
+	$text = ucp_preg_replace('#(?<=[\s\]\)])(<)?(\[)?(\()?([\'"]?)(https?|ftp|news){1}://([\p{L}\p{N}\-]+\.([\p{L}\p{N}\-]+\.)*[\p{L}\p{N}]+(:[0-9]+)?(/[^\s\[]*[^\s.,?!\[;:-])?)\4(?(3)(\)))(?(2)(\]))(?(1)(>))(?![^\s]*\[/(?:url|img|video|audio)\])#uie', 'stripslashes(\'$1$2$3$4\').handle_url_tag(\'$5://$6\', \'$5://$6\', true).stripslashes(\'$4$10$11$12\')', $text);
+	$text = ucp_preg_replace('#(?<=[\s\]\)])(<)?(\[)?(\()?([\'"]?)(www|ftp)\.(([\p{L}\p{N}\-]+\.)*[\p{L}\p{N}]+(:[0-9]+)?(/[^\s\[]*[^\s.,?!\[;:-])?)\4(?(3)(\)))(?(2)(\]))(?(1)(>))(?![^\s]*\[/(?:url|img|video|audio)\])#uie', 'stripslashes(\'$1$2$3$4\').handle_url_tag(\'$5.$6\', \'$5.$6\', true).stripslashes(\'$4$10$11$12\')', $text);
 
 	return substr($text, 1);
 }
