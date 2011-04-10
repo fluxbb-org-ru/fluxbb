@@ -13,6 +13,7 @@ if (!defined('PUN_ROOT'))
 define('FORUM_VERSION', '1.4.5');
 
 define('FORUM_DB_REVISION', 11);
+define('FORUM_DB_PE_REVISION', 11);
 define('FORUM_SI_REVISION', 2);
 define('FORUM_PARSER_REVISION', 2);
 
@@ -120,6 +121,7 @@ if (!defined('PUN_CONFIG_LOADED'))
 
 // Verify that we are running the proper database schema revision
 if (!isset($pun_config['o_database_revision']) || $pun_config['o_database_revision'] < FORUM_DB_REVISION ||
+		!isset($pun_config['o_database_pe_revision']) || $pun_config['o_database_pe_revision'] < FORUM_DB_PE_REVISION ||
 		!isset($pun_config['o_searchindex_revision']) || $pun_config['o_searchindex_revision'] < FORUM_SI_REVISION ||
 		!isset($pun_config['o_parser_revision']) || $pun_config['o_parser_revision'] < FORUM_PARSER_REVISION ||
 		version_compare($pun_config['o_cur_version'], FORUM_VERSION, '<'))

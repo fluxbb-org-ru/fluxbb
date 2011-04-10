@@ -10,6 +10,7 @@
 define('FORUM_VERSION', '1.4.5');
 
 define('FORUM_DB_REVISION', 11);
+define('FORUM_DB_PE_REVISION', 11);
 define('FORUM_SI_REVISION', 2);
 define('FORUM_PARSER_REVISION', 2);
 
@@ -1552,6 +1553,38 @@ else
 	$db->create_table('users', $schema) or error('Unable to create users table', __FILE__, __LINE__, $db->error());
 
 
+	$schema = array(
+		'FIELDS'		=> array(
+			'id'			=> array(
+				'datatype'		=> 'SERIAL',
+				'allow_null'	=> false
+			),
+			'poster'		=> array(
+				'datatype'		=> 'VARCHAR(200)',
+				'allow_null'	=> false,
+				'default'		=> '\'\''
+			),
+			'poster_id'		=> array(
+				'datatype'		=> 'INT(10) UNSIGNED',
+				'allow_null'	=> false,
+				'default'		=> '1'
+			),
+			'posted'		=> array(
+				'datatype'		=> 'INT(10) UNSIGNED',
+				'allow_null'	=> false,
+				'default'		=> '0'
+			),
+			'message'		=> array(
+				'datatype'		=> 'TEXT',
+				'allow_null'	=> true
+			)
+		),
+		'PRIMARY KEY'	=> array('id')
+	);
+
+	$db->create_table('warnings', $schema) or error('Unable to create warnings table', __FILE__, __LINE__, $db->error());
+
+
 	$now = time();
 
 	// Insert the four preset groups
@@ -1577,6 +1610,7 @@ else
 	$config = array(
 		'o_cur_version'				=> "'".FORUM_VERSION."'",
 		'o_database_revision'		=> "'".FORUM_DB_REVISION."'",
+		'o_database_pe_revision'	=> "'".FORUM_DB_PE_REVISION."'",
 		'o_searchindex_revision'	=> "'".FORUM_SI_REVISION."'",
 		'o_parser_revision'			=> "'".FORUM_PARSER_REVISION."'",
 		'o_board_title'				=> "'".$db->escape($title)."'",

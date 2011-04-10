@@ -19,7 +19,7 @@ if ($id < 1)
 	message($lang_common['Bad request']);
 
 // Fetch some info about the post, the topic and the forum
-$result = $db->query('SELECT f.id AS fid, f.forum_name, f.moderators, f.redirect_url, fp.post_replies, fp.post_topics, t.id AS tid, t.subject, t.posted, t.first_post_id, t.sticky, t.closed, p.poster, p.poster_id, p.message, p.hide_smilies FROM '.$db->prefix.'posts AS p INNER JOIN '.$db->prefix.'topics AS t ON t.id=p.topic_id INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND p.id='.$id) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
+$result = $db->query('SELECT f.id AS fid, f.forum_name, f.moderators, f.redirect_url, fp.post_replies, fp.post_topics, t.id AS tid, t.subject, t.posted, t.first_post_id, t.sticky, t.closed, p.poster, p.poster_id, p.message, p.hide_smilies, w.message AS warning, w.poster AS warner, w.posted AS warned  FROM '.$db->prefix.'posts AS p INNER JOIN '.$db->prefix.'topics AS t ON t.id=p.topic_id INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'warnings AS w ON p.id=w.id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND p.id='.$id) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
 if (!$db->num_rows($result))
 	message($lang_common['Bad request']);
 
@@ -127,6 +127,19 @@ if (isset($_POST['form_sent']))
 		else
 			update_search_index('edit', $id, $message);
 
+		if ($is_admmod)
+		{
+			$warning = pun_linebreaks(pun_trim($_POST['warning']));
+			if ($warning != $cur_post['warning'])
+			{
+				$db->query('DELETE FROM '.$db->prefix.'warnings WHERE id='.$id) or error('Unable to remove warning', __FILE__, __LINE__, $db->error());
+				if (strlen($_POST['warning']) > 0 )
+				{
+					$db->query('INSERT INTO '.$db->prefix.'warnings (id, poster, poster_id, posted, message) VALUES('.$id.', \''.$db->escape($pun_user['username']).'\', '.$pun_user['id'].', '.time().', \''.$db->escape($_POST['warning']).'\')') or error('Unable to insert warning', __FILE__, __LINE__, $db->error());
+				}
+			}
+		}
+
 		// Update the post
 		$db->query('UPDATE '.$db->prefix.'posts SET message=\''.$db->escape($message).'\', hide_smilies='.$hide_smilies.$edited_sql.' WHERE id='.$id) or error('Unable to update post', __FILE__, __LINE__, $db->error());
 
@@ -227,6 +240,16 @@ else if (isset($_POST['preview']))
 							<li><span><a href="help.php#img" onclick="window.open(this.href); return false;"><?php echo $lang_common['img tag'] ?></a> <?php echo ($pun_config['p_message_bbcode'] == '1' && $pun_config['p_message_img_tag'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></span></li>
 							<li><span><a href="help.php#smilies" onclick="window.open(this.href); return false;"><?php echo $lang_common['Smilies'] ?></a> <?php echo ($pun_config['o_smilies'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></span></li>
 						</ul>
+<?php if ($is_admmod): ?>						<label><strong><?php echo $lang_common['Moderator'] ?></strong><br />
+						<input class="longinput" type="text" name="warning" size="80" maxlength="1024" tabindex="<?php echo $cur_index++ ?>" value="<?php echo pun_htmlspecialchars(isset($_POST['warning']) ? $_POST['warning'] : $cur_post['warning']) ?>" /><br /></label>
+<?php elseif ($cur_post['warning'] != ''): 
+	require_once PUN_ROOT.'include/parser.php';
+	$warning = '<cite>'.format_time($cur_post['warned']).' '.pun_htmlspecialchars($cur_post['warner']).' '.$lang_common['wrote'].'</cite>'.parse_message($cur_post['warning'], true);
+?>
+						<div class="postwarn">
+							<?php echo $warning."\n" ?>
+						</div>
+<?php endif; ?>
 					</div>
 				</fieldset>
 <?php

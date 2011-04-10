@@ -220,6 +220,14 @@ for ($i = 0;$cur_post_id = $db->result($result, $i);$i++)
 if (empty($post_ids))
 	error('The post table and topic table seem to be out of sync!', __FILE__, __LINE__);
 
+// Retrieve moderator's warnings
+$result = $db->query('SELECT w.id, w.message, w.poster, w.posted FROM '.$db->prefix.'warnings AS w WHERE w.id IN ('.implode(',', $post_ids).')', true) or error('Unable to fetch warnings', __FILE__, __LINE__, $db->error());
+$warnings = array();
+while ($warning = $db->fetch_assoc($result))
+{
+	$warnings[$warning['id']] = $warning;
+}
+
 // Retrieve the posts (and their respective poster/online status)
 $result = $db->query('SELECT u.email, u.title, u.url, u.location, u.signature, u.email_setting, u.num_posts, u.registered, u.admin_note, p.id, p.poster AS username, p.poster_id, p.poster_ip, p.poster_email, p.message, p.hide_smilies, p.posted, p.edited, p.edited_by, g.g_id, g.g_user_title, o.user_id AS is_online FROM '.$db->prefix.'posts AS p INNER JOIN '.$db->prefix.'users AS u ON u.id=p.poster_id INNER JOIN '.$db->prefix.'groups AS g ON g.g_id=u.group_id LEFT JOIN '.$db->prefix.'online AS o ON (o.user_id=u.id AND o.user_id!=1 AND o.idle=0) WHERE p.id IN ('.implode(',', $post_ids).') ORDER BY p.id', true) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
 while ($cur_post = $db->fetch_assoc($result))
@@ -339,6 +347,15 @@ while ($cur_post = $db->fetch_assoc($result))
 	// Perform the main parsing of the message (BBCode, smilies, censor words etc)
 	$cur_post['message'] = parse_message($cur_post['message'], $cur_post['hide_smilies']);
 
+	// Parse moderator's warning if any
+	if (isset($warnings[$cur_post['id']]))
+	{
+		$warning = $warnings[$cur_post['id']];
+		$cur_post['warning'] = '<cite>'.format_time($warning['posted']).' '.pun_htmlspecialchars($warning['poster']).' '.$lang_common['wrote'].'</cite>'.parse_message($warning['message'], true);
+	} else {
+	 	$cur_post['warning'] = null;
+	}
+
 	// Do signature parsing/caching
 	if ($pun_config['o_signatures'] == '1' && $cur_post['signature'] != '' && $pun_user['show_sig'] != '0')
 	{
@@ -372,6 +389,11 @@ while ($cur_post = $db->fetch_assoc($result))
 						<?php echo $cur_post['message']."\n" ?>
 <?php if ($cur_post['edited'] != '') echo "\t\t\t\t\t\t".'<p class="postedit"><em>'.$lang_topic['Last edit'].' '.pun_htmlspecialchars($cur_post['edited_by']).' ('.format_time($cur_post['edited']).')</em></p>'."\n"; ?>
 					</div>
+<?php if (!is_null($cur_post['warning'])): ?>
+					<div class="postwarn">
+						<?php echo $cur_post['warning']."\n" ?>
+					</div>
+<?php endif; ?>
 <?php if ($signature != '') echo "\t\t\t\t\t".'<div class="postsignature postmsg"><hr />'.$signature.'</div>'."\n"; ?>
 				</div>
 			</div>

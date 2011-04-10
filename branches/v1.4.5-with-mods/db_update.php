@@ -10,6 +10,7 @@
 define('UPDATE_TO', '1.4.5');
 
 define('UPDATE_TO_DB_REVISION', 11);
+define('UPDATE_TO_DB_PE_REVISION', 11);
 define('UPDATE_TO_SI_REVISION', 2);
 define('UPDATE_TO_PARSER_REVISION', 2);
 
@@ -162,6 +163,7 @@ switch ($db_type)
 
 // Check the database, search index and parser revision and the current version
 if (isset($pun_config['o_database_revision']) && $pun_config['o_database_revision'] >= UPDATE_TO_DB_REVISION &&
+		isset($pun_config['o_database_pe_revision']) && $pun_config['o_database_pe_revision'] >= UPDATE_TO_DB_PE_REVISION &&
 		isset($pun_config['o_searchindex_revision']) && $pun_config['o_searchindex_revision'] >= UPDATE_TO_SI_REVISION &&
 		isset($pun_config['o_parser_revision']) && $pun_config['o_parser_revision'] >= UPDATE_TO_PARSER_REVISION &&
 		version_compare($pun_config['o_cur_version'], UPDATE_TO, '>='))
@@ -621,7 +623,7 @@ switch ($stage)
 {
 	// Start by updating the database structure
 	case 'start':
-		$query_str = '?stage=preparse_posts';
+		$query_str = '?stage=pe';
 
 		// If we don't need to update the database, skip this stage
 		if (isset($pun_config['o_database_revision']) && $pun_config['o_database_revision'] >= UPDATE_TO_DB_REVISION)
@@ -1092,6 +1094,54 @@ switch ($stage)
 
 		break;
 
+	// Apply mods
+	case 'pe':
+		$query_str = '?stage=preparse_posts';
+
+		// If we don't need to update the database for mods, skip this stage
+		if (isset($pun_config['o_database_pe_revision']) && $pun_config['o_database_pe_revision'] >= UPDATE_TO_DB_PE_REVISION)
+			break;
+
+		// If the moderator warnings table does not exists, create it
+		if (!$db->table_exists('warnings'))
+		{
+			$schema = array(
+				'FIELDS'		=> array(
+					'id'			=> array(
+						'datatype'		=> 'SERIAL',
+						'allow_null'	=> false
+					),
+					'poster'		=> array(
+						'datatype'		=> 'VARCHAR(200)',
+						'allow_null'	=> false,
+						'default'		=> '\'\''
+					),
+					'poster_id'		=> array(
+						'datatype'		=> 'INT(10) UNSIGNED',
+						'allow_null'	=> false,
+						'default'		=> '1'
+					),
+					'posted'		=> array(
+						'datatype'		=> 'INT(10) UNSIGNED',
+						'allow_null'	=> false,
+						'default'		=> '0'
+					),
+					'message'		=> array(
+						'datatype'		=> 'TEXT',
+						'allow_null'	=> true
+					)
+				),
+				'PRIMARY KEY'	=> array('id')
+			);
+
+			$db->create_table('warnings', $schema) or error('Unable to create warnings table', __FILE__, __LINE__, $db->error());
+		}
+
+		// Add mods revision number
+		if (!array_key_exists('o_database_pe_revision', $pun_config))
+			$db->query('INSERT INTO '.$db->prefix.'config (conf_name, conf_value) VALUES (\'o_database_pe_revision\', \'0\')') or error('Unable to insert config value \'o_database_revision\'', __FILE__, __LINE__, $db->error());
+
+		break;
 
 	// Convert bans
 	case 'conv_bans':
@@ -1397,7 +1447,7 @@ switch ($stage)
 
 	// Convert users
 	case 'conv_users':
-		$query_str = '?stage=preparse_posts';
+		$query_str = '?stage=pe';
 
 		if ($start_at == 0)
 			$_SESSION['dupe_users'] = array();
@@ -1435,7 +1485,7 @@ switch ($stage)
 
 	// Handle any duplicate users which occured due to conversion
 	case 'conv_users_dupe':
-		$query_str = '?stage=preparse_posts';
+		$query_str = '?stage=pe';
 
 		if (!$mysql || empty($_SESSION['dupe_users']))
 			break;
@@ -1758,6 +1808,9 @@ foreach ($errors[$id] as $cur_error)
 
 		// And the database revision number
 		$db->query('UPDATE '.$db->prefix.'config SET conf_value = \''.UPDATE_TO_DB_REVISION.'\' WHERE conf_name = \'o_database_revision\'') or error('Unable to update database revision number', __FILE__, __LINE__, $db->error());
+
+		// And the mod revision number
+		$db->query('UPDATE '.$db->prefix.'config SET conf_value = \''.UPDATE_TO_DB_PE_REVISION.'\' WHERE conf_name = \'o_database_pe_revision\'') or error('Unable to update database revision number', __FILE__, __LINE__, $db->error());
 
 		// And the search index revision number
 		$db->query('UPDATE '.$db->prefix.'config SET conf_value = \''.UPDATE_TO_SI_REVISION.'\' WHERE conf_name = \'o_searchindex_revision\'') or error('Unable to update search index revision number', __FILE__, __LINE__, $db->error());
