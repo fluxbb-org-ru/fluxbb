@@ -359,7 +359,7 @@ while ($cur_post = $db->fetch_assoc($result))
 			<div class="postbody">
 				<div class="postleft">
 					<dl>
-						<dt><strong><?php echo $username ?><a href="#req_message" onclick="return insert_text('', '[b]@<?php echo pun_htmlspecialchars($cur_post['username']) ?>[/b], ')">&nbsp;@&nbsp;</a></strong></dt>
+						<dt><strong><?php if ($quickpost): ?><a href="#req_message" onclick="return insert_text('', '[b]@<?php echo pun_htmlspecialchars($cur_post['username']) ?>[/b], ')">@&nbsp;</a><?php endif; ?><?php echo $username ?></strong></dt>
 						<dd class="usertitle"><strong><?php echo $user_title ?></strong></dd>
 <?php if ($user_avatar != '') echo "\t\t\t\t\t\t".'<dd class="postavatar">'.$user_avatar.'</dd>'."\n"; ?>
 <?php if (count($user_info)) echo "\t\t\t\t\t\t".implode("\n\t\t\t\t\t\t", $user_info)."\n"; ?>
