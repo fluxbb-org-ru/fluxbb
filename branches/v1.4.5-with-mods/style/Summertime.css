@@ -258,8 +258,7 @@ body {
 }
 
 #brddesc {
-	border-top-style: dotted;
-	border-top-width: 1px;
+    border-top: 1px dotted #96ba6f;
 	padding: 10px 0;
 }
 
@@ -1412,9 +1411,9 @@ html, body {
     border-top-width: 2px;
 }
 
-#brdtitle #brddesc, .pun .pagepost, #brdstats #onlinelist, #brdfooter #searchlinks, #brdfooter #modcontrols,
+.pun .pagepost, #brdstats #onlinelist, #brdfooter #searchlinks, 
 #punmaint h2, #punredirect h2, #adminconsole .submittop, .pun #debugtime, .pun .pagelink a, .pun .pagelink * {
-	border-color: #b9c5ce;
+	border-color: #96ba6f;
 }
 
 .pun a, .pun a:link, .pun a:visited {
