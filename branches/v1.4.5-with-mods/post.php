@@ -673,6 +673,28 @@ if (!empty($checkboxes))
 
 ?>
 			</div>
+<?php
+
+if (isset($recaptcha))
+{
+
+?>
+<!-- start reCaptcha -->
+			<div class="inform">
+				<fieldset>
+					<legend><?php echo $lang_admin_plugin_recaptcha['reCaptcha legend'] ?></legend>
+					<div class="infldset">
+						<p><?php echo $lang_admin_plugin_recaptcha['reCaptcha info'] ?></p>
+						<?php echo $recaptcha->getHtml()."\n"; ?>
+					</div>
+				</fieldset>
+			</div>
+<!-- end reCaptcha -->
+<?php
+
+}
+
+?>
 			<div class="inform">
 				<fieldset>
 					<legend><?php echo $lang_common['Options'] ?></legend>
