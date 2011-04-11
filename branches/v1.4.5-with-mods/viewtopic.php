@@ -447,7 +447,7 @@ $cur_index = 1;
 					<div class="infldset txtarea">
 <?php include PUN_ROOT.'include/bbcode.inc.php'; ?>
 						<input type="hidden" name="form_sent" value="1" />
-						<input type="hidden" name="form_user" value="<?php echo pun_htmlspecialchars($pun_user['username']) ?>" />
+						<input type="hidden" name="form_user" value="<?php echo (!$pun_user['is_guest']) ? pun_htmlspecialchars($pun_user['username']) : 'Guest'; ?>" />
 <?php if ($pun_config['o_topic_subscriptions'] == '1' && ($pun_user['auto_notify'] == '1' || $cur_topic['is_subscribed'])): ?>						<input type="hidden" name="subscribe" value="1" />
 <?php endif; ?>
 <?php
@@ -478,6 +478,35 @@ else
 					</div>
 				</fieldset>
 			</div>
+<?php
+
+// Load reCAPTCHA if it set
+if ($pun_user['is_guest'] && !empty($pun_config['o_recaptcha_pubkey']))
+{
+	require PUN_ROOT.'include/recaptcha.php';
+	$recaptcha = new Recaptcha(array('publicKey' => $pun_config['o_recaptcha_pubkey'], 'privateKey' => $pun_config['o_recaptcha_privkey']));
+}
+
+if (isset($recaptcha))
+{
+
+?>
+<!-- start reCaptcha -->
+			<div class="inform">
+				<fieldset>
+					<legend><?php echo $lang_admin_plugin_recaptcha['reCaptcha legend'] ?></legend>
+					<div class="infldset">
+						<p><?php echo $lang_admin_plugin_recaptcha['reCaptcha info'] ?></p>
+						<?php echo $recaptcha->getHtml()."\n"; ?>
+					</div>
+				</fieldset>
+			</div>
+<!-- end reCaptcha -->
+<?php
+
+}
+
+?>
 			<p class="buttons"><input type="submit" name="submit" tabindex="<?php echo $cur_index++ ?>" value="<?php echo $lang_common['Submit'] ?>" accesskey="s" /> <input type="submit" name="preview" value="<?php echo $lang_topic['Preview'] ?>" tabindex="<?php echo $cur_index++ ?>" accesskey="p" /></p>
 		</form>
 	</div>
