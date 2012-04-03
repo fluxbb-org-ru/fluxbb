@@ -69,7 +69,6 @@ $lang_common = array(
 'Write message legend'  =>  'Введите сообщение и нажмите Отправить',
 'Previous'              =>  'Назад',
 'Next'                  =>  'Вперед',
-'Forum index'           =>  'Форум',
 'Spacer'                =>  '&hellip;', // Ellipsis for paginate
 
 // Title
@@ -137,24 +136,6 @@ $lang_common = array(
 'Query'                 =>  'Запрос',
 'Total query time'      =>  'Итого время выполнения запросов: %s',
 
-// Email related notifications
-'New user notification'             =>  'Оповещение - Новая регистрация',
-'New user message'                  =>  'Пользователь \'%s\' зарегистрировался на форуме в %s',
-'Banned email notification'         =>  'Оповещение - Обнаружен забаненный e-mail',
-'Banned email register message'     =>  'Пользователь \'%s\' зарегистрировался с забаненным e-mail: %s',
-'Banned email change message'       =>  'Пользователь \'%s\' сменил e-mail на забаненный адрес: %s',
-'Banned email post message'         =>  'Пользователь \'%s\' написал указав забаненный email: %s',
-'Duplicate email notification'      =>  'Оповещение - Обнаружен повторяющийся e-mail',
-'Duplicate email register message'  =>  'Пользователь \'%s\' зарегистрировался с e-mail, который также принадлежит: %s',
-'Duplicate email change message'    =>  'Пользователь \'%s\' сменил e-mail на адрес, который уже принадлежит: %s',
-'Report notification'               =>  'Сигнал(%d) - \'%s\'',
-'Report message 1'                  =>  'Пользователь \'%s\' оставил следующий сигнал: %s',
-'Report message 2'                  =>  'Причина: %s',
-
-'User profile'                      =>  'Профиль пользователя: %s',
-'Post URL'                          =>  'URL сообщения: %s',
-'Email signature'                   =>  'Почтовый робот'."\n".'(Не отвечайте на это сообщение)',
-
 // For extern.php RSS feed
 'RSS description'                   =>  'Самые свежие темы на %s.',
 'RSS description topic'             =>  'Самые свежие сообщения в %s.',
@@ -169,5 +150,14 @@ $lang_common = array(
 // Admin related stuff in the header
 'New reports'                       =>  'Есть новые сингалы',
 'Maintenance mode enabled'          =>  'Включен режим обслуживания!',
+
+// Units for file sizes
+'Size unit B'						=>	'%s B',
+'Size unit KiB'						=>	'%s KB',
+'Size unit MiB'						=>	'%s MB',
+'Size unit GiB'						=>	'%s GB',
+'Size unit TiB'						=>	'%s TB',
+'Size unit PiB'						=>	'%s PB',
+'Size unit EiB'						=>	'%s EB',
 
 );

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (C) 2008-2011 FluxBB
+ * Copyright (C) 2008-2012 FluxBB
  * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
  * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
  */
@@ -15,27 +15,27 @@ if (!defined('PUN'))
 switch ($db_type)
 {
 	case 'mysql':
-		require PUN_ROOT.'include/dblayer/mysql.php';
+		require_once PUN_ROOT.'include/dblayer/mysql.php';
 		break;
 
 	case 'mysql_innodb':
-		require PUN_ROOT.'include/dblayer/mysql_innodb.php';
+		require_once PUN_ROOT.'include/dblayer/mysql_innodb.php';
 		break;
 
 	case 'mysqli':
-		require PUN_ROOT.'include/dblayer/mysqli.php';
+		require_once PUN_ROOT.'include/dblayer/mysqli.php';
 		break;
 
 	case 'mysqli_innodb':
-		require PUN_ROOT.'include/dblayer/mysqli_innodb.php';
+		require_once PUN_ROOT.'include/dblayer/mysqli_innodb.php';
 		break;
 
 	case 'pgsql':
-		require PUN_ROOT.'include/dblayer/pgsql.php';
+		require_once PUN_ROOT.'include/dblayer/pgsql.php';
 		break;
 
 	case 'sqlite':
-		require PUN_ROOT.'include/dblayer/sqlite.php';
+		require_once PUN_ROOT.'include/dblayer/sqlite.php';
 		break;
 
 	default:

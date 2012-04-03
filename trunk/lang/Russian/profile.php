@@ -81,6 +81,7 @@ $lang_profile = array(
 'Realname'                  =>  'Настоящее имя',
 'Location'                  =>  'Откуда',
 'Website'                   =>  'Веб сайт',
+'Invalid website URL'		=>	'Вы ввели неправильный URL сайта.',
 'Jabber'                    =>  'Jabber',
 'ICQ'                       =>  'ICQ',
 'MSN'                       =>  'MSN Messenger',

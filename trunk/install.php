@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Copyright (C) 2008-2011 FluxBB
+ * Copyright (C) 2008-2012 FluxBB
  * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
  * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
  */
 
 // The FluxBB version this script installs
-define('FORUM_VERSION', '1.4.5');
+define('FORUM_VERSION', '1.4.8');
 
-define('FORUM_DB_REVISION', 11);
+define('FORUM_DB_REVISION', 15);
 define('FORUM_SI_REVISION', 2);
 define('FORUM_PARSER_REVISION', 2);
 
@@ -21,40 +21,6 @@ define('PUN_SEARCH_MAX_WORD', 20);
 
 
 define('PUN_ROOT', dirname(__FILE__).'/');
-
-// If we've been passed a default language, use it
-$install_lang = isset($_REQUEST['install_lang']) ? trim($_REQUEST['install_lang']) : 'English';
-
-// If such a language pack doesn't exist, or isn't up-to-date enough to translate this page, default to English
-if (!file_exists(PUN_ROOT.'lang/'.$install_lang.'/install.php'))
-	$install_lang = 'English';
-
-require PUN_ROOT.'lang/'.$install_lang.'/install.php';
-
-if (file_exists(PUN_ROOT.'config.php'))
-{
-	// Check to see whether FluxBB is already installed
-	include PUN_ROOT.'config.php';
-
-	// If we have the 1.3-legacy constant defined, define the proper 1.4 constant so we don't get an incorrect "need to install" message
-	if (defined('FORUM'))
-		define('PUN', FORUM);
-
-	// If PUN is defined, config.php is probably valid and thus the software is installed
-	if (defined('PUN'))
-		exit($lang_install['Already installed']);
-}
-
-// Define PUN because email.php requires it
-define('PUN', 1);
-
-// If the cache directory is not specified, we use the default setting
-if (!defined('FORUM_CACHE_DIR'))
-	define('FORUM_CACHE_DIR', PUN_ROOT.'cache/');
-
-// Make sure we are running at least MIN_PHP_VERSION
-if (!function_exists('version_compare') || version_compare(PHP_VERSION, MIN_PHP_VERSION, '<'))
-	exit(sprintf($lang_install['You are running error'], 'PHP', PHP_VERSION, FORUM_VERSION, MIN_PHP_VERSION));
 
 // Load the functions script
 require PUN_ROOT.'include/functions.php';
@@ -95,6 +61,42 @@ if (get_magic_quotes_gpc())
 // Turn off PHP time limit
 @set_time_limit(0);
 
+
+// If we've been passed a default language, use it
+$install_lang = isset($_REQUEST['install_lang']) ? trim($_REQUEST['install_lang']) : 'English';
+
+// If such a language pack doesn't exist, or isn't up-to-date enough to translate this page, default to English
+if (!file_exists(PUN_ROOT.'lang/'.$install_lang.'/install.php'))
+	$install_lang = 'English';
+
+require PUN_ROOT.'lang/'.$install_lang.'/install.php';
+
+if (file_exists(PUN_ROOT.'config.php'))
+{
+	// Check to see whether FluxBB is already installed
+	include PUN_ROOT.'config.php';
+
+	// If we have the 1.3-legacy constant defined, define the proper 1.4 constant so we don't get an incorrect "need to install" message
+	if (defined('FORUM'))
+		define('PUN', FORUM);
+
+	// If PUN is defined, config.php is probably valid and thus the software is installed
+	if (defined('PUN'))
+		exit($lang_install['Already installed']);
+}
+
+// Define PUN because email.php requires it
+define('PUN', 1);
+
+// If the cache directory is not specified, we use the default setting
+if (!defined('FORUM_CACHE_DIR'))
+	define('FORUM_CACHE_DIR', PUN_ROOT.'cache/');
+
+// Make sure we are running at least MIN_PHP_VERSION
+if (!function_exists('version_compare') || version_compare(PHP_VERSION, MIN_PHP_VERSION, '<'))
+	exit(sprintf($lang_install['You are running error'], 'PHP', PHP_VERSION, FORUM_VERSION, MIN_PHP_VERSION));
+
+
 //
 // Generate output to be used for config.php
 //
@@ -129,7 +131,7 @@ if (!isset($_POST['form_sent']))
 {
 	// Make an educated guess regarding base_url
 	$base_url  = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https://' : 'http://';	// protocol
-	$base_url .= preg_replace('/:(80|443)$/', '', $_SERVER['HTTP_HOST']);							// host[:port]
+	$base_url .= preg_replace('%:(80|443)$%', '', $_SERVER['HTTP_HOST']);							// host[:port]
 	$base_url .= str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));							// path
 
 	if (substr($base_url, -1) == '/')
@@ -172,11 +174,11 @@ else
 		$alerts[] = $lang_install['Username 2'];
 	else if (!strcasecmp($username, 'Guest'))
 		$alerts[] = $lang_install['Username 3'];
-	else if (preg_match('/[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/', $username) || preg_match('/((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(([0-9A-Fa-f]{1,4}:){0,5}:((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(::([0-9A-Fa-f]{1,4}:){0,5}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))/', $username))
+	else if (preg_match('%[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}%', $username) || preg_match('%((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(([0-9A-Fa-f]{1,4}:){0,5}:((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(::([0-9A-Fa-f]{1,4}:){0,5}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))%', $username))
 		$alerts[] = $lang_install['Username 4'];
 	else if ((strpos($username, '[') !== false || strpos($username, ']') !== false) && strpos($username, '\'') !== false && strpos($username, '"') !== false)
 		$alerts[] = $lang_install['Username 5'];
-	else if (preg_match('/(?:\[\/?(?:b|u|i|h|colou?r|quote|code|img|url|email|list)\]|\[(?:code|quote|list)=)/i', $username))
+	else if (preg_match('%(?:\[/?(?:b|u|i|h|colou?r|quote|code|img|url|email|list)\]|\[(?:code|quote|list)=)%i', $username))
 		$alerts[] = $lang_install['Username 6'];
 
 	if (pun_strlen($password1) < 4)
@@ -203,11 +205,11 @@ else
 }
 
 // Check if the cache directory is writable
-if (!@is_writable(FORUM_CACHE_DIR))
+if (!forum_is_writable(FORUM_CACHE_DIR))
 	$alerts[] = sprintf($lang_install['Alert cache'], FORUM_CACHE_DIR);
 
 // Check if default avatar directory is writable
-if (!@is_writable(PUN_ROOT.'img/avatars/'))
+if (!forum_is_writable(PUN_ROOT.'img/avatars/'))
 	$alerts[] = sprintf($lang_install['Alert avatar'], PUN_ROOT.'img/avatars/');
 
 if (!isset($_POST['form_sent']) || !empty($alerts))
@@ -253,11 +255,10 @@ if (!isset($_POST['form_sent']) || !empty($alerts))
 /* <![CDATA[ */
 function process_form(the_form)
 {
-	var element_names = {
+	var required_fields = {
 		"req_db_type": "<?php echo $lang_install['Database type'] ?>",
 		"req_db_host": "<?php echo $lang_install['Database server hostname'] ?>",
 		"req_db_name": "<?php echo $lang_install['Database name'] ?>",
-		"db_prefix": "<?php echo $lang_install['Table prefix'] ?>",
 		"req_username": "<?php echo $lang_install['Administrator username'] ?>",
 		"req_password1": "<?php echo $lang_install['Administrator password 1'] ?>",
 		"req_password2": "<?php echo $lang_install['Administrator password 2'] ?>",
@@ -270,14 +271,11 @@ function process_form(the_form)
 		for (var i = 0; i < the_form.length; ++i)
 		{
 			var elem = the_form.elements[i];
-			if (elem.name && (/^req_/.test(elem.name)))
+			if (elem.name && required_fields[elem.name] && !elem.value && elem.type && (/^(?:text(?:area)?|password|file)$/i.test(elem.type)))
 			{
-				if (!elem.value && elem.type && (/^(?:text(?:area)?|password|file)$/i.test(elem.type)))
-				{
-					alert('"' + element_names[elem.name] + '" <?php echo $lang_install['Required field'] ?>');
-					elem.focus();
-					return false;
-				}
+				alert('"' + required_fields[elem.name] + '" <?php echo $lang_install['Required field'] ?>');
+				elem.focus();
+				return false;
 			}
 		}
 	}
@@ -286,7 +284,7 @@ function process_form(the_form)
 /* ]]> */
 </script>
 </head>
-<body onload="document.getElementById('install').req_db_type.focus();document.getElementById('install').start.disabled=false;">
+<body onload="document.getElementById('install').req_db_type.focus();document.getElementById('install').start.disabled=false;" onunload="">
 
 <div id="puninstall" class="pun">
 <div class="top-box"><div><!-- Top Corners --></div></div>
@@ -579,7 +577,7 @@ else
 	$db = new DBLayer($db_host, $db_username, $db_password, $db_name, $db_prefix, false);
 
 	// Validate prefix
-	if (strlen($db_prefix) > 0 && (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $db_prefix) || strlen($db_prefix) > 40))
+	if (strlen($db_prefix) > 0 && (!preg_match('%^[a-zA-Z_][a-zA-Z0-9_]*$%', $db_prefix) || strlen($db_prefix) > 40))
 		error(sprintf($lang_install['Table prefix error'], $db->prefix));
 
 	// Do some DB type specific checks
@@ -945,6 +943,11 @@ else
 				'datatype'		=> 'SMALLINT(6)',
 				'allow_null'	=> false,
 				'default'		=> '60'
+			),
+			'g_report_flood'			=> array(
+				'datatype'		=> 'SMALLINT(6)',
+				'allow_null'	=> false,
+				'default'		=> '60'
 			)
 		),
 		'PRIMARY KEY'	=> array('g_id')
@@ -990,8 +993,7 @@ else
 		'INDEXES'		=> array(
 			'ident_idx'		=> array('ident'),
 			'logged_idx'	=> array('logged')
-		),
-		'ENGINE'		=> 'HEAP'
+		)
 	);
 
 	if ($db_type == 'mysql' || $db_type == 'mysqli' || $db_type == 'mysql_innodb' || $db_type == 'mysqli_innodb')
@@ -1485,7 +1487,7 @@ else
 			'language'			=> array(
 				'datatype'		=> 'VARCHAR(25)',
 				'allow_null'	=> false,
-				'default'		=> '\'English\''
+				'default'		=> '\''.$db->escape($default_lang).'\''
 			),
 			'style'				=> array(
 				'datatype'		=> 'VARCHAR(25)',
@@ -1506,6 +1508,10 @@ else
 				'allow_null'	=> true
 			),
 			'last_email_sent'	=> array(
+				'datatype'		=> 'INT(10) UNSIGNED',
+				'allow_null'	=> true
+			),
+			'last_report_sent'	=> array(
 				'datatype'		=> 'INT(10) UNSIGNED',
 				'allow_null'	=> true
 			),
@@ -1555,13 +1561,13 @@ else
 	$now = time();
 
 	// Insert the four preset groups
-	$db->query('INSERT INTO '.$db->prefix.'groups ('.($db_type != 'pgsql' ? 'g_id, ' : '').'g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_post_flood, g_search_flood, g_email_flood) VALUES('.($db_type != 'pgsql' ? '1, ' : '').'\''.$db->escape($lang_install['Administrators']).'\', \''.$db->escape($lang_install['Administrator']).'\', 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0)') or error('Unable to add group', __FILE__, __LINE__, $db->error());
+	$db->query('INSERT INTO '.$db->prefix.'groups ('.($db_type != 'pgsql' ? 'g_id, ' : '').'g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_post_flood, g_search_flood, g_email_flood, g_report_flood) VALUES('.($db_type != 'pgsql' ? '1, ' : '').'\''.$db->escape($lang_install['Administrators']).'\', \''.$db->escape($lang_install['Administrator']).'\', 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0)') or error('Unable to add group', __FILE__, __LINE__, $db->error());
 
-	$db->query('INSERT INTO '.$db->prefix.'groups ('.($db_type != 'pgsql' ? 'g_id, ' : '').'g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_post_flood, g_search_flood, g_email_flood) VALUES('.($db_type != 'pgsql' ? '2, ' : '').'\''.$db->escape($lang_install['Moderators']).'\', \''.$db->escape($lang_install['Moderator']).'\', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0)') or error('Unable to add group', __FILE__, __LINE__, $db->error());
+	$db->query('INSERT INTO '.$db->prefix.'groups ('.($db_type != 'pgsql' ? 'g_id, ' : '').'g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_post_flood, g_search_flood, g_email_flood, g_report_flood) VALUES('.($db_type != 'pgsql' ? '2, ' : '').'\''.$db->escape($lang_install['Moderators']).'\', \''.$db->escape($lang_install['Moderator']).'\', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0)') or error('Unable to add group', __FILE__, __LINE__, $db->error());
 
-	$db->query('INSERT INTO '.$db->prefix.'groups ('.($db_type != 'pgsql' ? 'g_id, ' : '').'g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_post_flood, g_search_flood, g_email_flood) VALUES('.($db_type != 'pgsql' ? '3, ' : '').'\''.$db->escape($lang_install['Guests']).'\', NULL, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 60, 30, 0)') or error('Unable to add group', __FILE__, __LINE__, $db->error());
+	$db->query('INSERT INTO '.$db->prefix.'groups ('.($db_type != 'pgsql' ? 'g_id, ' : '').'g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_post_flood, g_search_flood, g_email_flood, g_report_flood) VALUES('.($db_type != 'pgsql' ? '3, ' : '').'\''.$db->escape($lang_install['Guests']).'\', NULL, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 60, 30, 0, 0)') or error('Unable to add group', __FILE__, __LINE__, $db->error());
 
-	$db->query('INSERT INTO '.$db->prefix.'groups ('.($db_type != 'pgsql' ? 'g_id, ' : '').'g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_post_flood, g_search_flood, g_email_flood) VALUES('.($db_type != 'pgsql' ? '4, ' : '').'\''.$db->escape($lang_install['Members']).'\', NULL, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 60, 30, 60)') or error('Unable to add group', __FILE__, __LINE__, $db->error());
+	$db->query('INSERT INTO '.$db->prefix.'groups ('.($db_type != 'pgsql' ? 'g_id, ' : '').'g_title, g_user_title, g_moderator, g_mod_edit_users, g_mod_rename_users, g_mod_change_passwords, g_mod_ban_users, g_read_board, g_view_users, g_post_replies, g_post_topics, g_edit_posts, g_delete_posts, g_delete_topics, g_set_title, g_search, g_search_users, g_send_email, g_post_flood, g_search_flood, g_email_flood, g_report_flood) VALUES('.($db_type != 'pgsql' ? '4, ' : '').'\''.$db->escape($lang_install['Members']).'\', NULL, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 60, 30, 60, 60)') or error('Unable to add group', __FILE__, __LINE__, $db->error());
 
 	// Insert guest and first admin user
 	$db->query('INSERT INTO '.$db_prefix.'users (group_id, username, password, email) VALUES(3, \''.$db->escape($lang_install['Guest']).'\', \''.$db->escape($lang_install['Guest']).'\', \''.$db->escape($lang_install['Guest']).'\')')
@@ -1574,90 +1580,90 @@ else
 	$avatars = in_array(strtolower(@ini_get('file_uploads')), array('on', 'true', '1')) ? 1 : 0;
 
 	// Insert config data
-	$config = array(
-		'o_cur_version'				=> "'".FORUM_VERSION."'",
-		'o_database_revision'		=> "'".FORUM_DB_REVISION."'",
-		'o_searchindex_revision'	=> "'".FORUM_SI_REVISION."'",
-		'o_parser_revision'			=> "'".FORUM_PARSER_REVISION."'",
-		'o_board_title'				=> "'".$db->escape($title)."'",
-		'o_board_desc'				=> "'".$db->escape($description)."'",
-		'o_default_timezone'		=> "'0'",
-		'o_time_format'				=> "'H:i:s'",
-		'o_date_format'				=> "'Y-m-d'",
-		'o_timeout_visit'			=> "'1800'",
-		'o_timeout_online'			=> "'300'",
-		'o_redirect_delay'			=> "'1'",
-		'o_show_version'			=> "'0'",
-		'o_show_user_info'			=> "'1'",
-		'o_show_post_count'			=> "'1'",
-		'o_signatures'				=> "'1'",
-		'o_smilies'					=> "'1'",
-		'o_smilies_sig'				=> "'1'",
-		'o_make_links'				=> "'1'",
-		'o_default_lang'			=> "'".$db->escape($default_lang)."'",
-		'o_default_style'			=> "'".$db->escape($default_style)."'",
-		'o_default_user_group'		=> "'4'",
-		'o_topic_review'			=> "'15'",
-		'o_disp_topics_default'		=> "'30'",
-		'o_disp_posts_default'		=> "'25'",
-		'o_indent_num_spaces'		=> "'4'",
-		'o_quote_depth'				=> "'3'",
-		'o_quickpost'				=> "'1'",
-		'o_users_online'			=> "'1'",
-		'o_censoring'				=> "'0'",
-		'o_ranks'					=> "'1'",
-		'o_show_dot'				=> "'0'",
-		'o_topic_views'				=> "'1'",
-		'o_quickjump'				=> "'1'",
-		'o_gzip'					=> "'0'",
-		'o_additional_navlinks'		=> "''",
-		'o_report_method'			=> "'0'",
-		'o_regs_report'				=> "'0'",
-		'o_default_email_setting'	=> "'1'",
-		'o_mailing_list'			=> "'".$email."'",
-		'o_avatars'					=> "'".$avatars."'",
-		'o_avatars_dir'				=> "'img/avatars'",
-		'o_avatars_width'			=> "'60'",
-		'o_avatars_height'			=> "'60'",
-		'o_avatars_size'			=> "'10240'",
-		'o_search_all_forums'		=> "'1'",
-		'o_base_url'				=> "'".$db->escape($base_url)."'",
-		'o_admin_email'				=> "'".$email."'",
-		'o_webmaster_email'			=> "'".$email."'",
-		'o_forum_subscriptions'		=> "'1'",
-		'o_topic_subscriptions'		=> "'1'",
-		'o_smtp_host'				=> "NULL",
-		'o_smtp_user'				=> "NULL",
-		'o_smtp_pass'				=> "NULL",
-		'o_smtp_ssl'				=> "'0'",
-		'o_regs_allow'				=> "'1'",
-		'o_regs_verify'				=> "'0'",
-		'o_announcement'			=> "'0'",
-		'o_announcement_message'	=> "'".$db->escape($lang_install['Announcement'])."'",
-		'o_rules'					=> "'0'",
-		'o_rules_message'			=> "'".$db->escape($lang_install['Rules'])."'",
-		'o_maintenance'				=> "'0'",
-		'o_maintenance_message'		=> "'".$db->escape($lang_install['Maintenance message'])."'",
-		'o_default_dst'				=> "'0'",
-		'o_feed_type'				=> "'2'",
-		'o_feed_ttl'				=> "'0'",
-		'p_message_bbcode'			=> "'1'",
-		'p_message_img_tag'			=> "'1'",
-		'p_message_all_caps'		=> "'1'",
-		'p_subject_all_caps'		=> "'1'",
-		'p_sig_all_caps'			=> "'1'",
-		'p_sig_bbcode'				=> "'1'",
-		'p_sig_img_tag'				=> "'0'",
-		'p_sig_length'				=> "'400'",
-		'p_sig_lines'				=> "'4'",
-		'p_allow_banned_email'		=> "'1'",
-		'p_allow_dupe_email'		=> "'0'",
-		'p_force_guest_email'		=> "'1'"
+	$pun_config = array(
+		'o_cur_version'				=> FORUM_VERSION,
+		'o_database_revision'		=> FORUM_DB_REVISION,
+		'o_searchindex_revision'	=> FORUM_SI_REVISION,
+		'o_parser_revision'			=> FORUM_PARSER_REVISION,
+		'o_board_title'				=> $title,
+		'o_board_desc'				=> $description,
+		'o_default_timezone'		=> 0,
+		'o_time_format'				=> 'H:i:s',
+		'o_date_format'				=> 'Y-m-d',
+		'o_timeout_visit'			=> 1800,
+		'o_timeout_online'			=> 300,
+		'o_redirect_delay'			=> 1,
+		'o_show_version'			=> 0,
+		'o_show_user_info'			=> 1,
+		'o_show_post_count'			=> 1,
+		'o_signatures'				=> 1,
+		'o_smilies'					=> 1,
+		'o_smilies_sig'				=> 1,
+		'o_make_links'				=> 1,
+		'o_default_lang'			=> $default_lang,
+		'o_default_style'			=> $default_style,
+		'o_default_user_group'		=> 4,
+		'o_topic_review'			=> 15,
+		'o_disp_topics_default'		=> 30,
+		'o_disp_posts_default'		=> 25,
+		'o_indent_num_spaces'		=> 4,
+		'o_quote_depth'				=> 3,
+		'o_quickpost'				=> 1,
+		'o_users_online'			=> 1,
+		'o_censoring'				=> 0,
+		'o_ranks'					=> 1,
+		'o_show_dot'				=> 0,
+		'o_topic_views'				=> 1,
+		'o_quickjump'				=> 1,
+		'o_gzip'					=> 0,
+		'o_additional_navlinks'		=> '',
+		'o_report_method'			=> 0,
+		'o_regs_report'				=> 0,
+		'o_default_email_setting'	=> 1,
+		'o_mailing_list'			=> $email,
+		'o_avatars'					=> $avatars,
+		'o_avatars_dir'				=> 'img/avatars',
+		'o_avatars_width'			=> 60,
+		'o_avatars_height'			=> 60,
+		'o_avatars_size'			=> 10240,
+		'o_search_all_forums'		=> 1,
+		'o_base_url'				=> $base_url,
+		'o_admin_email'				=> $email,
+		'o_webmaster_email'			=> $email,
+		'o_forum_subscriptions'		=> 1,
+		'o_topic_subscriptions'		=> 1,
+		'o_smtp_host'				=> NULL,
+		'o_smtp_user'				=> NULL,
+		'o_smtp_pass'				=> NULL,
+		'o_smtp_ssl'				=> 0,
+		'o_regs_allow'				=> 1,
+		'o_regs_verify'				=> 0,
+		'o_announcement'			=> 0,
+		'o_announcement_message'	=> $lang_install['Announcement'],
+		'o_rules'					=> 0,
+		'o_rules_message'			=> $lang_install['Rules'],
+		'o_maintenance'				=> 0,
+		'o_maintenance_message'		=> $lang_install['Maintenance message'],
+		'o_default_dst'				=> 0,
+		'o_feed_type'				=> 2,
+		'o_feed_ttl'				=> 0,
+		'p_message_bbcode'			=> 1,
+		'p_message_img_tag'			=> 1,
+		'p_message_all_caps'		=> 1,
+		'p_subject_all_caps'		=> 1,
+		'p_sig_all_caps'			=> 1,
+		'p_sig_bbcode'				=> 1,
+		'p_sig_img_tag'				=> 0,
+		'p_sig_length'				=> 400,
+		'p_sig_lines'				=> 4,
+		'p_allow_banned_email'		=> 1,
+		'p_allow_dupe_email'		=> 0,
+		'p_force_guest_email'		=> 1
 	);
 
-	foreach ($config as $conf_name => $conf_value)
+	foreach ($pun_config as $conf_name => $conf_value)
 	{
-		$db->query('INSERT INTO '.$db_prefix."config (conf_name, conf_value) VALUES('$conf_name', $conf_value)")
+		$db->query('INSERT INTO '.$db_prefix.'config (conf_name, conf_value) VALUES(\''.$conf_name.'\', '.($conf_value === NULL ? 'NULL' : '\''.$db->escape($conf_value).'\'').')')
 			or error('Unable to insert into table '.$db_prefix.'config. Please check your configuration and try again', __FILE__, __LINE__, $db->error());
 	}
 
@@ -1685,7 +1691,6 @@ else
 
 	// Index the test post so searching for it works
 	require PUN_ROOT.'include/search_idx.php';
-	$pun_config['o_default_lang'] = $default_lang;
 	update_search_index('post', 1, $message, $subject);
 
 	$db->end_transaction();
@@ -1705,7 +1710,7 @@ else
 
 	// Attempt to write config.php and serve it up for download if writing fails
 	$written = false;
-	if (is_writable(PUN_ROOT))
+	if (forum_is_writable(PUN_ROOT))
 	{
 		$fh = @fopen(PUN_ROOT.'config.php', 'wb');
 		if ($fh)

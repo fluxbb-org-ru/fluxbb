@@ -14,6 +14,7 @@ $lang_search = array(
 'Author search'						=>  'Автор',
 'Search in legend'					=>  'Где искать',
 'Search in info'					=>  'Выберите в каком форуме искать и где искать: в заголовке, сообщении или и там и там.',
+'Search multiple forums info'		=>	'Если не выбран ни один, будем искать по всем.',
 'Forum search'						=>  'Форум',
 'All forums'						=>  '&lt;Все&gt;',
 'Search in'							=>  'Искать в',
@@ -35,9 +36,8 @@ $lang_search = array(
 'Show as posts'						=>  'сообщения',
 
 // Results
+'Search'							=>	'Поиск',
 'Search results'					=>  'Результаты поиска',
-'Search topics'						=>  'Искать темы',
-'Search posts'						=>  'Искать сообщения',
 'Quick search show_new'				=>  'Новые',
 'Quick search show_recent'			=>  'Активные',
 'Quick search show_unanswered'		=>  'Без ответов',

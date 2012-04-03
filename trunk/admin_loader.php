@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (C) 2008-2011 FluxBB
+ * Copyright (C) 2008-2012 FluxBB
  * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
  * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
  */
@@ -19,7 +19,7 @@ if (!$pun_user['is_admmod'])
 
 // The plugin to load should be supplied via GET
 $plugin = isset($_GET['plugin']) ? $_GET['plugin'] : '';
-if (!preg_match('/^AM?P_(\w*?)\.php$/i', $plugin))
+if (!preg_match('%^AM?P_(\w*?)\.php$%i', $plugin))
 	message($lang_common['Bad request']);
 
 // AP_ == Admins only, AMP_ == admins and moderators

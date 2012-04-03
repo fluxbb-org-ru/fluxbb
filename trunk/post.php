@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (C) 2008-2011 FluxBB
+ * Copyright (C) 2008-2012 FluxBB
  * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
  * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
  */
@@ -59,10 +59,6 @@ $errors = array();
 // Did someone just hit "Submit" or "Preview"?
 if (isset($_POST['form_sent']))
 {
-	// Make sure form_user is correct
-	if (($pun_user['is_guest'] && $_POST['form_user'] != 'Guest') || (!$pun_user['is_guest'] && $_POST['form_user'] != $pun_user['username']))
-		message($lang_common['Bad request']);
-
 	// Flood protection
 	if (!isset($_POST['preview']) && $pun_user['last_post'] != '' && (time() - $pun_user['last_post']) < $pun_user['g_post_flood'])
 		$errors[] = $lang_post['Flood start'].' '.$pun_user['g_post_flood'].' '.$lang_post['flood end'];
@@ -96,8 +92,9 @@ if (isset($_POST['form_sent']))
 	{
 		$username = pun_trim($_POST['req_username']);
 		$email = strtolower(trim(($pun_config['p_force_guest_email'] == '1') ? $_POST['req_email'] : $_POST['email']));
+		$banned_email = false;
 
-		// Load the register.php/profile.php language files
+		// Load the register.php/prof_reg.php language files
 		require PUN_ROOT.'lang/'.$pun_user['language'].'/prof_reg.php';
 		require PUN_ROOT.'lang/'.$pun_user['language'].'/register.php';
 
@@ -119,8 +116,6 @@ if (isset($_POST['form_sent']))
 
 				$banned_email = true; // Used later when we send an alert email
 			}
-			else
-				$banned_email = false;
 		}
 	}
 
@@ -157,6 +152,9 @@ if (isset($_POST['form_sent']))
 	$hide_smilies = isset($_POST['hide_smilies']) ? '1' : '0';
 	$subscribe = isset($_POST['subscribe']) ? '1' : '0';
 	$stick_topic = isset($_POST['stick_topic']) && $is_admmod ? '1' : '0';
+	
+	// Replace four-byte characters (MySQL cannot handle them)
+	$message = strip_bad_multibyte_chars($message);
 
 	$now = time();
 
@@ -188,7 +186,7 @@ if (isset($_POST['form_sent']))
 			else
 			{
 				// It's a guest. Insert the new post
-				$email_sql = ($pun_config['p_force_guest_email'] == '1' || $email != '') ? '\''.$email.'\'' : 'NULL';
+				$email_sql = ($pun_config['p_force_guest_email'] == '1' || $email != '') ? '\''.$db->escape($email).'\'' : 'NULL';
 				$db->query('INSERT INTO '.$db->prefix.'posts (poster, poster_ip, poster_email, message, hide_smilies, posted, topic_id) VALUES(\''.$db->escape($username).'\', \''.get_remote_address().'\', '.$email_sql.', \''.$db->escape($message).'\', '.$hide_smilies.', '.$now.', '.$tid.')') or error('Unable to create post', __FILE__, __LINE__, $db->error());
 				$new_pid = $db->insert_id();
 			}
@@ -219,6 +217,11 @@ if (isset($_POST['form_sent']))
 
 					$notification_emails = array();
 
+					if ($pun_config['o_censoring'] == '1')
+						$cleaned_message = bbcode2email($censored_message, -1);
+					else
+						$cleaned_message = bbcode2email($message, -1);
+
 					// Loop through subscribed users and send emails
 					while ($cur_subscriber = $db->fetch_assoc($result))
 					{
@@ -247,15 +250,15 @@ if (isset($_POST['form_sent']))
 								$mail_message = str_replace('<replier>', $username, $mail_message);
 								$mail_message = str_replace('<post_url>', get_base_url().'/viewtopic.php?pid='.$new_pid.'#p'.$new_pid, $mail_message);
 								$mail_message = str_replace('<unsubscribe_url>', get_base_url().'/misc.php?action=unsubscribe&tid='.$tid, $mail_message);
-								$mail_message = str_replace('<board_mailer>', $pun_config['o_board_title'].' '.$lang_common['Mailer'], $mail_message);
+								$mail_message = str_replace('<board_mailer>', $pun_config['o_board_title'], $mail_message);
 
 								$mail_subject_full = str_replace('<topic_subject>', $cur_posting['subject'], $mail_subject_full);
 								$mail_message_full = str_replace('<topic_subject>', $cur_posting['subject'], $mail_message_full);
 								$mail_message_full = str_replace('<replier>', $username, $mail_message_full);
-								$mail_message_full = str_replace('<message>', $pun_config['o_censoring'] == '1' ? $censored_message : $message, $mail_message_full);
+								$mail_message_full = str_replace('<message>', $cleaned_message, $mail_message_full);
 								$mail_message_full = str_replace('<post_url>', get_base_url().'/viewtopic.php?pid='.$new_pid.'#p'.$new_pid, $mail_message_full);
 								$mail_message_full = str_replace('<unsubscribe_url>', get_base_url().'/misc.php?action=unsubscribe&tid='.$tid, $mail_message_full);
-								$mail_message_full = str_replace('<board_mailer>', $pun_config['o_board_title'].' '.$lang_common['Mailer'], $mail_message_full);
+								$mail_message_full = str_replace('<board_mailer>', $pun_config['o_board_title'], $mail_message_full);
 
 								$notification_emails[$cur_subscriber['language']][0] = $mail_subject;
 								$notification_emails[$cur_subscriber['language']][1] = $mail_message;
@@ -275,6 +278,8 @@ if (isset($_POST['form_sent']))
 								pun_mail($cur_subscriber['email'], $notification_emails[$cur_subscriber['language']][2], $notification_emails[$cur_subscriber['language']][3]);
 						}
 					}
+
+					unset($cleaned_message);
 				}
 			}
 		}
@@ -297,7 +302,7 @@ if (isset($_POST['form_sent']))
 			else
 			{
 				// Create the post ("topic post")
-				$email_sql = ($pun_config['p_force_guest_email'] == '1' || $email != '') ? '\''.$email.'\'' : 'NULL';
+				$email_sql = ($pun_config['p_force_guest_email'] == '1' || $email != '') ? '\''.$db->escape($email).'\'' : 'NULL';
 				$db->query('INSERT INTO '.$db->prefix.'posts (poster, poster_ip, poster_email, message, hide_smilies, posted, topic_id) VALUES(\''.$db->escape($username).'\', \''.get_remote_address().'\', '.$email_sql.', \''.$db->escape($message).'\', '.$hide_smilies.', '.$now.', '.$new_tid.')') or error('Unable to create post', __FILE__, __LINE__, $db->error());
 			}
 			$new_pid = $db->insert_id();
@@ -319,6 +324,11 @@ if (isset($_POST['form_sent']))
 					require_once PUN_ROOT.'include/email.php';
 
 					$notification_emails = array();
+
+					if ($pun_config['o_censoring'] == '1')
+						$cleaned_message = bbcode2email($censored_message, -1);
+					else
+						$cleaned_message = bbcode2email($message, -1);
 
 					// Loop through subscribed users and send emails
 					while ($cur_subscriber = $db->fetch_assoc($result))
@@ -349,16 +359,16 @@ if (isset($_POST['form_sent']))
 								$mail_message = str_replace('<poster>', $username, $mail_message);
 								$mail_message = str_replace('<topic_url>', get_base_url().'/viewtopic.php?id='.$new_tid, $mail_message);
 								$mail_message = str_replace('<unsubscribe_url>', get_base_url().'/misc.php?action=unsubscribe&fid='.$cur_posting['id'], $mail_message);
-								$mail_message = str_replace('<board_mailer>', $pun_config['o_board_title'].' '.$lang_common['Mailer'], $mail_message);
+								$mail_message = str_replace('<board_mailer>', $pun_config['o_board_title'], $mail_message);
 
 								$mail_subject_full = str_replace('<forum_name>', $cur_posting['forum_name'], $mail_subject_full);
 								$mail_message_full = str_replace('<topic_subject>', $pun_config['o_censoring'] == '1' ? $censored_subject : $subject, $mail_message_full);
 								$mail_message_full = str_replace('<forum_name>', $cur_posting['forum_name'], $mail_message_full);
 								$mail_message_full = str_replace('<poster>', $username, $mail_message_full);
-								$mail_message_full = str_replace('<message>', $pun_config['o_censoring'] == '1' ? $censored_message : $message, $mail_message_full);
+								$mail_message_full = str_replace('<message>', $cleaned_message, $mail_message_full);
 								$mail_message_full = str_replace('<topic_url>', get_base_url().'/viewtopic.php?id='.$new_tid, $mail_message_full);
 								$mail_message_full = str_replace('<unsubscribe_url>', get_base_url().'/misc.php?action=unsubscribe&fid='.$cur_posting['id'], $mail_message_full);
-								$mail_message_full = str_replace('<board_mailer>', $pun_config['o_board_title'].' '.$lang_common['Mailer'], $mail_message_full);
+								$mail_message_full = str_replace('<board_mailer>', $pun_config['o_board_title'], $mail_message_full);
 
 								$notification_emails[$cur_subscriber['language']][0] = $mail_subject;
 								$notification_emails[$cur_subscriber['language']][1] = $mail_message;
@@ -378,6 +388,8 @@ if (isset($_POST['form_sent']))
 								pun_mail($cur_subscriber['email'], $notification_emails[$cur_subscriber['language']][2], $notification_emails[$cur_subscriber['language']][3]);
 						}
 					}
+
+					unset($cleaned_message);
 				}
 			}
 		}
@@ -385,10 +397,18 @@ if (isset($_POST['form_sent']))
 		// If we previously found out that the email was banned
 		if ($pun_user['is_guest'] && $banned_email && $pun_config['o_mailing_list'] != '')
 		{
-			$mail_subject = $lang_common['Banned email notification'];
-			$mail_message = sprintf($lang_common['Banned email post message'], $username, $email)."\n";
-			$mail_message .= sprintf($lang_common['Post URL'], get_base_url().'/viewtopic.php?pid='.$new_pid.'#p'.$new_pid)."\n";
-			$mail_message .= "\n".'--'."\n".$lang_common['Email signature'];
+			// Load the "banned email post" template
+			$mail_tpl = trim(file_get_contents(PUN_ROOT.'lang/'.$pun_user['language'].'/mail_templates/banned_email_post.tpl'));
+
+			// The first row contains the subject
+			$first_crlf = strpos($mail_tpl, "\n");
+			$mail_subject = trim(substr($mail_tpl, 8, $first_crlf-8));
+			$mail_message = trim(substr($mail_tpl, $first_crlf));
+
+			$mail_message = str_replace('<username>', $username, $mail_message);
+			$mail_message = str_replace('<email>', $email, $mail_message);
+			$mail_message = str_replace('<post_url>', get_base_url().'/viewtopic.php?pid='.$new_pid.'#p'.$new_pid, $mail_message);
+			$mail_message = str_replace('<board_mailer>', $pun_config['o_board_title'], $mail_message);
 
 			pun_mail($pun_config['o_mailing_list'], $mail_subject, $mail_message);
 		}
@@ -434,10 +454,7 @@ if ($tid)
 		// If the message contains a code tag we have to split it up (text within [code][/code] shouldn't be touched)
 		if (strpos($q_message, '[code]') !== false && strpos($q_message, '[/code]') !== false)
 		{
-			$errors = array();
-			list($inside, $outside) = split_text($q_message, '[code]', '[/code]', $errors);
-			if (!empty($errors)) // Technically this shouldn't happen, since $q_message is an existing post it should only exist if it previously passed validation
-				message($errors[0]);
+			list($inside, $outside) = split_text($q_message, '[code]', '[/code]');
 
 			$q_message = implode("\1", $outside);
 		}
@@ -596,7 +613,6 @@ $cur_index = 1;
 					<legend><?php echo $lang_common['Write message legend'] ?></legend>
 					<div class="infldset txtarea">
 						<input type="hidden" name="form_sent" value="1" />
-						<input type="hidden" name="form_user" value="<?php echo (!$pun_user['is_guest']) ? pun_htmlspecialchars($pun_user['username']) : 'Guest'; ?>" />
 <?php
 
 if ($pun_user['is_guest'])

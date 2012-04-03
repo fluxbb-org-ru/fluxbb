@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (C) 2008-2011 FluxBB
+ * Copyright (C) 2008-2012 FluxBB
  * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
  * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
  */
@@ -173,7 +173,7 @@ if ($action == 'prune')
 	}
 
 	$prune_days = trim($_POST['req_prune_days']);
-	if ($prune_days == '' || preg_match('/[^0-9]/', $prune_days))
+	if ($prune_days == '' || preg_match('%[^0-9]%', $prune_days))
 		message($lang_admin_maintenance['Days must be integer message']);
 
 	$prune_date = time() - ($prune_days * 86400);

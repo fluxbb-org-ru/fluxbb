@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (C) 2008-2011 FluxBB
+ * Copyright (C) 2008-2012 FluxBB
  * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
  * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
  */
@@ -24,7 +24,7 @@ class DBLayer
 	var $error_msg = 'Unknown';
 
 	var $datatype_transformations = array(
-		'/^SERIAL$/'	=>	'INT(10) UNSIGNED AUTO_INCREMENT'
+		'%^SERIAL$%'	=>	'INT(10) UNSIGNED AUTO_INCREMENT'
 	);
 
 
@@ -204,7 +204,7 @@ class DBLayer
 
 		return array(
 			'name'		=> 'MySQL Standard',
-			'version'	=> preg_replace('/^([^-]+).*$/', '\\1', $this->result($result))
+			'version'	=> preg_replace('%^([^-]+).*$%', '\\1', $this->result($result))
 		);
 	}
 

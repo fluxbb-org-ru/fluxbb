@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (C) 2008-2011 FluxBB
+ * Copyright (C) 2008-2012 FluxBB
  * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
  * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
  */
@@ -41,7 +41,7 @@ else
 $tpl_main = file_get_contents($tpl_file);
 
 // START SUBST - <pun_include "*">
-preg_match_all('#<pun_include "([^/\\\\]*?)\.(php[45]?|inc|html?|txt)">#', $tpl_main, $pun_includes, PREG_SET_ORDER);
+preg_match_all('%<pun_include "([^/\\\\]*?)\.(php[45]?|inc|html?|txt)">%i', $tpl_main, $pun_includes, PREG_SET_ORDER);
 
 foreach ($pun_includes as $cur_include)
 {
@@ -104,7 +104,7 @@ if (isset($required_fields))
 /* <![CDATA[ */
 function process_form(the_form)
 {
-	var element_names = {
+	var required_fields = {
 <?php
 	// Output a JavaScript object with localised field names
 	$tpl_temp = count($required_fields);
@@ -120,14 +120,11 @@ function process_form(the_form)
 		for (var i = 0; i < the_form.length; ++i)
 		{
 			var elem = the_form.elements[i];
-			if (elem.name && (/^req_/.test(elem.name)))
+			if (elem.name && required_fields[elem.name] && !elem.value && elem.type && (/^(?:text(?:area)?|password|file)$/i.test(elem.type)))
 			{
-				if (!elem.value && elem.type && (/^(?:text(?:area)?|password|file)$/i.test(elem.type)))
-				{
-					alert('"' + element_names[elem.name] + '" <?php echo $lang_common['required field'] ?>');
-					elem.focus();
-					return false;
-				}
+				alert('"' + required_fields[elem.name] + '" <?php echo $lang_common['required field'] ?>');
+				elem.focus();
+				return false;
 			}
 		}
 	}
@@ -142,12 +139,8 @@ function process_form(the_form)
 // JavaScript tricks for IE6 and older
 echo '<!--[if lte IE 6]><script type="text/javascript" src="style/imports/minmax.js"></script><![endif]-->'."\n";
 
-if (!isset($page_head))
-	$page_head = array();
-
-$page_head['top'] = '<link rel="top" href="index.php" title="'.$lang_common['Forum index'].'" />';
-
-echo implode("\n", $page_head)."\n";
+if (isset($page_head))
+	echo implode("\n", $page_head)."\n";
 
 $tpl_temp = trim(ob_get_contents());
 $tpl_main = str_replace('<pun_head>', $tpl_temp, $tpl_main);
@@ -212,7 +205,7 @@ else
 // Are there any additional navlinks we should insert into the array before imploding it?
 if ($pun_user['g_read_board'] == '1' && $pun_config['o_additional_navlinks'] != '')
 {
-	if (preg_match_all('#([0-9]+)\s*=\s*(.*?)\n#s', $pun_config['o_additional_navlinks']."\n", $extra_links))
+	if (preg_match_all('%([0-9]+)\s*=\s*(.*?)\n%s', $pun_config['o_additional_navlinks']."\n", $extra_links))
 	{
 		// Insert any additional links into the $links array (at the correct index)
 		$num_links = count($extra_links[1]);
@@ -230,7 +223,7 @@ $tpl_main = str_replace('<pun_navlinks>', $tpl_temp, $tpl_main);
 $page_statusinfo = $page_topicsearches = array();
 
 if ($pun_user['is_guest'])
-	$page_statusinfo = '<p>'.$lang_common['Not logged in'].'</p>';
+	$page_statusinfo = '<p class="conl">'.$lang_common['Not logged in'].'</p>';
 else
 {
 	$page_statusinfo[] = '<li><span>'.$lang_common['Logged in as'].' <strong>'.pun_htmlspecialchars($pun_user['username']).'</strong></span></li>';
@@ -266,7 +259,7 @@ if ($pun_user['g_read_board'] == '1' && $pun_user['g_search'] == '1')
 
 
 // Generate all that jazz
-$tpl_temp = '<div id="brdwelcome" class="inbox">'."\n\t\t\t";
+$tpl_temp = '<div id="brdwelcome" class="inbox">';
 
 // The status information
 if (is_array($page_statusinfo))
@@ -283,10 +276,10 @@ if (!empty($page_topicsearches))
 {
 	$tpl_temp .= "\n\t\t\t".'<ul class="conr">';
 	$tpl_temp .= "\n\t\t\t\t".'<li><span>'.$lang_common['Topic searches'].' '.implode(' | ', $page_topicsearches).'</span></li>';
-	$tpl_temp .= "\n\t\t\t".'</ul>'."\n\t\t\t".'<div class="clearer"></div>';
+	$tpl_temp .= "\n\t\t\t".'</ul>';
 }
 
-$tpl_temp .= "\n\t\t".'</div>';
+$tpl_temp .= "\n\t\t\t".'<div class="clearer"></div>'."\n\t\t".'</div>';
 
 $tpl_main = str_replace('<pun_status>', $tpl_temp, $tpl_main);
 // END SUBST - <pun_status>

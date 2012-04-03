@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (C) 2008-2011 FluxBB
+ * Copyright (C) 2008-2012 FluxBB
  * based on code by Rickard Andersson copyright (C) 2002-2008 PunBB
  * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
  */
@@ -25,9 +25,9 @@ class DBLayer
 	var $error_msg = 'Unknown';
 
 	var $datatype_transformations = array(
-		'/^SERIAL$/'															=>	'INTEGER',
-		'/^(TINY|SMALL|MEDIUM|BIG)?INT( )?(\\([0-9]+\\))?( )?(UNSIGNED)?$/i'	=>	'INTEGER',
-		'/^(TINY|MEDIUM|LONG)?TEXT$/i'											=>	'TEXT'
+		'%^SERIAL$%'															=>	'INTEGER',
+		'%^(TINY|SMALL|MEDIUM|BIG)?INT( )?(\\([0-9]+\\))?( )?(UNSIGNED)?$%i'	=>	'INTEGER',
+		'%^(TINY|MEDIUM|LONG)?TEXT$%i'											=>	'TEXT'
 	);
 
 
@@ -49,7 +49,7 @@ class DBLayer
 		if (!is_readable($db_name))
 			error('Unable to open database \''.$db_name.'\' for reading. Permission denied', __FILE__, __LINE__);
 
-		if (!is_writable($db_name))
+		if (!forum_is_writable($db_name))
 			error('Unable to open database \''.$db_name.'\' for writing. Permission denied', __FILE__, __LINE__);
 
 		if ($p_connect)
@@ -279,7 +279,7 @@ class DBLayer
 		if (!$this->num_rows($result))
 			return false;
 
-		return preg_match('/[\r\n]'.preg_quote($field_name).' /', $this->result($result));
+		return preg_match('%[\r\n]'.preg_quote($field_name, '%').' %', $this->result($result));
 	}
 
 
@@ -345,7 +345,7 @@ class DBLayer
 		if (!$this->table_exists($table_name, $no_prefix))
 			return true;
 
-		return $this->query('DROP TABLE '.($no_prefix ? '' : $this->prefix).$table_name) ? true : false;
+		return $this->query('DROP TABLE '.($no_prefix ? '' : $this->prefix).$this->escape($table_name)) ? true : false;
 	}
 
 
@@ -372,7 +372,7 @@ class DBLayer
 		$result &= $this->query('INSERT INTO '.($no_prefix ? '' : $this->prefix).$this->escape($new_name).' SELECT * FROM '.($no_prefix ? '' : $this->prefix).$this->escape($old_name)) ? true : false;
 
 		// Drop old table
-		$result &= $this->drop_table(($no_prefix ? '' : $this->prefix).$this->escape($table_name));
+		$result &= $this->drop_table($table_name, $no_prefix);
 
 		return $result;
 	}
@@ -405,7 +405,7 @@ class DBLayer
 		$table['columns'] = array();
 		foreach ($table_lines as $table_line)
 		{
-			$table_line = pun_trim($table_line);
+			$table_line = trim($table_line, " \t\n\r,"); // trim spaces, tabs, newlines, and commas
 			if (substr($table_line, 0, 12) == 'CREATE TABLE')
 				continue;
 			else if (substr($table_line, 0, 11) == 'PRIMARY KEY')
@@ -413,7 +413,7 @@ class DBLayer
 			else if (substr($table_line, 0, 6) == 'UNIQUE')
 				$table['unique'] = $table_line;
 			else if (substr($table_line, 0, strpos($table_line, ' ')) != '')
-				$table['columns'][substr($table_line, 0, strpos($table_line, ' '))] = pun_trim(substr($table_line, strpos($table_line, ' ')));
+				$table['columns'][substr($table_line, 0, strpos($table_line, ' '))] = trim(substr($table_line, strpos($table_line, ' ')));
 		}
 
 		return $table;
@@ -444,23 +444,23 @@ class DBLayer
 		$query .= ' DEFAULT '.$default_value;
 
 		$old_columns = array_keys($table['columns']);
-		array_insert($table['columns'], $after_field, $query.',', $field_name);
+		array_insert($table['columns'], $after_field, $query, $field_name);
 
 		$new_table = 'CREATE TABLE '.($no_prefix ? '' : $this->prefix).$this->escape($table_name).' (';
 
 		foreach ($table['columns'] as $cur_column => $column_details)
-			$new_table .= "\n".$cur_column.' '.$column_details;
+			$new_table .= "\n".$cur_column.' '.$column_details.',';
 
 		if (isset($table['unique']))
 			$new_table .= "\n".$table['unique'].',';
 
 		if (isset($table['primary_key']))
-			$new_table .= "\n".$table['primary_key'];
+			$new_table .= "\n".$table['primary_key'].',';
 
 		$new_table = trim($new_table, ',')."\n".');';
 
 		// Drop old table
-		$result &= $this->drop_table(($no_prefix ? '' : $this->prefix).$this->escape($table_name));
+		$result &= $this->drop_table($table_name, $no_prefix);
 
 		// Create new table
 		$result &= $this->query($new_table) ? true : false;
@@ -476,7 +476,7 @@ class DBLayer
 		$result &= $this->query('INSERT INTO '.($no_prefix ? '' : $this->prefix).$this->escape($table_name).' ('.implode(', ', $old_columns).') SELECT * FROM '.($no_prefix ? '' : $this->prefix).$this->escape($table_name).'_t'.$now) ? true : false;
 
 		// Drop temp table
-		$result &= $this->drop_table(($no_prefix ? '' : $this->prefix).$this->escape($table_name).'_t'.$now);
+		$result &= $this->drop_table($table_name.'_t'.$now, $no_prefix);
 
 		return $result;
 	}
@@ -509,18 +509,18 @@ class DBLayer
 		$new_table = 'CREATE TABLE '.($no_prefix ? '' : $this->prefix).$this->escape($table_name).' (';
 
 		foreach ($table['columns'] as $cur_column => $column_details)
-			$new_table .= "\n".$cur_column.' '.$column_details;
+			$new_table .= "\n".$cur_column.' '.$column_details.',';
 
 		if (isset($table['unique']))
 			$new_table .= "\n".$table['unique'].',';
 
 		if (isset($table['primary_key']))
-			$new_table .= "\n".$table['primary_key'];
+			$new_table .= "\n".$table['primary_key'].',';
 
 		$new_table = trim($new_table, ',')."\n".');';
 
 		// Drop old table
-		$result &= $this->drop_table(($no_prefix ? '' : $this->prefix).$this->escape($table_name));
+		$result &= $this->drop_table($table_name, $no_prefix);
 
 		// Create new table
 		$result &= $this->query($new_table) ? true : false;
@@ -537,7 +537,7 @@ class DBLayer
 		$result &= $this->query('INSERT INTO '.($no_prefix ? '' : $this->prefix).$this->escape($table_name).' SELECT '.implode(', ', $new_columns).' FROM '.($no_prefix ? '' : $this->prefix).$this->escape($table_name).'_t'.$now) ? true : false;
 
 		// Drop temp table
-		$result &= $this->drop_table(($no_prefix ? '' : $this->prefix).$this->escape($table_name).'_t'.$now);
+		$result &= $this->drop_table($table_name.'_t'.$now, $no_prefix);
 
 		return $result;
 	}
