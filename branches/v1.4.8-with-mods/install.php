@@ -1014,6 +1014,50 @@ else
 				'datatype'		=> 'SERIAL',
 				'allow_null'	=> false
 			),
+			'alias'		=> array(
+				'datatype'		=> 'VARCHAR(128)',
+				'allow_null'	=> false,
+				'default'		=> '\'\''
+			),
+			'uri'		=> array(
+				'datatype'		=> 'VARCHAR(128)',
+				'allow_null'	=> false,
+				'default'		=> '\'\''
+			),
+			'template'		=> array(
+				'datatype'		=> 'VARCHAR(128)',
+				'allow_null'	=> false,
+				'default'		=> '\'\''
+			),
+			'editor_id'		=> array(
+				'datatype'		=> 'INT(10) UNSIGNED',
+				'allow_null'	=> false,
+				'default'		=> '1'
+			),
+			'edited'		=> array(
+				'datatype'		=> 'INT(10) UNSIGNED',
+				'allow_null'	=> false,
+				'default'		=> '0'
+			)
+		),
+		'PRIMARY KEY'	=> array('id'),
+		'UNIQUE KEYS'	=> array(
+			'pages_alias_idx'	=> array('alias')
+		),
+		'INDEXES'		=> array(
+			'pages_uri_idx'		=> array('uri')
+		)
+	);
+
+	$db->create_table('pages', $schema) or error('Unable to create pages table', __FILE__, __LINE__, $db->error());
+
+
+	$schema = array(
+		'FIELDS'		=> array(
+			'id'			=> array(
+				'datatype'		=> 'SERIAL',
+				'allow_null'	=> false
+			),
 			'poster'		=> array(
 				'datatype'		=> 'VARCHAR(200)',
 				'allow_null'	=> false,

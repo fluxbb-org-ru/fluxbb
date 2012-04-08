@@ -5,6 +5,8 @@
 /* Limited Reset
 ----------------------------------------------------------------*/
 
+@import url(imports/extra.css);
+
 html, body, .pun table, .pun div, .pun form, .pun p, .pun h1, .pun h2, .pun h3, .pun h4, .pun h5, .pun pre, .pun blockquote,
 .pun ul, .pun ol, .pun li, .pun dl, .pun dt, .pun dd, .pun th, .pun td, .pun fieldset, .pun legend .pun img,
 .pun abbr, .pun cite {
@@ -154,7 +156,6 @@ html, body, .pun table, .pun div, .pun form, .pun p, .pun h1, .pun h2, .pun h3, 
 .clearl {
 	clear: left;
 }
-
 
 /*****************************************************************
 2. COMMON STYLES
@@ -429,14 +430,14 @@ html, body, .pun table, .pun div, .pun form, .pun p, .pun h1, .pun h2, .pun h3, 
 }
 
 .pun .linksb, .pun .postlinksb, .pun .linkst, .pun .crumbs {
-	clear: both;
+	/*clear: both;*/
 	position: relative;
 }
 
 .pun .linkst .crumbs {
 	font-family: "Trebuchet MS", Helvetica, Arial, sans-serif;
 	font-size: 1.462em;
-	line-height: 1.211em;
+	line-height: 1; /* 1.211em; */
 	padding: 7px 0;
 }
 
@@ -1340,8 +1341,9 @@ PROFILES (+ ADMIN MENU)
 }
 
 .pun .block2col .blockform, .pun .block2col .block {
-	margin-left: 15em;
+	margin-left: 14em;
 }
+
 
 .pun .blockmenu .block2 {
 	padding-top: 19px;
