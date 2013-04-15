@@ -82,6 +82,7 @@ $lang_profile = array(
 'Location'                  =>  'Откуда',
 'Website'                   =>  'Веб сайт',
 'Invalid website URL'		=>	'Вы ввели неправильный URL сайта.',
+'Website not allowed'		=>	'У вас недостаточно прав чтобы опубликовать свой сайт.',
 'Jabber'                    =>  'Jabber',
 'ICQ'                       =>  'ICQ',
 'MSN'                       =>  'MSN Messenger',

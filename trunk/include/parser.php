@@ -66,6 +66,22 @@ function preparse_bbcode($text, &$errors, $is_signature = false)
 {
 	global $pun_config, $lang_common, $lang_post, $re_list;
 
+	// Remove empty tags
+	while (($new_text = strip_empty_bbcode($text)) !== false)
+	{
+		if ($new_text != $text)
+		{
+			$text = $new_text;
+			if ($new_text == '')
+			{
+				$errors[] = $lang_post['Empty after strip'];
+				return '';
+			}
+		}
+		else
+			break;
+	}
+
 	if ($is_signature)
 	{
 		global $lang_profile;
@@ -82,13 +98,20 @@ function preparse_bbcode($text, &$errors, $is_signature = false)
 	$temp = preg_replace($re_list, 'preparse_list_tag(\'$2\', \'$1\')', $text);
 
 	// If the regex failed
-	if ($temp === null)
+	if (is_null($temp))
 		$errors[] = $lang_common['BBCode list size error'];
 	else
 		$text = str_replace('*'."\0".']', '*]', $temp);
 
 	if ($pun_config['o_make_links'] == '1')
 		$text = do_clickable($text);
+
+	$temp_text = false;
+	if (empty($errors))
+		$temp_text = preparse_tags($text, $errors, $is_signature);
+
+	if ($temp_text !== false)
+		$text = $temp_text;
 
 	// If we split up the message before we have to concatenate it together again (code tags)
 	if (isset($inside))
@@ -106,13 +129,6 @@ function preparse_bbcode($text, &$errors, $is_signature = false)
 
 		unset($inside);
 	}
-
-	$temp_text = false;
-	if (empty($errors))
-		$temp_text = preparse_tags($text, $errors, $is_signature);
-
-	if ($temp_text !== false)
-		$text = $temp_text;
 
 	// Remove empty tags
 	while (($new_text = strip_empty_bbcode($text)) !== false)
@@ -144,7 +160,7 @@ function strip_empty_bbcode($text)
 		list($inside, $text) = extract_blocks($text, '[code]', '[/code]');
 
 	// Remove empty tags
-	while (($new_text = preg_replace('%\[(b|u|s|ins|del|em|i|h|colou?r|quote|img|url|email|list|topic|post|forum|user)(?:\=[^\]]*)?\]\s*\[/\1\]%', '', $text)) !== NULL)
+	while (!is_null($new_text = preg_replace('%\[(b|u|s|ins|del|em|i|h|colou?r|quote|img|url|email|list|topic|post|forum|user)(?:\=[^\]]*)?\]\s*\[/\1\]%', '', $text)))
 	{
 		if ($new_text != $text)
 			$text = $new_text;
@@ -166,7 +182,7 @@ function strip_empty_bbcode($text)
 	}
 
 	// Remove empty code tags
-	while (($new_text = preg_replace('%\[(code)\]\s*\[/\1\]%', '', $text)) !== NULL)
+	while (!is_null($new_text = preg_replace('%\[(code)\]\s*\[/\1\]%', '', $text)))
 	{
 		if ($new_text != $text)
 			$text = $new_text;
@@ -183,7 +199,7 @@ function strip_empty_bbcode($text)
 //
 function preparse_tags($text, &$errors, $is_signature = false)
 {
-	global $lang_common, $pun_config;
+	global $lang_common, $pun_config, $pun_user;
 
 	// Start off by making some arrays of bbcode tags and what we need to do with each one
 
@@ -197,6 +213,8 @@ function preparse_tags($text, &$errors, $is_signature = false)
 	$tags_nested = array('quote' => $pun_config['o_quote_depth'], 'list' => 5, '*' => 5);
 	// Tags to ignore the contents of completely (just code)
 	$tags_ignore = array('code');
+	// Tags not allowed
+	$tags_forbidden = array();
 	// Block tags, block tags can only go within another block tag, they cannot be in a normal tag
 	$tags_block = array('quote', 'code', 'list', 'h', '*');
 	// Inline tags, we do not allow new lines in these
@@ -220,6 +238,10 @@ function preparse_tags($text, &$errors, $is_signature = false)
 	);
 	// Tags we can automatically fix bad nesting
 	$tags_fix = array('quote', 'b', 'i', 'u', 's', 'ins', 'del', 'em', 'color', 'colour', 'url', 'email', 'h', 'topic', 'post', 'forum', 'user');
+
+	// Disallow URL tags
+	if ($pun_user['g_post_links'] != '1')
+		$tags_forbidden[] = 'url';
 
 	$split_text = preg_split('%(\[[\*a-zA-Z0-9-/]*?(?:=.*?)?\])%', $text, -1, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY);
 
@@ -376,6 +398,17 @@ function preparse_tags($text, &$errors, $is_signature = false)
 			$new_text .= $current;
 
 			continue;
+		}
+
+		// Is the tag forbidden?
+		if (in_array($current_tag, $tags_forbidden))
+		{
+			if (isset($lang_common['BBCode error tag '.$current_tag.' not allowed']))
+				$errors[] = sprintf($lang_common['BBCode error tag '.$current_tag.' not allowed']);
+			else
+				$errors[] = sprintf($lang_common['BBCode error tag not allowed'], $current_tag);
+
+			return false;
 		}
 
 		if ($current_nest)
@@ -663,7 +696,7 @@ function handle_url_tag($url, $link = '', $bbcode = false)
 		else
 			$link = stripslashes($link);
 
-		return '<a href="'.$full_url.'">'.$link.'</a>';
+		return '<a href="'.$full_url.'" rel="nofollow">'.$link.'</a>';
 	}
 }
 
@@ -675,10 +708,10 @@ function handle_img_tag($url, $is_signature = false, $alt = null)
 {
 	global $lang_common, $pun_user;
 
-	if ($alt == null)
+	if (is_null($alt))
 		$alt = basename($url);
 
-	$img_tag = '<a href="'.$url.'">&lt;'.$lang_common['Image link'].' - '.$alt.'&gt;</a>';
+	$img_tag = '<a href="'.$url.'" rel="nofollow">&lt;'.$lang_common['Image link'].' - '.$alt.'&gt;</a>';
 
 	if ($is_signature && $pun_user['show_img_sig'] != '0')
 		$img_tag = '<img class="sigimage" src="'.$url.'" alt="'.$alt.'" />';
@@ -815,7 +848,7 @@ function do_clickable($text)
 	$text = ' '.$text;
 
 	$text = ucp_preg_replace('%(?<=[\s\]\)])(<)?(\[)?(\()?([\'"]?)(https?|ftp|news){1}://([\p{L}\p{N}\-]+\.([\p{L}\p{N}\-]+\.)*[\p{L}\p{N}]+(:[0-9]+)?(/(?:[^\s\[]*[^\s.,?!\[;:-])?)?)\4(?(3)(\)))(?(2)(\]))(?(1)(>))(?![^\s]*\[/(?:url|img)\])%uie', 'stripslashes(\'$1$2$3$4\').handle_url_tag(\'$5://$6\', \'$5://$6\', true).stripslashes(\'$4$10$11$12\')', $text);
-	$text = ucp_preg_replace('%(?<=[\s\]\)])(<)?(\[)?(\()?([\'"]?)(www|ftp)\.(([\p{L}\p{N}\-]+\.)*[\p{L}\p{N}]+(:[0-9]+)?(/(?:[^\s\[]*[^\s.,?!\[;:-])?)?)\4(?(3)(\)))(?(2)(\]))(?(1)(>))(?![^\s]*\[/(?:url|img)\])%uie', 'stripslashes(\'$1$2$3$4\').handle_url_tag(\'$5.$6\', \'$5.$6\', true).stripslashes(\'$4$10$11$12\')', $text);
+	$text = ucp_preg_replace('%(?<=[\s\]\)])(<)?(\[)?(\()?([\'"]?)(www|ftp)\.(([\p{L}\p{N}\-]+\.)+[\p{L}\p{N}]+(:[0-9]+)?(/(?:[^\s\[]*[^\s.,?!\[;:-])?)?)\4(?(3)(\)))(?(2)(\]))(?(1)(>))(?![^\s]*\[/(?:url|img)\])%uie', 'stripslashes(\'$1$2$3$4\').handle_url_tag(\'$5.$6\', \'$5.$6\', true).stripslashes(\'$4$10$11$12\')', $text);
 
 	return substr($text, 1);
 }

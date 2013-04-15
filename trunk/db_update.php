@@ -7,9 +7,9 @@
  */
 
 // The FluxBB version this script updates to
-define('UPDATE_TO', '1.4.8');
+define('UPDATE_TO', '1.5.3');
 
-define('UPDATE_TO_DB_REVISION', 15);
+define('UPDATE_TO_DB_REVISION', 18);
 define('UPDATE_TO_SI_REVISION', 2);
 define('UPDATE_TO_PARSER_REVISION', 2);
 
@@ -254,7 +254,7 @@ function dcr2utf8($src)
 //
 function convert_to_utf8(&$str, $old_charset)
 {
-	if ($str === null || $str == '')
+	if (is_null($str) || $str == '')
 		return false;
 
 	$save = $str;
@@ -331,7 +331,7 @@ function alter_table_utf8($table)
 	$result = $db->query('SHOW FULL COLUMNS FROM '.$table) or error('Unable to fetch column information', __FILE__, __LINE__, $db->error());
 	while ($cur_column = $db->fetch_assoc($result))
 	{
-		if ($cur_column['Collation'] === null)
+		if (is_null($cur_column['Collation']))
 			continue;
 
 		list($type) = explode('(', $cur_column['Type']);
@@ -358,8 +358,8 @@ function convert_table_utf8($table, $callback, $old_charset, $key = null, $start
 	$end_at = 0;
 	if ($mysql)
 	{
-		// Only set up the tables if we are doing this in 1 go, or its the first go
-		if ($start_at === null || $start_at == 0)
+		// Only set up the tables if we are doing this in 1 go, or it's the first go
+		if (is_null($start_at) || $start_at == 0)
 		{
 			// Drop any temp table that exists, in-case it's left over from a failed update
 			$db->drop_table($table.'_utf8', true) or error('Unable to drop left over temp table', __FILE__, __LINE__, $db->error());
@@ -375,7 +375,7 @@ function convert_table_utf8($table, $callback, $old_charset, $key = null, $start
 		$db->set_names($old_connection_charset);
 
 		// Move & Convert everything
-		$result = $db->query('SELECT * FROM '.$table.($start_at === null ? '' : ' WHERE '.$key.'>'.$start_at).' ORDER BY '.$key.' ASC'.($start_at === null ? '' : ' LIMIT '.PER_PAGE), false) or error('Unable to select from old table', __FILE__, __LINE__, $db->error());
+		$result = $db->query('SELECT * FROM '.$table.(is_null($start_at) ? '' : ' WHERE '.$key.'>'.$start_at).' ORDER BY '.$key.' ASC'.(is_null($start_at) ? '' : ' LIMIT '.PER_PAGE), false) or error('Unable to select from old table', __FILE__, __LINE__, $db->error());
 
 		// Change back to utf8 mode so we can insert it into the new table
 		$db->set_names('utf8');
@@ -386,21 +386,21 @@ function convert_table_utf8($table, $callback, $old_charset, $key = null, $start
 
 			$temp = array();
 			foreach ($cur_item as $idx => $value)
-				$temp[$idx] = $value === null ? 'NULL' : '\''.$db->escape($value).'\'';
+				$temp[$idx] = is_null($value) ? 'NULL' : '\''.$db->escape($value).'\'';
 
-			$db->query('INSERT INTO '.$table.'_utf8('.implode(',', array_keys($temp)).') VALUES ('.implode(',', array_values($temp)).')') or ($error_callback === null ? error('Unable to insert data to new table', __FILE__, __LINE__, $db->error()) : call_user_func($error_callback, $cur_item));
+			$db->query('INSERT INTO '.$table.'_utf8('.implode(',', array_keys($temp)).') VALUES ('.implode(',', array_values($temp)).')') or (is_null($error_callback) ? error('Unable to insert data to new table', __FILE__, __LINE__, $db->error()) : call_user_func($error_callback, $cur_item));
 
 			$end_at = $cur_item[$key];
 		}
 
 		// If we aren't doing this all in 1 go and $end_at has a value (i.e. we have processed at least 1 row), figure out if we have more to do or not
-		if ($start_at !== null && $end_at > 0)
+		if (!is_null($start_at) && $end_at > 0)
 		{
 			$result = $db->query('SELECT 1 FROM '.$table.' WHERE '.$key.'>'.$end_at.' ORDER BY '.$key.' ASC LIMIT 1') or error('Unable to check for next row', __FILE__, __LINE__, $db->error());
 			$finished = $db->num_rows($result) == 0;
 		}
 
-		// Only swap the tables if we are doing this in 1 go, or its the last go
+		// Only swap the tables if we are doing this in 1 go, or it's the last go
 		if ($finished)
 		{
 			// Delete old table
@@ -417,14 +417,14 @@ function convert_table_utf8($table, $callback, $old_charset, $key = null, $start
 	else
 	{
 		// Convert everything
-		$result = $db->query('SELECT * FROM '.$table.($start_at === null ? '' : ' WHERE '.$key.'>'.$start_at).' ORDER BY '.$key.' ASC'.($start_at === null ? '' : ' LIMIT '.PER_PAGE)) or error('Unable to select from table', __FILE__, __LINE__, $db->error());
+		$result = $db->query('SELECT * FROM '.$table.(is_null($start_at) ? '' : ' WHERE '.$key.'>'.$start_at).' ORDER BY '.$key.' ASC'.(is_null($start_at ) ? '' : ' LIMIT '.PER_PAGE)) or error('Unable to select from table', __FILE__, __LINE__, $db->error());
 		while ($cur_item = $db->fetch_assoc($result))
 		{
 			$cur_item = call_user_func($callback, $cur_item, $old_charset);
 
 			$temp = array();
 			foreach ($cur_item as $idx => $value)
-				$temp[] = $idx.'='.($value === null ? 'NULL' : '\''.$db->escape($value).'\'');
+				$temp[] = $idx.'='.(is_null($value) ? 'NULL' : '\''.$db->escape($value).'\'');
 
 			if (!empty($temp))
 				$db->query('UPDATE '.$table.' SET '.implode(', ', $temp).' WHERE '.$key.'=\''.$db->escape($cur_item[$key]).'\'') or error('Unable to update data', __FILE__, __LINE__, $db->error());
@@ -432,7 +432,7 @@ function convert_table_utf8($table, $callback, $old_charset, $key = null, $start
 			$end_at = $cur_item[$key];
 		}
 
-		if ($start_at !== null && $end_at > 0)
+		if (!is_null($start_at) && $end_at > 0)
 		{
 			$result = $db->query('SELECT 1 FROM '.$table.' WHERE '.$key.'>'.$end_at.' ORDER BY '.$key.' ASC LIMIT 1') or error('Unable to check for next row', __FILE__, __LINE__, $db->error());
 			if ($db->num_rows($result) == 0)
@@ -621,7 +621,7 @@ $lock_error = false;
 // Generate or fetch the UID - this confirms we have a valid admin
 if (isset($_POST['req_db_pass']))
 {
-	$req_db_pass = strtolower(trim($_POST['req_db_pass']));
+	$req_db_pass = strtolower(pun_trim($_POST['req_db_pass']));
 
 	switch ($db_type)
 	{
@@ -674,7 +674,7 @@ if (isset($_POST['req_db_pass']))
 }
 else if (isset($_GET['uid']))
 {
-	$uid = trim($_GET['uid']);
+	$uid = pun_trim($_GET['uid']);
 	if (!$lock || $lock != $uid) // The lock doesn't exist or doesn't match the given UID
 		$lock_error = true;
 }
@@ -713,10 +713,10 @@ switch ($stage)
 		// Add the DST option to the users table
 		$db->add_field('users', 'dst', 'TINYINT(1)', false, 0, 'timezone') or error('Unable to add dst field', __FILE__, __LINE__, $db->error());
 
-		// Add the last_post field to the online table
+		// Add the last_post column to the online table
 		$db->add_field('online', 'last_post', 'INT(10) UNSIGNED', true, null, null) or error('Unable to add last_post field', __FILE__, __LINE__, $db->error());
 
-		// Add the last_search field to the online table
+		// Add the last_search column to the online table
 		$db->add_field('online', 'last_search', 'INT(10) UNSIGNED', true, null, null) or error('Unable to add last_search field', __FILE__, __LINE__, $db->error());
 
 		// Add the last_search column to the users table
@@ -975,7 +975,7 @@ switch ($stage)
 		if (!$db->add_index('users', 'username_idx', array($field), true))
 			$db->add_index('users', 'username_idx', array($field)) or error('Unable to add username_idx field', __FILE__, __LINE__, $db->error());
 
-		// Add g_view_users field to groups table
+		// Add g_view_users column to groups table
 		$db->add_field('groups', 'g_view_users', 'TINYINT(1)', false, 1, 'g_read_board') or error('Unable to add g_view_users field', __FILE__, __LINE__, $db->error());
 
 		// Add the last_email_sent column to the users table and the g_send_email and
@@ -1019,13 +1019,20 @@ switch ($stage)
 		$db->add_field('users', 'time_format', 'TINYINT(1)', false, 0, 'dst') or error('Unable to add time_format field', __FILE__, __LINE__, $db->error());
 		$db->add_field('users', 'date_format', 'TINYINT(1)', false, 0, 'dst') or error('Unable to add date_format field', __FILE__, __LINE__, $db->error());
 
-		// Change the search_data field to mediumtext
+		// Change the search_data column to mediumtext
 		$db->alter_field('search_cache', 'search_data', 'MEDIUMTEXT', true) or error('Unable to alter search_data field', __FILE__, __LINE__, $db->error());
 
-		// Incase we had the fulltext search extension installed (1.3-legacy), remove it
+		// Add the group promotion columns to the groups table
+		$db->add_field('groups', 'g_promote_min_posts', 'INT(10) UNSIGNED', false, 0, 'g_user_title') or error('Unable to add g_promote_min_posts field', __FILE__, __LINE__, $db->error());
+		$db->add_field('groups', 'g_promote_next_group', 'INT(10) UNSIGNED', false, 0, 'g_promote_min_posts') or error('Unable to add g_promote_next_group field', __FILE__, __LINE__, $db->error());
+
+		// Add a field for the per-group permission to post links
+		$db->add_field('groups', 'g_post_links', 'TINYINT(1)', false, 1, 'g_delete_topics') or error('Unable to add per-group permission to post links', __FILE__, __LINE__, $db->error());
+
+		// In case we had the fulltext search extension installed (1.3-legacy), remove it
 		$db->drop_index('topics', 'subject_idx') or error('Unable to drop subject_idx index', __FILE__, __LINE__, $db->error());
 		$db->drop_index('posts', 'message_idx') or error('Unable to drop message_idx index', __FILE__, __LINE__, $db->error());
-		// Incase we had the fulltext search mod installed (1.2), remove it
+		// In case we had the fulltext search mod installed (1.2), remove it
 		$db->drop_index('topics', 'subject_fulltext_search') or error('Unable to drop subject_fulltext_search index', __FILE__, __LINE__, $db->error());
 		$db->drop_index('posts', 'message_fulltext_search') or error('Unable to drop message_fulltext_search index', __FILE__, __LINE__, $db->error());
 
@@ -1162,6 +1169,14 @@ switch ($stage)
 		// For MySQL(i) without InnoDB, change the engine of the online table (for performance reasons)
 		if ($db_type == 'mysql' || $db_type == 'mysqli')
 			$db->query('ALTER TABLE '.$db->prefix.'online ENGINE = MyISAM') or error('Unable to change engine type of online table to MyISAM', __FILE__, __LINE__, $db->error());
+
+		// Remove config option o_ranks
+		if (array_key_exists('o_ranks', $pun_config))
+			$db->query('DELETE FROM '.$db->prefix.'config WHERE conf_name=\'o_ranks\'') or error('Unable to remove config value \'o_ranks\'', __FILE__, __LINE__, $db->error());
+
+		// Remove the ranks table
+		if ($db->table_exists('ranks'))
+			$db->drop_table('ranks') or error('Unable to drop ranks table', __FILE__, __LINE__, $db->error());
 
 		// Should we do charset conversion or not?
 		if (strpos($cur_version, '1.2') === 0 && isset($_POST['convert_charset']))
@@ -1321,7 +1336,7 @@ switch ($stage)
 
 	// Convert posts
 	case 'conv_posts':
-		$query_str = '?stage=conv_ranks&req_old_charset='.$old_charset;
+		$query_str = '?stage=conv_reports&req_old_charset='.$old_charset;
 
 		function _conv_posts($cur_item, $old_charset)
 		{
@@ -1340,24 +1355,6 @@ switch ($stage)
 
 		if ($end_at !== true)
 			$query_str = '?stage=conv_posts&req_old_charset='.$old_charset.'&start_at='.$end_at;
-
-		break;
-
-
-	// Convert ranks
-	case 'conv_ranks':
-		$query_str = '?stage=conv_reports&req_old_charset='.$old_charset;
-
-		echo sprintf($lang_update['Converting'], $lang_update['ranks']).'<br />'."\n";
-
-		function _conv_ranks($cur_item, $old_charset)
-		{
-			convert_to_utf8($cur_item['rank'], $old_charset);
-
-			return $cur_item;
-		}
-
-		convert_table_utf8($db->prefix.'ranks', '_conv_ranks', $old_charset, 'id');
 
 		break;
 
@@ -1557,7 +1554,7 @@ switch ($stage)
 
 					$temp = array();
 					foreach ($cur_user as $idx => $value)
-						$temp[$idx] = $value === null ? 'NULL' : '\''.$db->escape($value).'\'';
+						$temp[$idx] = is_null($value) ? 'NULL' : '\''.$db->escape($value).'\'';
 
 					// Insert the renamed user
 					$db->query('INSERT INTO '.$db->prefix.'users('.implode(',', array_keys($temp)).') VALUES ('.implode(',', array_values($temp)).')') or error('Unable to insert data to new table', __FILE__, __LINE__, $db->error());

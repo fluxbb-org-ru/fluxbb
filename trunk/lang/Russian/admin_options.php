@@ -1,6 +1,6 @@
 <?php
 
-// Language definitions used in admin-options.php
+// Language definitions used in admin_options.php
 $lang_admin_options = array(
 
 'Bad HTTP Referer message'          =>  'Плохой HTTP_REFERER. Если вы передвинули форум в другую папку или на другой домен, необходимо поправить Базовый URL вручную в базе данных (см. параметр o_base_url в таблице config) после чего очистите кеш, удалив все .php файлы в папке /cache.',
@@ -123,8 +123,6 @@ $lang_admin_options = array(
 'Censor words help'                 =>  'Включите эту опцию чтобы фильтровать нецензурные слова. См. больше на странице %s.',
 'Signatures label'                  =>  'Подписи',
 'Signatures help'                   =>  'Разрешить пользователям использовать подписи под своими сообщениями.',
-'User ranks label'                  =>  'Ранги пользователей',
-'User ranks help'                   =>  'Разрешить пользовательские ранги. См. подробности на странице %s.',
 'User has posted label'             =>  'Метка где писал',
 'User has posted help'              =>  'Показывать точки перед заголовками тем на странице viewforum.php в случае, если пользователь писал в этой теме. Выключите, если хотите снизить загрузку сервера.',
 'Topic views label'                 =>  'Счетчик просмотров',

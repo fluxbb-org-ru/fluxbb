@@ -6,6 +6,8 @@
  * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
  */
 
+include PUN_ROOT.'include/srand.php';
+
 
 //
 // Return current timestamp (with microseconds) as a float
@@ -244,7 +246,7 @@ function set_default_user()
 	$remote_addr = get_remote_address();
 
 	// Fetch guest user
-	$result = $db->query('SELECT u.*, g.*, o.logged, o.last_post, o.last_search FROM '.$db->prefix.'users AS u INNER JOIN '.$db->prefix.'groups AS g ON u.group_id=g.g_id LEFT JOIN '.$db->prefix.'online AS o ON o.ident=\''.$remote_addr.'\' WHERE u.id=1') or error('Unable to fetch guest information', __FILE__, __LINE__, $db->error());
+	$result = $db->query('SELECT u.*, g.*, o.logged, o.last_post, o.last_search FROM '.$db->prefix.'users AS u INNER JOIN '.$db->prefix.'groups AS g ON u.group_id=g.g_id LEFT JOIN '.$db->prefix.'online AS o ON o.ident=\''.$db->escape($remote_addr).'\' WHERE u.id=1') or error('Unable to fetch guest information', __FILE__, __LINE__, $db->error());
 	if (!$db->num_rows($result))
 		exit('Unable to fetch guest information. Your database must contain both a guest user and a guest user group.');
 
@@ -566,7 +568,7 @@ function generate_page_title($page_title, $p = null)
 
 	$page_title = array_reverse($page_title);
 
-	if ($p != null)
+	if (!is_null($p))
 		$page_title[0] .= ' ('.sprintf($lang_common['Page'], forum_number_format($p)).')';
 
 	$crumbs = implode($lang_common['Title separator'], $page_title);
@@ -619,7 +621,7 @@ function get_tracked_topics()
 	if (!$cookie_data)
 		return array('topics' => array(), 'forums' => array());
 
-	if (strlen($cookie_data) > 4048)
+	if (strlen($cookie_data) > FORUM_MAX_COOKIE_SIZE)
 		return array('topics' => array(), 'forums' => array());
 
 	// Unserialize data from cookie
@@ -681,7 +683,7 @@ function delete_avatar($user_id)
 
 
 //
-// Delete a topic and all of it's posts
+// Delete a topic and all of its posts
 //
 function delete_topic($topic_id)
 {
@@ -799,7 +801,7 @@ function censor_words($text)
 function get_title($user)
 {
 	global $db, $pun_config, $pun_bans, $lang_common;
-	static $ban_list, $pun_ranks;
+	static $ban_list;
 
 	// If not already built in a previous call, build an array of lowercase banned usernames
 	if (empty($ban_list))
@@ -808,22 +810,6 @@ function get_title($user)
 
 		foreach ($pun_bans as $cur_ban)
 			$ban_list[] = strtolower($cur_ban['username']);
-	}
-
-	// If not already loaded in a previous call, load the cached ranks
-	if ($pun_config['o_ranks'] == '1' && !defined('PUN_RANKS_LOADED'))
-	{
-		if (file_exists(FORUM_CACHE_DIR.'cache_ranks.php'))
-			include FORUM_CACHE_DIR.'cache_ranks.php';
-
-		if (!defined('PUN_RANKS_LOADED'))
-		{
-			if (!defined('FORUM_CACHE_FUNCTIONS_LOADED'))
-				require PUN_ROOT.'include/cache.php';
-
-			generate_ranks_cache();
-			require FORUM_CACHE_DIR.'cache_ranks.php';
-		}
 	}
 
 	// If the user has a custom title
@@ -838,22 +824,9 @@ function get_title($user)
 	// If the user is a guest
 	else if ($user['g_id'] == PUN_GUEST)
 		$user_title = $lang_common['Guest'];
+	// If nothing else helps, we assign the default
 	else
-	{
-		// Are there any ranks?
-		if ($pun_config['o_ranks'] == '1' && !empty($pun_ranks))
-		{
-			foreach ($pun_ranks as $cur_rank)
-			{
-				if ($user['num_posts'] >= $cur_rank['min_posts'])
-					$user_title = pun_htmlspecialchars($cur_rank['rank']);
-			}
-		}
-
-		// If the user didn't "reach" any rank (or if ranks are disabled), we assign the default
-		if (!isset($user_title))
-			$user_title = $lang_common['Member'];
-	}
+		$user_title = $lang_common['Member'];
 
 	return $user_title;
 }
@@ -882,7 +855,7 @@ function paginate($num_pages, $cur_page, $link)
 	{
 		// Add a previous page link
 		if ($num_pages > 1 && $cur_page > 1)
-			$pages[] = '<a'.(empty($pages) ? ' class="item1"' : '').' href="'.$link.'&amp;p='.($cur_page - 1).'">'.$lang_common['Previous'].'</a>';
+			$pages[] = '<a rel="prev"'.(empty($pages) ? ' class="item1"' : '').' href="'.$link.'&amp;p='.($cur_page - 1).'">'.$lang_common['Previous'].'</a>';
 
 		if ($cur_page > 3)
 		{
@@ -913,7 +886,7 @@ function paginate($num_pages, $cur_page, $link)
 
 		// Add a next page link
 		if ($num_pages > 1 && !$link_to_all && $cur_page < $num_pages)
-			$pages[] = '<a'.(empty($pages) ? ' class="item1"' : '').' href="'.$link.'&amp;p='.($cur_page +1).'">'.$lang_common['Next'].'</a>';
+			$pages[] = '<a rel="next"'.(empty($pages) ? ' class="item1"' : '').' href="'.$link.'&amp;p='.($cur_page +1).'">'.$lang_common['Next'].'</a>';
 	}
 
 	return implode(' ', $pages);
@@ -923,9 +896,14 @@ function paginate($num_pages, $cur_page, $link)
 //
 // Display a message
 //
-function message($message, $no_back_link = false)
+function message($message, $no_back_link = false, $http_status = null)
 {
 	global $db, $lang_common, $pun_config, $pun_start, $tpl_main, $pun_user;
+
+	// Did we receive a custom header?
+	if(!is_null($http_status)) {
+		header('HTTP/1.1 ' . $http_status);
+	}
 
 	if (!defined('PUN_HEADER'))
 	{
@@ -965,10 +943,10 @@ function format_time($timestamp, $date_only = false, $date_format = null, $time_
 	$timestamp += $diff;
 	$now = time();
 
-	if($date_format == null)
+	if(is_null($date_format))
 		$date_format = $forum_date_formats[$pun_user['date_format']];
 
-	if($time_format == null)
+	if(is_null($time_format))
 		$time_format = $forum_time_formats[$pun_user['time_format']];
 
 	$date = gmdate($date_format, $timestamp);
@@ -1008,22 +986,12 @@ function forum_number_format($number, $decimals = 0)
 //
 function random_key($len, $readable = false, $hash = false)
 {
-	$key = '';
+	$key = secure_random_bytes($len);
 
 	if ($hash)
-		$key = substr(pun_hash(uniqid(rand(), true)), 0, $len);
+		$key = substr(bin2hex($key), 0, $len);
 	else if ($readable)
-	{
-		$chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-		for ($i = 0; $i < $len; ++$i)
-			$key .= substr($chars, (mt_rand() % strlen($chars)), 1);
-	}
-	else
-	{
-		for ($i = 0; $i < $len; ++$i)
-			$key .= chr(mt_rand(33, 126));
-	}
+		$key = substr(base64_encode($key), 0, $len);
 
 	return $key;
 }
@@ -1155,7 +1123,7 @@ function pun_linebreaks($str)
 //
 function pun_trim($str, $charlist = false)
 {
-	return utf8_trim($str, $charlist);
+	return is_string($str) ? utf8_trim($str, $charlist) : '';
 }
 
 //
@@ -1175,7 +1143,7 @@ function is_all_uppercase($string)
 //
 function array_insert(&$input, $offset, $element, $key = null)
 {
-	if ($key == null)
+	if (is_null($key))
 		$key = $offset;
 
 	// Determine the proper offset if we're using a string
@@ -1321,7 +1289,10 @@ function redirect($destination_url, $message)
 
 	// If the delay is 0 seconds, we might as well skip the redirect all together
 	if ($pun_config['o_redirect_delay'] == '0')
+	{
 		header('Location: '.str_replace('&amp;', '&', $destination_url));
+		exit;
+	}
 
 	// Send no-cache headers
 	header('Expires: Thu, 21 Jul 1977 07:30:00 GMT'); // When yours truly first set eyes on this world! :)
@@ -1383,7 +1354,7 @@ function redirect($destination_url, $message)
 	$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_common['Redirecting']);
 
 ?>
-<meta http-equiv="refresh" content="<?php echo $pun_config['o_redirect_delay'] ?>;URL=<?php echo str_replace(array('<', '>', '"'), array('&lt;', '&gt;', '&quot;'), $destination_url) ?>" />
+<meta http-equiv="refresh" content="<?php echo $pun_config['o_redirect_delay'] ?>;URL=<?php echo $destination_url ?>" />
 <title><?php echo generate_page_title($page_title) ?></title>
 <link rel="stylesheet" type="text/css" href="style/<?php echo $pun_user['style'].'.css' ?>" />
 <?php
@@ -1501,7 +1472,7 @@ H2 {MARGIN: 0; COLOR: #FFFFFF; BACKGROUND-COLOR: #B84623; FONT-SIZE: 1.1em; PADD
 	<div>
 <?php
 
-	if (defined('PUN_DEBUG') && $file !== null && $line !== null)
+	if (defined('PUN_DEBUG') && !is_null($file) && !is_null($line))
 	{
 		echo "\t\t".'<strong>File:</strong> '.$file.'<br />'."\n\t\t".'<strong>Line:</strong> '.$line.'<br /><br />'."\n\t\t".'<strong>FluxBB reported</strong>: '.$message."\n";
 
@@ -1651,7 +1622,7 @@ function file_size($size)
 	for ($i = 0; $size > 1024; $i++)
 		$size /= 1024;
 
-	return sprintf($lang_common['Size unit '.$units[$i]], round($size, 2));;
+	return sprintf($lang_common['Size unit '.$units[$i]], round($size, 2));
 }
 
 
@@ -1977,13 +1948,13 @@ function ucp_preg_replace($pattern, $replace, $subject)
 //
 // As MySQL cannot properly handle four-byte characters with the default utf-8
 // charset up until version 5.5.3 (where a special charset has to be used), they
-// need to be replaced, by question marks in this case. 
+// need to be replaced, by question marks in this case.
 //
 function strip_bad_multibyte_chars($str)
 {
 	$result = '';
 	$length = strlen($str);
-	
+
 	for ($i = 0; $i < $length; $i++)
 	{
 		// Replace four-byte characters (11110www 10zzzzzz 10yyyyyy 10xxxxxx)
@@ -1998,7 +1969,7 @@ function strip_bad_multibyte_chars($str)
 			$result .= $str[$i];
 		}
 	}
-	
+
 	return $result;
 }
 

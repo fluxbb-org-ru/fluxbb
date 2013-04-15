@@ -17,7 +17,9 @@ $lang_common = array(
 'No permission'         =>  'У вас нет прав на просмотр этой страницы.',
 'Bad referrer'          =>  'Плохой HTTP_REFERER. Вы перешли на эту страницу из неавторизованного источника. Если проблема постоянная, убедитесь, что \'Base URL\' верно прописан в Admin/Options и что вы посещаете форум именно по такому URL. Дополнительную информацию вы можете получить из документации FluxBB.',
 'No cookie'             =>  'Вы вошли, но куки не были установлены. Пожалуйста проверьте ваши настройки и, если возможно, разрешите куки для этого сайта.',
-'Pun include error'     =>  'Невозможно подключить файл %s из шаблона %s. Нет такого файла в %s.',
+'Pun include extension' =>	'Невозможно выполнить вставку %s из шаблона %s. "%s" такие файлы недопустимы',
+'Pun include directory'	=>	'Невозможно выполнить вставку %s из шаблона %s. Просмотр папки запрещен',
+'Pun include error'		=>	'Невозможно выполнить вставку %s из шаблона %s. Такого файла нет ни в папке шаблонов, ни в пользовательской папке',
 
 // Miscellaneous
 'Announcement'          =>  'Объявление',
@@ -59,17 +61,18 @@ $lang_common = array(
 'Pages'                 =>  'Страницы',
 'Page'                  =>  'Страница %s',
 'BBCode'                =>  'BBCode',   // You probably shouldn't change this
-'img tag'               =>  '[img] tag',
-'Smilies'               =>  'Смайлики',
+'url tag'				=>	'тег [url]:',
+'img tag'               =>  'тег [img]:',
+'Smilies'               =>  'Смайлики:',
 'and'                   =>  'и',
 'Image link'            =>  'картинка', // This is displayed (i.e. <image>) instead of images when "Show images" is disabled in the profile
-'wrote'                 =>  'пишет',    // For [quote]'s
+'wrote'                 =>  'пишет:',    // For [quote]'s
 'Mailer'                =>  'Отправитель',  // As in "MyForums Mailer" in the signature of outgoing e-mails
 'Important information' =>  'Важная информация',
 'Write message legend'  =>  'Введите сообщение и нажмите Отправить',
 'Previous'              =>  'Назад',
 'Next'                  =>  'Вперед',
-'Spacer'                =>  '&hellip;', // Ellipsis for paginate
+'Spacer'                =>  '…', // Ellipsis for paginate
 
 // Title
 'Title'                 =>  'Титул',
@@ -85,6 +88,8 @@ $lang_common = array(
 'BBCode error invalid self-nesting' =>  '[%s] открывается внутри такого же тега, это недопустимо',
 'BBCode error no closing tag'       =>  'Обнаружен [%1$s] без соответствующего [/%1$s]',
 'BBCode error empty attribute'      =>  'Тег [%s] с пустым атрибутом',
+'BBCode error tag not allowed'		=>	'Вы не можете использовать теги [%s]',
+'BBCode error tag url not allowed'	=>	'Вы не можете использовать ссылки',
 'BBCode code problem'               =>  'Проблемы с вашим тегом [code]',
 'BBCode list size error'            =>  'Ваш список слишком велик, пожалуйста уменьшите его!',
 

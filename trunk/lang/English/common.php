@@ -17,7 +17,9 @@ $lang_common = array(
 'No permission'						=>	'You do not have permission to access this page.',
 'Bad referrer'						=>	'Bad HTTP_REFERER. You were referred to this page from an unauthorized source. If the problem persists please make sure that \'Base URL\' is correctly set in Admin/Options and that you are visiting the forum by navigating to that URL. More information regarding the referrer check can be found in the FluxBB documentation.',
 'No cookie'							=>	'You appear to have logged in successfully, however a cookie has not been set. Please check your settings and if applicable, enable cookies for this website.',
-'Pun include error'					=>	'Unable to process user include %s from template %s. There is no such file in neither the template directory nor in the user include directory.',
+'Pun include extension'  			=>	'Unable to process user include %s from template %s. "%s" files are not allowed',
+'Pun include directory'				=>	'Unable to process user include %s from template %s. Directory traversal is not allowed',
+'Pun include error'					=>	'Unable to process user include %s from template %s. There is no such file in neither the template directory nor in the user include directory',
 
 // Miscellaneous
 'Announcement'						=>	'Announcement',
@@ -41,7 +43,7 @@ $lang_common = array(
 'Required'							=>	'(Required)',
 'required field'					=>	'is a required field in this form.', // For javascript form validation
 'Last post'							=>	'Last post',
-'by'								=>	'by', // As in last post by someuser
+'by'								=>	'by', // As in last post by some user
 'New posts'							=>	'New posts', // The link that leads to the first new post
 'New posts info'					=>	'Go to the first new post in this topic.', // The popup text for new posts links
 'Username'							=>	'Username',
@@ -59,6 +61,7 @@ $lang_common = array(
 'Pages'								=>	'Pages:',
 'Page'								=>	'Page %s',
 'BBCode'							=>	'BBCode:', // You probably shouldn't change this
+'url tag'							=>	'[url] tag:',
 'img tag'							=>	'[img] tag:',
 'Smilies'							=>	'Smilies:',
 'and'								=>	'and',
@@ -85,6 +88,8 @@ $lang_common = array(
 'BBCode error invalid self-nesting'	=>	'[%s] was opened within itself, this is not allowed',
 'BBCode error no closing tag'		=>	'[%1$s] was found without a matching [/%1$s]',
 'BBCode error empty attribute'		=>	'[%s] tag had an empty attribute section',
+'BBCode error tag not allowed'		=>	'You are not allowed to use [%s] tags',
+'BBCode error tag url not allowed'	=>	'You are not allowed to post links',
 'BBCode code problem'				=>	'There is a problem with your [code] tags',
 'BBCode list size error'			=>	'Your list was too long to parse, please make it smaller!',
 
