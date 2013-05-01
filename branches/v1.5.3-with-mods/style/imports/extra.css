@@ -1,0 +1,89 @@
+/* Multicolumn templates
+----------------------------------------------------------------*/
+
+#brdmain h2 .conr {
+	float: right;
+	text-align: right;
+	font-size: 13px;
+}
+
+
+#brdmain .side-right .blockmenu {
+	width: 13em;
+	float: right;
+	padding-bottom: 12px;
+}
+
+#brdmain .side-right .blockform, 
+#brdmain .side-right .block {
+	margin-left: 0;
+	margin-right: 15em;
+}
+
+#brdmain .side-left-wide .blockmenu {
+	width: 20em;
+	float: left;
+	padding-bottom: 12px;
+}
+
+#brdmain .side-left-wide .blockform, 
+#brdmain .side-left-wide .block {
+	margin-left: 22em;
+}
+
+#brdmain .side-right-wide .blockmenu {
+	width: 20em;
+	float: right;
+	padding-bottom: 12px;
+}
+
+#brdmain .side-right-wide .blockform, 
+#brdmain .side-right-wide .block {
+	margin-left: 0;
+	margin-right: 22em;
+}
+
+/* BBCode toolbar
+----------------------------------------------------------------*/
+
+#bbcodewrapper IMG {
+	border: 0;
+}
+#bbcodewrapper {
+	padding: 0 2em 0 0;
+	position: relative;
+	overflow: hidden;
+}
+#bbcodewrapper A {
+	display: block;
+	float: left;
+	padding-right: 4px;
+}
+#bbcodebuttons {
+	float: left;
+}
+#bbcodesmilies {
+	float: right;
+}
+
+/* Moderator's warnings
+----------------------------------------------------------------*/
+.pun .postwarn {
+	border-style: solid;
+	border-width: 0 0 0 3px;
+	border-color: #e99;
+	margin: 0.75em 1em 0.75em 2em;
+	padding: 0 0.75em;
+}
+.pun .postwarn cite {
+	font-weight: bold;
+}	
+
+.pun .postwarn:before {
+	content: "M";
+	position: absolute;
+	margin-left: -2em;
+	font-size: 150%;
+	font-weight: bold;
+	color: #e99;
+}
