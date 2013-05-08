@@ -841,7 +841,7 @@ function paginate($num_pages, $cur_page, $link)
 
     $pages = array();
     $link_to_all = false;
-    $sep = strpos($cur_page, '?') !== FALSE ? '&amp;' : '?';
+    $sep = strpos($link, '?') !== FALSE ? '&amp;' : '?';
 
     // If $cur_page == -1, we link to all pages (used in viewforum.php)
     if ($cur_page == -1)
