@@ -92,14 +92,23 @@ if (isset($_POST['form_sent']))
 	// Make sure base_url doesn't end with a slash
 	if (substr($form['base_url'], -1) == '/')
 		$form['base_url'] = substr($form['base_url'], 0, -1);
+		
+	// Convert IDN to Punycode if needed
+	if (preg_match('/[^\x00-\x7F]/', $form['base_url']))
+	{
+		if (!function_exists('idn_to_ascii'))
+			message($lang_admin_options['Base URL problem']);
+		else
+			$form['base_url'] = idn_to_ascii($form['base_url']);
+	}
 
 	$languages = forum_list_langs();
 	if (!in_array($form['default_lang'], $languages))
-		message($lang_common['Bad request']);
+		message($lang_common['Bad request'], false, '404 Not Found');
 
 	$styles = forum_list_styles();
 	if (!in_array($form['default_style'], $styles))
-		message($lang_common['Bad request']);
+		message($lang_common['Bad request'], false, '404 Not Found');
 
 	if ($form['time_format'] == '')
 		$form['time_format'] = 'H:i:s';
@@ -174,16 +183,16 @@ if (isset($_POST['form_sent']))
 		$form['disp_posts_default'] = 75;
 
 	if ($form['feed_type'] < 0 || $form['feed_type'] > 2)
-		message($lang_common['Bad request']);
+		message($lang_common['Bad request'], false, '404 Not Found');
 
 	if ($form['feed_ttl'] < 0)
-		message($lang_common['Bad request']);
+		message($lang_common['Bad request'], false, '404 Not Found');
 
 	if ($form['report_method'] < 0 || $form['report_method'] > 2)
-		message($lang_common['Bad request']);
+		message($lang_common['Bad request'], false, '404 Not Found');
 
 	if ($form['default_email_setting'] < 0 || $form['default_email_setting'] > 2)
-		message($lang_common['Bad request']);
+		message($lang_common['Bad request'], false, '404 Not Found');
 
 	if ($form['timeout_online'] >= $form['timeout_visit'])
 		message($lang_admin_options['Timeout error message']);

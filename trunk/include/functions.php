@@ -6,7 +6,6 @@
  * License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher
  */
 
-include PUN_ROOT.'include/srand.php';
 
 
 //
@@ -215,6 +214,7 @@ function get_current_protocol()
 	return $protocol;
 }
 
+
 //
 // Fetch the base_url, optionally support HTTPS and HTTP
 //
@@ -233,6 +233,27 @@ function get_base_url($support_https = false)
 	}
 
 	return $base_url;
+}
+
+
+//
+// Fetch admin IDs
+//
+function get_admin_ids()
+{
+	if (file_exists(FORUM_CACHE_DIR.'cache_admins.php'))
+		include FORUM_CACHE_DIR.'cache_admins.php';
+
+	if (!defined('PUN_ADMINS_LOADED'))
+	{
+		if (!defined('FORUM_CACHE_FUNCTIONS_LOADED'))
+			require PUN_ROOT.'include/cache.php';
+
+		generate_admins_cache();
+		require FORUM_CACHE_DIR.'cache_admins.php';
+	}
+
+	return $pun_admins;
 }
 
 
@@ -339,7 +360,10 @@ function pun_setcookie($user_id, $password_hash, $expire)
 //
 function forum_setcookie($name, $value, $expire)
 {
-	global $cookie_path, $cookie_domain, $cookie_secure;
+	global $cookie_path, $cookie_domain, $cookie_secure, $pun_config;
+
+	if ($expire - time() - $pun_config['o_timeout_visit'] < 1)
+		$expire = 0;
 
 	// Enable sending of a P3P header
 	header('P3P: CP="CUR ADM"');
@@ -407,7 +431,7 @@ function check_bans()
 		if ($is_banned)
 		{
 			$db->query('DELETE FROM '.$db->prefix.'online WHERE ident=\''.$db->escape($pun_user['username']).'\'') or error('Unable to delete from online list', __FILE__, __LINE__, $db->error());
-			message($lang_common['Ban message'].' '.(($cur_ban['expire'] != '') ? $lang_common['Ban message 2'].' '.strtolower(format_time($cur_ban['expire'], true)).'. ' : '').(($cur_ban['message'] != '') ? $lang_common['Ban message 3'].'<br /><br /><strong>'.pun_htmlspecialchars($cur_ban['message']).'</strong><br /><br />' : '<br /><br />').$lang_common['Ban message 4'].' <a href="mailto:'.$pun_config['o_admin_email'].'">'.$pun_config['o_admin_email'].'</a>.', true);
+			message($lang_common['Ban message'].' '.(($cur_ban['expire'] != '') ? $lang_common['Ban message 2'].' '.strtolower(format_time($cur_ban['expire'], true)).'. ' : '').(($cur_ban['message'] != '') ? $lang_common['Ban message 3'].'<br /><br /><strong>'.pun_htmlspecialchars($cur_ban['message']).'</strong><br /><br />' : '<br /><br />').$lang_common['Ban message 4'].' <a href="mailto:'.pun_htmlspecialchars($pun_config['o_admin_email']).'">'.pun_htmlspecialchars($pun_config['o_admin_email']).'</a>.', true);
 		}
 	}
 
@@ -429,6 +453,9 @@ function check_username($username, $exclude_id = null)
 {
 	global $db, $pun_config, $errors, $lang_prof_reg, $lang_register, $lang_common, $pun_bans;
 
+	// Include UTF-8 function
+	require PUN_ROOT.'include/utf8/strcasecmp.php';
+
 	// Convert multiple whitespace characters into one (to prevent people from registering with indistinguishable usernames)
 	$username = preg_replace('%\s+%s', ' ', $username);
 
@@ -437,7 +464,7 @@ function check_username($username, $exclude_id = null)
 		$errors[] = $lang_prof_reg['Username too short'];
 	else if (pun_strlen($username) > 25) // This usually doesn't happen since the form element only accepts 25 characters
 		$errors[] = $lang_prof_reg['Username too long'];
-	else if (!strcasecmp($username, 'Guest') || !strcasecmp($username, $lang_common['Guest']))
+	else if (!strcasecmp($username, 'Guest') || !utf8_strcasecmp($username, $lang_common['Guest']))
 		$errors[] = $lang_prof_reg['Username guest'];
 	else if (preg_match('%[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}%', $username) || preg_match('%((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(([0-9A-Fa-f]{1,4}:){0,5}:((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(::([0-9A-Fa-f]{1,4}:){0,5}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))%', $username))
 		$errors[] = $lang_prof_reg['Username IP'];
@@ -451,7 +478,7 @@ function check_username($username, $exclude_id = null)
 		$errors[] = $lang_register['Username censor'];
 
 	// Check that the username (or a too similar username) is not already registered
-	$query = ($exclude_id) ? ' AND id!='.$exclude_id : '';
+	$query = (!is_null($exclude_id)) ? ' AND id!='.$exclude_id : '';
 
 	$result = $db->query('SELECT username FROM '.$db->prefix.'users WHERE (UPPER(username)=UPPER(\''.$db->escape($username).'\') OR UPPER(username)=UPPER(\''.$db->escape(ucp_preg_replace('%[^\p{L}\p{N}]%u', '', $username)).'\')) AND id>1'.$query) or error('Unable to fetch user info', __FILE__, __LINE__, $db->error());
 
@@ -809,14 +836,14 @@ function get_title($user)
 		$ban_list = array();
 
 		foreach ($pun_bans as $cur_ban)
-			$ban_list[] = strtolower($cur_ban['username']);
+			$ban_list[] = utf8_strtolower($cur_ban['username']);
 	}
 
 	// If the user has a custom title
 	if ($user['title'] != '')
 		$user_title = pun_htmlspecialchars($user['title']);
 	// If the user is banned
-	else if (in_array(strtolower($user['username']), $ban_list))
+	else if (in_array(utf8_strtolower($user['username']), $ban_list))
 		$user_title = $lang_common['Banned'];
 	// If the user group has a default user title
 	else if ($user['g_user_title'] != '')
@@ -986,12 +1013,23 @@ function forum_number_format($number, $decimals = 0)
 //
 function random_key($len, $readable = false, $hash = false)
 {
+	if (!function_exists('secure_random_bytes'))
+		include PUN_ROOT.'include/srand.php';
+
 	$key = secure_random_bytes($len);
 
 	if ($hash)
-		$key = substr(bin2hex($key), 0, $len);
+		return substr(bin2hex($key), 0, $len);
 	else if ($readable)
-		$key = substr(base64_encode($key), 0, $len);
+	{
+		$chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+		$result = '';
+		for ($i = 0; $i < $len; ++$i)
+			$result .= substr($chars, (ord($key[$i]) % strlen($chars)), 1);
+
+		return $result;
+	}
 
 	return $key;
 }
@@ -1290,6 +1328,9 @@ function redirect($destination_url, $message)
 	// If the delay is 0 seconds, we might as well skip the redirect all together
 	if ($pun_config['o_redirect_delay'] == '0')
 	{
+		$db->end_transaction();
+		$db->close();
+
 		header('Location: '.str_replace('&amp;', '&', $destination_url));
 		exit;
 	}
@@ -1922,9 +1963,12 @@ function url_valid($url)
 //
 // This function takes care of possibly disabled unicode properties in PCRE builds
 //
-function ucp_preg_replace($pattern, $replace, $subject)
+function ucp_preg_replace($pattern, $replace, $subject, $callback = false)
 {
-	$replaced = preg_replace($pattern, $replace, $subject);
+	if($callback) 
+		$replaced = preg_replace_callback($pattern, create_function('$matches', 'return '.$replace.';'), $subject);
+	else
+		$replaced = preg_replace($pattern, $replace, $subject);
 
 	// If preg_replace() returns false, this probably means unicode support is not built-in, so we need to modify the pattern a little
 	if ($replaced === false)
@@ -1941,6 +1985,14 @@ function ucp_preg_replace($pattern, $replace, $subject)
 	}
 
 	return $replaced;
+}
+
+//
+// A wrapper for ucp_preg_replace
+//
+function ucp_preg_replace_callback($pattern, $replace, $subject)
+{
+	return ucp_preg_replace($pattern, $replace, $subject, true);
 }
 
 //
