@@ -622,6 +622,7 @@ $cur_index = 1;
 					<legend><?php echo $lang_common['Write message legend'] ?></legend>
 					<div class="infldset txtarea">
 						<input type="hidden" name="form_sent" value="1" />
+<?php include PUN_ROOT.'include/bbcode.inc.php'; ?>
 <?php
 
 if ($pun_user['is_guest'])

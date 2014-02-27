@@ -20,12 +20,14 @@ header('Pragma: no-cache'); // For HTTP/1.0 compatibility
 header('Content-type: text/html; charset=utf-8');
 
 // Load the template
-if (defined('PUN_ADMIN_CONSOLE'))
-	$tpl_file = 'admin.tpl';
-else if (defined('PUN_HELP'))
-	$tpl_file = 'help.tpl';
-else
-	$tpl_file = 'main.tpl';
+if (empty($tpl_file)) {
+	if (defined('PUN_ADMIN_CONSOLE'))
+		$tpl_file = 'admin.tpl';
+	else if (defined('PUN_HELP'))
+		$tpl_file = 'help.tpl';
+	else
+		$tpl_file = 'main.tpl';
+}
 
 if (file_exists(PUN_ROOT.'style/'.$pun_user['style'].'/'.$tpl_file))
 {
@@ -145,7 +147,7 @@ function process_form(the_form)
 }
 
 // JavaScript tricks for IE6 and older
-echo '<!--[if lte IE 6]><script type="text/javascript" src="style/imports/minmax.js"></script><![endif]-->'."\n";
+echo '<!--[if lte IE 6]><script type="text/javascript" src="js/minmax.js"></script><![endif]-->'."\n";
 
 if (isset($page_head))
 	echo implode("\n", $page_head)."\n";

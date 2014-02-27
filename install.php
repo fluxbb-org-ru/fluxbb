@@ -7,9 +7,9 @@
  */
 
 // The FluxBB version this script installs
-define('FORUM_VERSION', '1.5.6');
+define('FORUM_VERSION', '1.5.6.1');
 
-define('FORUM_DB_REVISION', 20);
+define('FORUM_DB_REVISION', '20.1');
 define('FORUM_SI_REVISION', 2);
 define('FORUM_PARSER_REVISION', 2);
 
@@ -989,6 +989,50 @@ else
 				'datatype'		=> 'SERIAL',
 				'allow_null'	=> false
 			),
+            'alias'     => array(
+                'datatype'      => 'VARCHAR(255)',
+                'allow_null'    => false,
+                'default'       => '\'\''
+            ),
+            'uri'       => array(
+                'datatype'      => 'VARCHAR(255)',
+                'allow_null'    => false,
+                'default'       => '\'\''
+            ),
+            'template'      => array(
+                'datatype'      => 'VARCHAR(255)',
+                'allow_null'    => false,
+                'default'       => '\'\''
+            ),
+            'editor_id'     => array(
+                'datatype'      => 'INT(10) UNSIGNED',
+                'allow_null'    => false,
+                'default'       => '1'
+            ),
+            'edited'        => array(
+                'datatype'      => 'INT(10) UNSIGNED',
+                'allow_null'    => false,
+                'default'       => '0'
+            )
+        ),
+        'PRIMARY KEY'   => array('id'),
+        'UNIQUE KEYS'   => array(
+            'pages_alias_idx'   => array('alias')
+        ),
+        'INDEXES'       => array(
+            'pages_uri_idx'     => array('uri')
+        )
+    );
+
+    $db->create_table('pages', $schema) or error('Unable to create pages table', __FILE__, __LINE__, $db->error());
+
+
+    $schema = array(
+        'FIELDS'        => array(
+            'id'            => array(
+                'datatype'      => 'SERIAL',
+                'allow_null'    => false
+            ),
 			'poster'		=> array(
 				'datatype'		=> 'VARCHAR(200)',
 				'allow_null'	=> false,
@@ -1508,6 +1552,38 @@ else
 		$schema['UNIQUE KEYS']['username_idx'] = array('username(25)');
 
 	$db->create_table('users', $schema) or error('Unable to create users table', __FILE__, __LINE__, $db->error());
+
+
+    $schema = array(
+        'FIELDS'        => array(
+            'id'            => array(
+                'datatype'      => 'SERIAL',
+                'allow_null'    => false
+            ),
+            'poster'        => array(
+                'datatype'      => 'VARCHAR(200)',
+                'allow_null'    => false,
+                'default'       => '\'\''
+            ),
+            'poster_id'     => array(
+                'datatype'      => 'INT(10) UNSIGNED',
+                'allow_null'    => false,
+                'default'       => '1'
+            ),
+            'posted'        => array(
+                'datatype'      => 'INT(10) UNSIGNED',
+                'allow_null'    => false,
+                'default'       => '0'
+            ),
+            'message'       => array(
+                'datatype'      => 'TEXT',
+                'allow_null'    => true
+            )
+        ),
+        'PRIMARY KEY'   => array('id')
+    );
+
+    $db->create_table('warnings', $schema) or error('Unable to create warnings table', __FILE__, __LINE__, $db->error());
 
 
 	$now = time();

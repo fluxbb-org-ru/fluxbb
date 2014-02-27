@@ -23,6 +23,10 @@ if ($id < 1 && $pid < 1)
 // Load the viewtopic.php language file
 require PUN_ROOT.'lang/'.$pun_user['language'].'/topic.php';
 
+// Load the page management functions and language file for it
+require PUN_ROOT.'include/pages.php';
+require PUN_ROOT.'lang/'.$pun_user['language'].'/pages.php';
+
 
 // If a post ID is specified we determine topic ID and page number so we can redirect to the correct message
 if ($pid)
@@ -209,6 +213,14 @@ for ($i = 0;$cur_post_id = $db->result($result, $i);$i++)
 if (empty($post_ids))
 	error('The post table and topic table seem to be out of sync!', __FILE__, __LINE__);
 
+// Retrieve moderator's warnings
+$result = $db->query('SELECT w.id, w.message, w.poster, w.posted FROM '.$db->prefix.'warnings AS w WHERE w.id IN ('.implode(',', $post_ids).')', true) or error('Unable to fetch warnings', __FILE__, __LINE__, $db->error());
+$warnings = array();
+while ($warning = $db->fetch_assoc($result))
+{
+    $warnings[$warning['id']] = $warning;
+}
+
 // Retrieve the posts (and their respective poster/online status)
 $result = $db->query('SELECT u.email, u.title, u.url, u.location, u.signature, u.email_setting, u.num_posts, u.registered, u.admin_note, p.id, p.poster AS username, p.poster_id, p.poster_ip, p.poster_email, p.message, p.hide_smilies, p.posted, p.edited, p.edited_by, g.g_id, g.g_user_title, o.user_id AS is_online FROM '.$db->prefix.'posts AS p INNER JOIN '.$db->prefix.'users AS u ON u.id=p.poster_id INNER JOIN '.$db->prefix.'groups AS g ON g.g_id=u.group_id LEFT JOIN '.$db->prefix.'online AS o ON (o.user_id=u.id AND o.user_id!=1 AND o.idle=0) WHERE p.id IN ('.implode(',', $post_ids).') ORDER BY p.id', true) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
 while ($cur_post = $db->fetch_assoc($result))
@@ -331,6 +343,15 @@ while ($cur_post = $db->fetch_assoc($result))
 	// Perform the main parsing of the message (BBCode, smilies, censor words etc)
 	$cur_post['message'] = parse_message($cur_post['message'], $cur_post['hide_smilies']);
 
+    // Parse moderator's warning if any
+    if (isset($warnings[$cur_post['id']]))
+    {
+        $warning = $warnings[$cur_post['id']];
+        $cur_post['warning'] = '<cite>'.format_time($warning['posted']).' '.pun_htmlspecialchars($warning['poster']).' '.$lang_common['wrote'].'</cite>'.parse_message($warning['message'], true);
+    } else {
+        $cur_post['warning'] = null;
+    }
+
 	// Do signature parsing/caching
 	if ($pun_config['o_signatures'] == '1' && $cur_post['signature'] != '' && $pun_user['show_sig'] != '0')
 	{
@@ -343,15 +364,27 @@ while ($cur_post = $db->fetch_assoc($result))
 		}
 	}
 
+    $post_no = '#' . ($start_from + $post_count);
+    if (Pages::canManage())
+    {
+        $post_no = '<a class="pagepublish" href="admin_loader.php?plugin=' . Pages::plugin() . '&uri=' 
+                 . urlencode('viewtopic.php?pid=' . $cur_post['id']) . '">' . $lang_pages['Publish'] . '</a> ' 
+                 . $post_no;
+    }
+
 ?>
 <div id="p<?php echo $cur_post['id'] ?>" class="blockpost<?php echo ($post_count % 2 == 0) ? ' roweven' : ' rowodd' ?><?php if ($cur_post['id'] == $cur_topic['first_post_id']) echo ' firstpost'; ?><?php if ($post_count == 1) echo ' blockpost1'; ?>">
-	<h2><span><span class="conr">#<?php echo ($start_from + $post_count) ?></span> <a href="viewtopic.php?pid=<?php echo $cur_post['id'].'#p'.$cur_post['id'] ?>"><?php echo format_time($cur_post['posted']) ?></a></span></h2>
+    <h2><span><span class="conr"><?php echo $post_no ?></span> <a href="viewtopic.php?pid=<?php echo $cur_post['id'].'#p'.$cur_post['id'] ?>"><?php echo format_time($cur_post['posted']) ?></a></span></h2>
 	<div class="box">
 		<div class="inbox">
 			<div class="postbody">
 				<div class="postleft">
 					<dl>
+<?php if ($quickpost): ?>
+                        <dt><strong><a href="#req_message" onclick="return insert_text('', '[b]@<?php echo pun_htmlspecialchars($cur_post['username']) ?>[/b], ')">@&nbsp;</a><?php echo $username ?></strong></dt>
+<?php else: ?>
 						<dt><strong><?php echo $username ?></strong></dt>
+<?php endif; ?>
 						<dd class="usertitle"><strong><?php echo $user_title ?></strong></dd>
 <?php if ($user_avatar != '') echo "\t\t\t\t\t\t".'<dd class="postavatar">'.$user_avatar.'</dd>'."\n"; ?>
 <?php if (count($user_info)) echo "\t\t\t\t\t\t".implode("\n\t\t\t\t\t\t", $user_info)."\n"; ?>
@@ -364,6 +397,11 @@ while ($cur_post = $db->fetch_assoc($result))
 						<?php echo $cur_post['message']."\n" ?>
 <?php if ($cur_post['edited'] != '') echo "\t\t\t\t\t\t".'<p class="postedit"><em>'.$lang_topic['Last edit'].' '.pun_htmlspecialchars($cur_post['edited_by']).' ('.format_time($cur_post['edited']).')</em></p>'."\n"; ?>
 					</div>
+<?php if (!is_null($cur_post['warning'])): ?>
+                    <div class="postwarn">
+                        <?php echo $cur_post['warning']."\n" ?>
+                    </div>
+<?php endif; ?>
 <?php if ($signature != '') echo "\t\t\t\t\t".'<div class="postsignature postmsg"><hr />'.$signature.'</div>'."\n"; ?>
 				</div>
 			</div>
@@ -416,6 +454,7 @@ $cur_index = 1;
 					<legend><?php echo $lang_common['Write message legend'] ?></legend>
 					<div class="infldset txtarea">
 						<input type="hidden" name="form_sent" value="1" />
+<?php include PUN_ROOT.'include/bbcode.inc.php'; ?>
 <?php if ($pun_config['o_topic_subscriptions'] == '1' && ($pun_user['auto_notify'] == '1' || $cur_topic['is_subscribed'])): ?>						<input type="hidden" name="subscribe" value="1" />
 <?php endif; ?>
 <?php

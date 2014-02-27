@@ -5,6 +5,8 @@
 /* Limited Reset
 ----------------------------------------------------------------*/
 
+@import url(imports/extra.css);
+
 html, body, .pun table, .pun div, .pun form, .pun p, .pun h1, .pun h2, .pun h3, .pun h4, .pun h5, .pun pre, .pun blockquote,
 .pun ul, .pun ol, .pun li, .pun dl, .pun dt, .pun dd, .pun th, .pun td, .pun fieldset, .pun legend .pun img,
 .pun abbr, .pun cite {
@@ -429,14 +431,14 @@ html, body, .pun table, .pun div, .pun form, .pun p, .pun h1, .pun h2, .pun h3, 
 }
 
 .pun .linksb, .pun .postlinksb, .pun .linkst, .pun .crumbs {
-	clear: both;
+    /* clear: both; */
 	position: relative;
 }
 
 .pun .linkst .crumbs {
 	font-family: "Trebuchet MS", Helvetica, Arial, sans-serif;
 	font-size: 1.462em;
-	line-height: 1.211em;
+    line-height: 1; /* 1.211em; */
 	padding: 7px 0;
 }
 
@@ -672,6 +674,7 @@ html, body, .pun table, .pun div, .pun form, .pun p, .pun h1, .pun h2, .pun h3, 
 }
 
 .pun .blocktable .tclcon {
+    height: 1%;
 	min-height: 1px;
 	overflow: hidden;
 	padding: 0 11px 0 12px;
@@ -962,6 +965,7 @@ MAIN POSTS
 }
 
 .pun .codebox pre {
+    overflow-y:hidden;
 	overflow: auto;
 	width: 100%;
 	direction: ltr;
