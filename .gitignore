@@ -1,0 +1,5 @@
+cache/*
+config.php
+img/avatar/*.png
+img/avatar/*.gif
+img/avatar/*.jpg
