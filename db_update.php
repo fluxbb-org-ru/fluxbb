@@ -7,9 +7,9 @@
  */
 
 // The FluxBB version this script updates to
-define('UPDATE_TO', '1.5.6');
+define('UPDATE_TO', '1.5.6.1');
 
-define('UPDATE_TO_DB_REVISION', 20);
+define('UPDATE_TO_DB_REVISION', '20.1');
 define('UPDATE_TO_SI_REVISION', 2);
 define('UPDATE_TO_PARSER_REVISION', 2);
 
@@ -1036,6 +1036,53 @@ switch ($stage)
 		$db->drop_index('topics', 'subject_fulltext_search') or error('Unable to drop subject_fulltext_search index', __FILE__, __LINE__, $db->error());
 		$db->drop_index('posts', 'message_fulltext_search') or error('Unable to drop message_fulltext_search index', __FILE__, __LINE__, $db->error());
 
+        // If the pages table is not exists yet, create it
+        if (!$db->table_exists('pages'))
+        {
+            $schema = array(
+                'FIELDS'        => array(
+                    'id'            => array(
+                        'datatype'      => 'SERIAL',
+                        'allow_null'    => false
+                    ),
+                    'alias'     => array(
+                        'datatype'      => 'VARCHAR(255)',
+                        'allow_null'    => false,
+                        'default'       => '\'\''
+                    ),
+                    'uri'       => array(
+                        'datatype'      => 'VARCHAR(255)',
+                        'allow_null'    => false,
+                        'default'       => '\'\''
+                    ),
+                    'template'      => array(
+                        'datatype'      => 'VARCHAR(255)',
+                        'allow_null'    => false,
+                        'default'       => '\'\''
+                    ),
+                    'editor_id'     => array(
+                        'datatype'      => 'INT(10) UNSIGNED',
+                        'allow_null'    => false,
+                        'default'       => '1'
+                    ),
+                    'edited'        => array(
+                        'datatype'      => 'INT(10) UNSIGNED',
+                        'allow_null'    => false,
+                        'default'       => '0'
+                    )
+                ),
+                'PRIMARY KEY'   => array('id'),
+                'UNIQUE KEYS'   => array(
+                    'pages_alias_idx'   => array('alias')
+                ),
+                'INDEXES'       => array(
+                    'pages_uri_idx'     => array('uri')
+                )
+            );
+
+            $db->create_table('pages', $schema);
+        }
+
 		// If the search_cache table has been dropped by the fulltext search extension, recreate it
 		if (!$db->table_exists('search_cache'))
 		{
@@ -1177,6 +1224,41 @@ switch ($stage)
 		// Remove the ranks table
 		if ($db->table_exists('ranks'))
 			$db->drop_table('ranks') or error('Unable to drop ranks table', __FILE__, __LINE__, $db->error());
+
+        // If the moderator warnings table does not exists, create it
+        if (!$db->table_exists('warnings'))
+        {
+            $schema = array(
+                'FIELDS'        => array(
+                    'id'            => array(
+                        'datatype'      => 'SERIAL',
+                        'allow_null'    => false
+                    ),
+                    'poster'        => array(
+                        'datatype'      => 'VARCHAR(200)',
+                        'allow_null'    => false,
+                        'default'       => '\'\''
+                    ),
+                    'poster_id'     => array(
+                        'datatype'      => 'INT(10) UNSIGNED',
+                        'allow_null'    => false,
+                        'default'       => '1'
+                    ),
+                    'posted'        => array(
+                        'datatype'      => 'INT(10) UNSIGNED',
+                        'allow_null'    => false,
+                        'default'       => '0'
+                    ),
+                    'message'       => array(
+                        'datatype'      => 'TEXT',
+                        'allow_null'    => true
+                    )
+                ),
+                'PRIMARY KEY'   => array('id')
+            );
+
+            $db->create_table('warnings', $schema) or error('Unable to create warnings table', __FILE__, __LINE__, $db->error());
+        }
 
 		// Should we do charset conversion or not?
 		if (strpos($cur_version, '1.2') === 0 && isset($_POST['convert_charset']))

@@ -814,7 +814,7 @@ else if (isset($_GET['find_user']))
 	$can_action = ($can_delete || $can_ban || $can_move) && $num_users > 0;
 
 	$page_title = array(pun_htmlspecialchars($pun_config['o_board_title']), $lang_admin_common['Admin'], $lang_admin_common['Users'], $lang_admin_users['Results head']);
-	$page_head = array('js' => '<script type="text/javascript" src="common.js"></script>');
+    $page_head = array('js' => '<script type="text/javascript" src="js/common.js"></script>');
 	define('PUN_ACTIVE_PAGE', 'admin');
 	require PUN_ROOT.'header.php';
 
