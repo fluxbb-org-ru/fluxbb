@@ -28,11 +28,11 @@
 
 #brdmain .side-left-wide .blockform, 
 #brdmain .side-left-wide .block {
-	margin-left: 22em;
+	margin-left: 27em;
 }
 
 #brdmain .side-right-wide .blockmenu {
-	width: 20em;
+	width: 25em;
 	float: right;
 	padding-bottom: 12px;
 }
@@ -40,7 +40,7 @@
 #brdmain .side-right-wide .blockform, 
 #brdmain .side-right-wide .block {
 	margin-left: 0;
-	margin-right: 22em;
+	margin-right: 27em;
 }
 
 /* BBCode toolbar
