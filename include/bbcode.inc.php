@@ -8,7 +8,7 @@ else
 $smldir = $pun_config['o_base_url'].'/img/smilies/';
 
 echo <<<EOT
-        <script type="text/javascript" src="js/post.js"></script>
+        <script type="text/javascript" src="{$pun_config['o_base_url']}/js/post.js"></script>
         <div id="bbcodewrapper">
             <span id="bbcodebuttons">
 <a href="#" title="b"       onclick="return insert_text('[b]','[/b]')"><img src="{$btndir}b.png" alt="[b]" /></a>

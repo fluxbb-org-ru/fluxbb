@@ -94,15 +94,15 @@ if (!defined('PUN_ALLOW_INDEX'))
 
 ?>
 <title><?php echo generate_page_title($page_title, $p) ?></title>
-<link rel="stylesheet" type="text/css" href="style/<?php echo $pun_user['style'].'.css' ?>" />
+<link rel="stylesheet" type="text/css" href="<?php echo $pun_config['o_base_url'].'/style/'.$pun_user['style'].'.css' ?>" />
 <?php
 
 if (defined('PUN_ADMIN_CONSOLE'))
 {
 	if (file_exists(PUN_ROOT.'style/'.$pun_user['style'].'/base_admin.css'))
-		echo '<link rel="stylesheet" type="text/css" href="style/'.$pun_user['style'].'/base_admin.css" />'."\n";
+		echo '<link rel="stylesheet" type="text/css" href="'.$pun_config['o_base_url'].'/style/'.$pun_user['style'].'/base_admin.css" />'."\n";
 	else
-		echo '<link rel="stylesheet" type="text/css" href="style/imports/base_admin.css" />'."\n";
+		echo '<link rel="stylesheet" type="text/css" href="'.$pun_config['o_base_url'].'/style/imports/base_admin.css" />'."\n";
 }
 
 if (isset($required_fields))
@@ -147,7 +147,7 @@ function process_form(the_form)
 }
 
 // JavaScript tricks for IE6 and older
-echo '<!--[if lte IE 6]><script type="text/javascript" src="js/minmax.js"></script><![endif]-->'."\n";
+echo '<!--[if lte IE 6]><script type="text/javascript" src="'.$pun_config['o_base_url'].'/js/minmax.js"></script><![endif]-->'."\n";
 
 if (isset($page_head))
 	echo implode("\n", $page_head)."\n";

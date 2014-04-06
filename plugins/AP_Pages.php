@@ -13,7 +13,7 @@ $self_url = 'admin_loader.php?plugin=' . basename(__FILE__);
 
 if (isset($_POST['save_page'])) {
 
-    $alias = isset($_POST['alias']) ? $_POST['alias'] : '';
+    $alias = isset($_POST['alias']) ? ('/'.ltrim($_POST['alias'], '/')) : '';
     $uri = isset($_POST['uri']) ? $_POST['uri'] : '';
     $template = isset($_POST['template']) ? $_POST['template'] : '';
 
