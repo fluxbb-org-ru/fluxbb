@@ -29,7 +29,6 @@ while ($cur_topic = $db->fetch_assoc($result)) {
 				<ul>
 <?php 
 	foreach ($topics as $cur_topic): 
-//        die(var_export($cur_topic, true));
 		$post_ref = $pun_config['o_base_url'] . '/viewtopic.php?pid=' . $cur_topic['id'] . '#p' . $cur_topic['id'];
 		$tid = $cur_topic['tid'];
 		$fid = $cur_topic['fid'];
