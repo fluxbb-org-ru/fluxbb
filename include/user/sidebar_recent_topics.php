@@ -2,7 +2,7 @@
 
 $topics = array();
 // TODO: it'll be good to cache rows by TTL
-		$sql = 
+$sql = 
 "SELECT 
 	f.id AS fid, f.forum_name, 
 	t.id AS tid, t.subject, t.last_post,

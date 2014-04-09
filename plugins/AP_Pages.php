@@ -206,16 +206,18 @@ if (isset($_POST['del_page']) || isset($_GET['del_page'])) {
             </thead>
             <tbody>
 <?php
-
+    if (!isset($base_url)) {
+        $page_base_url = $pun_config['o_base_url'];
+    }
     foreach ($rows as $row) {
 
 ?>
                 <tr>
                     <td class="tcl">
 <?php if (isset($row['subject'])): ?>
-                        <strong><a href="<?php echo $pun_config['o_base_url'].$row['alias'] ?>"><?php echo htmlspecialchars($row['subject']) ?></a></strong><br />
+                        <strong><a href="<?php echo $page_base_url.$row['alias'] ?>"><?php echo htmlspecialchars($row['subject']) ?></a></strong><br />
 <?php endif; ?>
-                        <a href="<?php echo $pun_config['o_base_url'].$row['alias'] ?>"><?php echo $row['alias'] ?></a> &rarr;
+                        <a href="<?php echo $page_base_url.$row['alias'] ?>"><?php echo $row['alias'] ?></a> &rarr;
                         <?php echo $row['uri'] ?>
 
                     </td>
