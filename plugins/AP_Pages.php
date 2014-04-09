@@ -206,7 +206,7 @@ if (isset($_POST['del_page']) || isset($_GET['del_page'])) {
             </thead>
             <tbody>
 <?php
-    if (!isset($base_url)) {
+    if (!isset($page_base_url)) {
         $page_base_url = $pun_config['o_base_url'];
     }
     foreach ($rows as $row) {

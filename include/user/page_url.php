@@ -9,6 +9,10 @@ $alias = $db->escape($page_uri);
 $result = $db->query("SELECT a.* FROM {$db_prefix}pages AS a WHERE a.alias='{$alias}'");
 $alias_data = $db->fetch_assoc($result);
 
+if (!isset($page_base_url)) {
+    $page_base_url = $pun_config['o_base_url'];
+}
+
 if (empty($alias_data['uri']))
     fileNotFound();
 
@@ -37,7 +41,7 @@ if (preg_match('#^viewtopic\.php\?pid=(\d+)#', $alias_data['uri'], $matches)) {
     if (preg_match('#^https?://#', $alias_data['uri'], $matches))
         header('Location: ' . $alias_data['uri']);
     else
-        header('Location: ' . $pun_config['o_base_url'] . '/' . $alias_data['uri']);
+        header('Location: ' . $page_base_url . '/' . $alias_data['uri']);
     exit;
 }
 
@@ -46,7 +50,7 @@ if (empty($post_data['message'])) {
 }
 
 // Generate paging links
-$paging_links = '<span class="pages-label">'.$lang_common['Pages'].' </span>'.paginate($num_pages, $p, $pun_config['o_base_url'].$page_uri);
+$paging_links = '<span class="pages-label">'.$lang_common['Pages'].' </span>'.paginate($num_pages, $p, $page_base_url.$page_uri);
 
 if (Pages::canManage()) {
     $post_link = "\t\t\t".'<p class="postlink conr">'
