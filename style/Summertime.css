@@ -169,6 +169,7 @@ body {
 ----------------------------------------------------------------*/
 
 .punwrap #brdtitle, .punwrap #brdmenu, .punwrap #brdwelcome, 
+.punwrap #announce-block,
 .punwrap #brdmain,
 #brdfooter .box {
     width: 956px;
@@ -245,9 +246,10 @@ body {
 }
 
 #announce {
+    background-color: transparent !important;
     border-style: solid none none none;
     border-width: 2px 0 0 0;
-    padding-top: 3px;
+/*    padding-top: 3px; */
 }
 
 /*****************************************************************
@@ -506,6 +508,9 @@ body {
     position: absolute;
     right: 0;
     text-align: right;
+    top: 33px;
+}
+.pun .subscribelink {
     top: 33px;
 }
 
@@ -1425,11 +1430,15 @@ html, body {
     color: #333333;
 }
 
-#brdtitle, #brdmain, #announce, #brdwelcome, #brdfooter .box {
+#brdtitle, #brdmain, #announce-block, #announce, #brdwelcome, #brdfooter .box {
     background-color: #fcfcf5;
     border-color: #d6e0ca;
     border-style: solid;
     border-width: 0 1px;
+}
+
+#announce-block {
+    background-color: #ff9; 
 }
 
 #brdtitle {
