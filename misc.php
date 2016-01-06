@@ -51,6 +51,8 @@ else if ($action == 'markread')
 	if ($pun_user['is_guest'])
 		message($lang_common['No permission'], false, '403 Forbidden');
 
+	check_csrf($_GET['csrf_token']);
+
 	$db->query('UPDATE '.$db->prefix.'users SET last_visit='.$pun_user['logged'].' WHERE id='.$pun_user['id']) or error('Unable to update user last visit data', __FILE__, __LINE__, $db->error());
 
 	// Reset tracked topics
@@ -65,6 +67,8 @@ else if ($action == 'markforumread')
 {
 	if ($pun_user['is_guest'])
 		message($lang_common['No permission'], false, '403 Forbidden');
+
+	check_csrf($_GET['csrf_token']);
 
 	$fid = isset($_GET['fid']) ? intval($_GET['fid']) : 0;
 	if ($fid < 1)
@@ -136,37 +140,19 @@ else if (isset($_GET['email']))
 
 		$db->query('UPDATE '.$db->prefix.'users SET last_email_sent='.time().' WHERE id='.$pun_user['id']) or error('Unable to update user', __FILE__, __LINE__, $db->error());
 
-		redirect(pun_htmlspecialchars($_POST['redirect_url']), $lang_misc['Email sent redirect']);
+		// Try to determine if the data in redirect_url is valid (if not, we redirect to index.php after the email is sent)
+		$redirect_url = validate_redirect($_POST['redirect_url'], 'index.php');
+
+		redirect(pun_htmlspecialchars($redirect_url), $lang_misc['Email sent redirect']);
 	}
 
 
 	// Try to determine if the data in HTTP_REFERER is valid (if not, we redirect to the user's profile after the email is sent)
 	if (!empty($_SERVER['HTTP_REFERER']))
-	{
-		$referrer = parse_url($_SERVER['HTTP_REFERER']);
-		// Remove www subdomain if it exists
-		if (strpos($referrer['host'], 'www.') === 0)
-			$referrer['host'] = substr($referrer['host'], 4);
-
-		// Make sure the path component exists
-		if (!isset($referrer['path']))
-			$referrer['path'] = '';
-
-		$valid = parse_url(get_base_url());
-		// Remove www subdomain if it exists
-		if (strpos($valid['host'], 'www.') === 0)
-			$valid['host'] = substr($valid['host'], 4);
-
-		// Make sure the path component exists
-		if (!isset($valid['path']))
-			$valid['path'] = '';
-
-		if ($referrer['host'] == $valid['host'] && preg_match('%^'.preg_quote($valid['path'], '%').'/(.*?)\.php%i', $referrer['path']))
-			$redirect_url = $_SERVER['HTTP_REFERER'];
-	}
+		$redirect_url = validate_redirect($_SERVER['HTTP_REFERER'], null);
 
 	if (!isset($redirect_url))
-		$redirect_url = 'profile.php?id='.$recipient_id;
+		$redirect_url = get_base_url(true).'/profile.php?id='.$recipient_id;
 	else if (preg_match('%viewtopic\.php\?pid=(\d+)$%', $redirect_url, $matches))
 		$redirect_url .= '#p'.$matches[1];
 
@@ -335,6 +321,8 @@ else if ($action == 'subscribe')
 	if ($pun_user['is_guest'])
 		message($lang_common['No permission'], false, '403 Forbidden');
 
+	check_csrf($_GET['csrf_token']);
+
 	$topic_id = isset($_GET['tid']) ? intval($_GET['tid']) : 0;
 	$forum_id = isset($_GET['fid']) ? intval($_GET['fid']) : 0;
 	if ($topic_id < 1 && $forum_id < 1)
@@ -384,6 +372,8 @@ else if ($action == 'unsubscribe')
 {
 	if ($pun_user['is_guest'])
 		message($lang_common['No permission'], false, '403 Forbidden');
+
+	check_csrf($_GET['csrf_token']);
 
 	$topic_id = isset($_GET['tid']) ? intval($_GET['tid']) : 0;
 	$forum_id = isset($_GET['fid']) ? intval($_GET['fid']) : 0;

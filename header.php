@@ -19,6 +19,10 @@ header('Pragma: no-cache'); // For HTTP/1.0 compatibility
 // Send the Content-type header in case the web server is setup to send something else
 header('Content-type: text/html; charset=utf-8');
 
+// Prevent site from being embedded in a frame
+$frame_options = defined('FORUM_FRAME_OPTIONS') ? FORUM_FRAME_OPTIONS : 'deny';
+header('X-Frame-Options: '.$frame_options);
+
 // Load the template
 if (defined('PUN_ADMIN_CONSOLE'))
 	$tpl_file = 'admin.tpl';
@@ -144,10 +148,7 @@ function process_form(the_form)
 
 }
 
-// JavaScript tricks for IE6 and older
-echo '<!--[if lte IE 6]><script type="text/javascript" src="style/imports/minmax.js"></script><![endif]-->'."\n";
-
-if (isset($page_head))
+if (!empty($page_head))
 	echo implode("\n", $page_head)."\n";
 
 $tpl_temp = trim(ob_get_contents());
@@ -207,7 +208,7 @@ else
 	if ($pun_user['is_admmod'])
 		$links[] = '<li id="navadmin"'.((PUN_ACTIVE_PAGE == 'admin') ? ' class="isactive"' : '').'><a href="admin_index.php">'.$lang_common['Admin'].'</a></li>';
 
-	$links[] = '<li id="navlogout"><a href="login.php?action=out&amp;id='.$pun_user['id'].'&amp;csrf_token='.pun_hash($pun_user['id'].pun_hash(get_remote_address())).'">'.$lang_common['Logout'].'</a></li>';
+	$links[] = '<li id="navlogout"><a href="login.php?action=out&amp;id='.$pun_user['id'].'&amp;csrf_token='.pun_csrf_token().'">'.$lang_common['Logout'].'</a></li>';
 }
 
 // Are there any additional navlinks we should insert into the array before imploding it?

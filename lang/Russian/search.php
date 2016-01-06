@@ -16,7 +16,6 @@ $lang_search = array(
 'Search in info'                    =>  'Выберите в каком форуме искать и где искать: в заголовке, сообщении или и там и там.',
 'Search multiple forums info'       =>  'Если не выбран ни один, будем искать по всем.',
 'Forum search'                      =>  'Форум',
-'All forums'                        =>  '&lt;Все&gt;',
 'Search in'                         =>  'Искать в',
 'Message and subject'               =>  'сообщении и заголовке темы',
 'Message only'                      =>  'только в сообщении',

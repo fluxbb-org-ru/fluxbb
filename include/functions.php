@@ -41,7 +41,8 @@ function check_cookie(&$pun_user)
 	if (isset($cookie) && $cookie['user_id'] > 1 && $cookie['expiration_time'] > $now)
 	{
 		// If the cookie has been tampered with
-		if (forum_hmac($cookie['user_id'].'|'.$cookie['expiration_time'], $cookie_seed.'_cookie_hash') != $cookie['cookie_hash'])
+		$is_authorized = pun_hash_equals(forum_hmac($cookie['user_id'].'|'.$cookie['expiration_time'], $cookie_seed.'_cookie_hash'), $cookie['cookie_hash']);
+		if (!$is_authorized)
 		{
 			$expire = $now + 31536000; // The cookie expires after a year
 			pun_setcookie(1, pun_hash(uniqid(rand(), true)), $expire);
@@ -55,7 +56,8 @@ function check_cookie(&$pun_user)
 		$pun_user = $db->fetch_assoc($result);
 
 		// If user authorisation failed
-		if (!isset($pun_user['id']) || forum_hmac($pun_user['password'], $cookie_seed.'_password_hash') !== $cookie['password_hash'])
+		$is_authorized = pun_hash_equals(forum_hmac($pun_user['password'], $cookie_seed.'_password_hash'), $cookie['password_hash']);
+		if (!isset($pun_user['id']) || !$is_authorized)
 		{
 			$expire = $now + 31536000; // The cookie expires after a year
 			pun_setcookie(1, pun_hash(uniqid(rand(), true)), $expire);
@@ -161,9 +163,12 @@ function authenticate_user($user, $password, $password_is_hash = false)
 	$result = $db->query('SELECT u.*, g.*, o.logged, o.idle FROM '.$db->prefix.'users AS u INNER JOIN '.$db->prefix.'groups AS g ON g.g_id=u.group_id LEFT JOIN '.$db->prefix.'online AS o ON o.user_id=u.id WHERE '.(is_int($user) ? 'u.id='.intval($user) : 'u.username=\''.$db->escape($user).'\'')) or error('Unable to fetch user info', __FILE__, __LINE__, $db->error());
 	$pun_user = $db->fetch_assoc($result);
 
+	$is_password_authorized = pun_hash_equals($password, $pun_user['password']);
+	$is_hash_authorized = pun_hash_equals(pun_hash($password), $pun_user['password']);
+
 	if (!isset($pun_user['id']) ||
-		($password_is_hash && $password != $pun_user['password']) ||
-		(!$password_is_hash && pun_hash($password) != $pun_user['password']))
+		($password_is_hash && !$is_password_authorized ||
+		(!$password_is_hash && !$is_hash_authorized)))
 		set_default_user();
 	else
 		$pun_user['is_guest'] = false;
@@ -591,14 +596,14 @@ function generate_avatar_markup($user_id)
 //
 function generate_page_title($page_title, $p = null)
 {
-	global $pun_config, $lang_common;
+	global $lang_common;
 
 	if (!is_array($page_title))
 		$page_title = array($page_title);
 
 	$page_title = array_reverse($page_title);
 
-	if (!is_null($p))
+	if ($p > 1)
 		$page_title[0] .= ' ('.sprintf($lang_common['Page'], forum_number_format($p)).')';
 
 	$crumbs = implode($lang_common['Title separator'], $page_title);
@@ -667,6 +672,17 @@ function get_tracked_topics()
 	}
 
 	return $tracked_topics;
+}
+
+
+//
+// Shortcut method for executing all callbacks registered with the addon manager for the given hook
+//
+function flux_hook($name)
+{
+	global $flux_addons;
+
+	$flux_addons->hook($name);
 }
 
 
@@ -830,7 +846,7 @@ function censor_words($text)
 //
 function get_title($user)
 {
-	global $db, $pun_config, $pun_bans, $lang_common;
+	global $pun_bans, $lang_common;
 	static $ban_list;
 
 	// If not already built in a previous call, build an array of lowercase banned usernames
@@ -885,11 +901,11 @@ function paginate($num_pages, $cur_page, $link)
 	{
 		// Add a previous page link
 		if ($num_pages > 1 && $cur_page > 1)
-			$pages[] = '<a rel="prev"'.(empty($pages) ? ' class="item1"' : '').' href="'.$link.'&amp;p='.($cur_page - 1).'">'.$lang_common['Previous'].'</a>';
+			$pages[] = '<a rel="prev"'.(empty($pages) ? ' class="item1"' : '').' href="'.$link.($cur_page == 2 ? '' : '&amp;p='.($cur_page - 1)).'">'.$lang_common['Previous'].'</a>';
 
 		if ($cur_page > 3)
 		{
-			$pages[] = '<a'.(empty($pages) ? ' class="item1"' : '').' href="'.$link.'&amp;p=1">1</a>';
+			$pages[] = '<a'.(empty($pages) ? ' class="item1"' : '').' href="'.$link.'">1</a>';
 
 			if ($cur_page > 5)
 				$pages[] = '<span class="spacer">'.$lang_common['Spacer'].'</span>';
@@ -901,7 +917,7 @@ function paginate($num_pages, $cur_page, $link)
 			if ($current < 1 || $current > $num_pages)
 				continue;
 			else if ($current != $cur_page || $link_to_all)
-				$pages[] = '<a'.(empty($pages) ? ' class="item1"' : '').' href="'.$link.'&amp;p='.$current.'">'.forum_number_format($current).'</a>';
+				$pages[] = '<a'.(empty($pages) ? ' class="item1"' : '').' href="'.$link.($current == 1 ? '' : '&amp;p='.$current).'">'.forum_number_format($current).'</a>';
 			else
 				$pages[] = '<strong'.(empty($pages) ? ' class="item1"' : '').'>'.forum_number_format($current).'</strong>';
 		}
@@ -964,7 +980,7 @@ function message($message, $no_back_link = false, $http_status = null)
 //
 function format_time($timestamp, $date_only = false, $date_format = null, $time_format = null, $time_only = false, $no_text = false)
 {
-	global $pun_config, $lang_common, $pun_user, $forum_date_formats, $forum_time_formats;
+	global $lang_common, $pun_user, $forum_date_formats, $forum_time_formats;
 
 	if ($timestamp == '')
 		return $lang_common['Never'];
@@ -1043,7 +1059,7 @@ function random_key($len, $readable = false, $hash = false)
 //
 function confirm_referrer($scripts, $error_msg = false)
 {
-	global $pun_config, $lang_common;
+	global $lang_common;
 
 	if (!is_array($scripts))
 		$scripts = array($scripts);
@@ -1060,18 +1076,54 @@ function confirm_referrer($scripts, $error_msg = false)
 	$valid_paths = array();
 	foreach ($scripts as $script)
 	{
-	$valid = parse_url(strtolower(get_base_url().'/'.$script));
-	// Remove www subdomain if it exists
-	if (strpos($valid['host'], 'www.') === 0)
-		$valid['host'] = substr($valid['host'], 4);
+		$valid = parse_url(strtolower(get_base_url().'/'.$script));
+		// Remove www subdomain if it exists
+		if (strpos($valid['host'], 'www.') === 0)
+			$valid['host'] = substr($valid['host'], 4);
 
 		$valid_host = $valid['host'];
 		$valid_paths[] = $valid['path'];
 	}
 
 	// Check the host and path match. Ignore the scheme, port, etc.
-	if ($referrer['host'] != $valid_host || !in_array($referrer['path'], $valid_paths))
+	if ($referrer['host'] != $valid_host || !in_array($referrer['path'], $valid_paths, true))
 		message($error_msg ? $error_msg : $lang_common['Bad referrer']);
+}
+
+
+//
+// Validate the given redirect URL, use the fallback otherwise
+//
+function validate_redirect($redirect_url, $fallback_url)
+{
+	$referrer = parse_url(strtolower($redirect_url));
+
+	// Make sure the host component exists
+	if (!isset($referrer['host']))
+		$referrer['host'] = '';
+
+	// Remove www subdomain if it exists
+	if (strpos($referrer['host'], 'www.') === 0)
+		$referrer['host'] = substr($referrer['host'], 4);
+
+	// Make sure the path component exists
+	if (!isset($referrer['path']))
+		$referrer['path'] = '';
+
+	$valid = parse_url(strtolower(get_base_url()));
+
+	// Remove www subdomain if it exists
+	if (strpos($valid['host'], 'www.') === 0)
+		$valid['host'] = substr($valid['host'], 4);
+
+	// Make sure the path component exists
+	if (!isset($valid['path']))
+		$valid['path'] = '';
+
+	if ($referrer['host'] == $valid['host'] && preg_match('%^'.preg_quote($valid['path'], '%').'/(.*?)\.php%i', $referrer['path']))
+		return $redirect_url;
+	else
+		return $fallback_url;
 }
 
 
@@ -1091,6 +1143,58 @@ function random_pass($len)
 function pun_hash($str)
 {
 	return sha1($str);
+}
+
+
+//
+// Compare two strings in constant time
+// Inspired by WordPress
+//
+function pun_hash_equals($a, $b)
+{
+	if (function_exists('hash_equals'))
+		return hash_equals($a, $b);
+
+	$a_length = strlen($a);
+
+	if ($a_length !== strlen($b))
+		return false;
+
+	$result = 0;
+
+	// Do not attempt to "optimize" this.
+	for ($i = 0; $i < $a_length; $i++)
+		$result |= ord($a[$i]) ^ ord($b[$i]);
+
+	return $result === 0;
+}
+
+
+//
+// Compute a random hash used against CSRF attacks
+//
+function pun_csrf_token()
+{
+	global $pun_user;
+	static $token;
+
+	if (!isset($token))
+		$token = pun_hash($pun_user['id'].$pun_user['password'].pun_hash(get_remote_address()));
+
+	return $token;
+}
+
+//
+// Check if the CSRF hash is correct
+//
+function check_csrf($token)
+{
+	global $lang_common;
+
+	$is_hash_authorized = pun_hash_equals($token, pun_csrf_token());
+
+	if (!isset($token) || !$is_hash_authorized)
+		message($lang_common['Bad csrf hash'], false, '404 Not Found');
 }
 
 
@@ -1165,7 +1269,7 @@ function pun_strlen($str)
 //
 function pun_linebreaks($str)
 {
-	return str_replace("\r", "\n", str_replace("\r\n", "\n", $str));
+	return str_replace(array("\r\n", "\r"), "\n", $str);
 }
 
 
@@ -1781,7 +1885,7 @@ function forum_list_plugins($is_admin)
 //
 function split_text($text, $start, $end, $retab = true)
 {
-	global $pun_config, $lang_common;
+	global $pun_config;
 
 	$result = array(0 => array(), 1 => array()); // 0 = inside, 1 = outside
 
@@ -1958,11 +2062,9 @@ function url_valid($url)
 			  [0-9A-Za-z]		   # Part last char is alphanum (no dash).
 			  \.				   # Each part followed by literal dot.
 			)*					   # One or more parts before top level domain.
-			(?:					   # Explicitly specify top level domains.
-			  com|edu|gov|int|mil|net|org|biz|
-			  info|name|pro|aero|coop|museum|
-			  asia|cat|jobs|mobi|tel|travel|
-			  [A-Za-z]{2})		   # Country codes are exqactly two alpha chars.
+			(?:					   # Top level domains
+			  [A-Za-z]{2,63}|	   # Country codes are exactly two alpha chars.
+			  xn--[0-9A-Za-z]{4,59})		   # Internationalized Domain Name (IDN)
 			$					   # Anchor to end of string.
 			/ix', $m['host'])) return FALSE;
 	}
@@ -1978,7 +2080,7 @@ function url_valid($url)
 //
 function ucp_preg_replace($pattern, $replace, $subject, $callback = false)
 {
-	if($callback) 
+	if($callback)
 		$replaced = preg_replace_callback($pattern, create_function('$matches', 'return '.$replace.';'), $subject);
 	else
 		$replaced = preg_replace($pattern, $replace, $subject);

@@ -249,7 +249,7 @@ generate_admin_menu('options');
 								<tr>
 									<th scope="row"><?php echo $lang_admin_options['Board desc label'] ?></th>
 									<td>
-										<input type="text" name="form[board_desc]" size="50" maxlength="255" value="<?php echo pun_htmlspecialchars($pun_config['o_board_desc']) ?>" />
+										<textarea name="form[board_desc]" cols="60" rows="3"><?php echo pun_htmlspecialchars($pun_config['o_board_desc']) ?></textarea>
 										<span><?php echo $lang_admin_options['Board desc help'] ?></span>
 									</td>
 								</tr>
@@ -705,14 +705,14 @@ generate_admin_menu('options');
 								<tr>
 									<th scope="row"><?php echo $lang_admin_options['Admin e-mail label'] ?></th>
 									<td>
-										<input type="text" name="form[admin_email]" size="50" maxlength="80" value="<?php echo $pun_config['o_admin_email'] ?>" />
+										<input type="text" name="form[admin_email]" size="50" maxlength="80" value="<?php echo pun_htmlspecialchars($pun_config['o_admin_email']) ?>" />
 										<span><?php echo $lang_admin_options['Admin e-mail help'] ?></span>
 									</td>
 								</tr>
 								<tr>
 									<th scope="row"><?php echo $lang_admin_options['Webmaster e-mail label'] ?></th>
 									<td>
-										<input type="text" name="form[webmaster_email]" size="50" maxlength="80" value="<?php echo $pun_config['o_webmaster_email'] ?>" />
+										<input type="text" name="form[webmaster_email]" size="50" maxlength="80" value="<?php echo pun_htmlspecialchars($pun_config['o_webmaster_email']) ?>" />
 										<span><?php echo $lang_admin_options['Webmaster e-mail help'] ?></span>
 									</td>
 								</tr>

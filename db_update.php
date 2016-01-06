@@ -7,9 +7,9 @@
  */
 
 // The FluxBB version this script updates to
-define('UPDATE_TO', '1.5.6');
+define('UPDATE_TO', '1.5.9');
 
-define('UPDATE_TO_DB_REVISION', 20);
+define('UPDATE_TO_DB_REVISION', 21);
 define('UPDATE_TO_SI_REVISION', 2);
 define('UPDATE_TO_PARSER_REVISION', 2);
 
@@ -1029,6 +1029,9 @@ switch ($stage)
 		// Add a field for the per-group permission to post links
 		$db->add_field('groups', 'g_post_links', 'TINYINT(1)', false, 1, 'g_delete_topics') or error('Unable to add per-group permission to post links', __FILE__, __LINE__, $db->error());
 
+		// Add a field for the per-group permission to promote users to the next auto-promote group
+		$db->add_field('groups', 'g_mod_promote_users', 'TINYINT(1)', false, 0, 'g_mod_ban_users') or error('Unable to add per-group permission to promote users', __FILE__, __LINE__, $db->error());
+
 		// In case we had the fulltext search extension installed (1.3-legacy), remove it
 		$db->drop_index('topics', 'subject_idx') or error('Unable to drop subject_idx index', __FILE__, __LINE__, $db->error());
 		$db->drop_index('posts', 'message_idx') or error('Unable to drop message_idx index', __FILE__, __LINE__, $db->error());
@@ -1903,4 +1906,4 @@ $db->end_transaction();
 $db->close();
 
 if ($query_str != '')
-	exit('<script type="text/javascript">window.location="db_update.php'.$query_str.'&uid='.$uid.'"</script><noscript><meta http-equiv="refresh" content="0;url=db_update.php'.$query_str.'&uid='.$uid.'" /></noscript>');
+	exit('<meta http-equiv="refresh" content="0;url=db_update.php'.$query_str.'&uid='.$uid.'" /><hr /><p>'.sprintf($lang_update['Automatic redirect failed'], '<a href="db_update.php'.$query_str.'&uid='.$uid.'">'.$lang_update['Click here'].'</a>').'</p>');

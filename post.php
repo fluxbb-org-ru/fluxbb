@@ -59,13 +59,15 @@ $errors = array();
 // Did someone just hit "Submit" or "Preview"?
 if (isset($_POST['form_sent']))
 {
+	flux_hook('post_before_validation');
+
 	// Flood protection
 	if (!isset($_POST['preview']) && $pun_user['last_post'] != '' && (time() - $pun_user['last_post']) < $pun_user['g_post_flood'])
 		$errors[] = sprintf($lang_post['Flood start'], $pun_user['g_post_flood'], $pun_user['g_post_flood'] - (time() - $pun_user['last_post']));
 
 	// Make sure they got here from the site
 	confirm_referrer(array('post.php', 'viewtopic.php'));
-	
+
 	// If it's a new topic
 	if ($fid)
 	{
@@ -161,6 +163,8 @@ if (isset($_POST['form_sent']))
 
 	$now = time();
 
+	flux_hook('post_after_validation');
+
 	// Did everything go according to plan?
 	if (empty($errors) && !isset($_POST['preview']))
 	{
@@ -215,6 +219,7 @@ if (isset($_POST['form_sent']))
 					require_once PUN_ROOT.'include/email.php';
 
 					$notification_emails = array();
+					$languages = forum_list_langs();
 
 					if ($pun_config['o_censoring'] == '1')
 						$cleaned_message = bbcode2email($censored_message, -1);
@@ -224,6 +229,9 @@ if (isset($_POST['form_sent']))
 					// Loop through subscribed users and send emails
 					while ($cur_subscriber = $db->fetch_assoc($result))
 					{
+						if (!in_array($cur_subscriber['language'], $languages))
+							$cur_subscriber['language'] = $pun_config['o_default_lang'];
+
 						// Is the subscription email for $cur_subscriber['language'] cached or not?
 						if (!isset($notification_emails[$cur_subscriber['language']]))
 						{
@@ -323,6 +331,7 @@ if (isset($_POST['form_sent']))
 					require_once PUN_ROOT.'include/email.php';
 
 					$notification_emails = array();
+					$languages = forum_list_langs();
 
 					if ($pun_config['o_censoring'] == '1')
 						$cleaned_message = bbcode2email($censored_message, -1);
@@ -332,6 +341,9 @@ if (isset($_POST['form_sent']))
 					// Loop through subscribed users and send emails
 					while ($cur_subscriber = $db->fetch_assoc($result))
 					{
+						if (!in_array($cur_subscriber['language'], $languages))
+							$cur_subscriber['language'] = $pun_config['o_default_lang'];
+
 						// Is the subscription email for $cur_subscriber['language'] cached or not?
 						if (!isset($notification_emails[$cur_subscriber['language']]))
 						{
@@ -541,6 +553,8 @@ else
 	$focus_element[] = 'req_username';
 }
 
+flux_hook('post_before_header');
+
 define('PUN_ACTIVE_PAGE', 'index');
 require PUN_ROOT.'header.php';
 
@@ -700,6 +714,7 @@ if (!empty($checkboxes))
 
 ?>
 			</div>
+<?php flux_hook('post_before_submit') ?>
 			<p class="buttons"><input type="submit" name="submit" value="<?php echo $lang_common['Submit'] ?>" tabindex="<?php echo $cur_index++ ?>" accesskey="s" /> <input type="submit" name="preview" value="<?php echo $lang_post['Preview'] ?>" tabindex="<?php echo $cur_index++ ?>" accesskey="p" /> <a href="javascript:history.go(-1)"><?php echo $lang_common['Go back'] ?></a></p>
 		</form>
 	</div>

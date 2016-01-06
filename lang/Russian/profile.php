@@ -134,6 +134,7 @@ $lang_profile = array(
 'Delete posts'              =>  'Удалить все темы и сообщения пользователя.',
 'Delete'                    =>  'Удалить',       // submit button (confirm user delete)
 'User delete redirect'      =>  'Пользователь удален. Переадресация &hellip;',
+'User promote redirect'     =>  'Пользователь продвинут. Переадресация &hellip;',
 'Group membership redirect' =>  'Назначение группы сохранено. Переадресация &hellip;',
 'Update forums redirect'    =>  'Модераторство в форумах сохранено. Переадресация &hellip;',
 'Ban redirect'              =>  'Переадресация &hellip;',
