@@ -1,6 +1,6 @@
 # DISCLAIMER
 
-Russian Flux is not a fork of [fluxbb/fluxbb](https://github.com/fluxbb/fluxbb) because of it's Subversion history only.
+Russian Flux is not a fork of [fluxbb/fluxbb](https://github.com/fluxbb/fluxbb) because of its Subversion history only.
 
 Visit our [Russian Flux Community](http://fluxbb.org.ru/), we appreciate your help!
 
