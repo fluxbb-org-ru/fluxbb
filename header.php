@@ -148,6 +148,16 @@ function process_form(the_form)
 
 }
 
+if (in_array(basename($_SERVER['SCRIPT_NAME'], '.php'), array('viewtopic', 'post', 'edit')) &&
+    file_exists(PUN_ROOT.'style/'.$pun_user['style'].'/highlight.min.css'))
+{
+?>
+<link rel="stylesheet" href="style/<?php echo $pun_user['style'] ?>/highlight.min.css">
+<script src="js/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<?php
+}
+
 if (!empty($page_head))
 	echo implode("\n", $page_head)."\n";
 

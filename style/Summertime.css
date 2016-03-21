@@ -1588,8 +1588,9 @@ li.postreport a, li.postreport a:link, li.postreport a:visited {
 }
 
 .pun .codebox, #punhelp .codebox code {
-    background: #333;
-    color: #fff;
+    background: #f8f8f8;
+    color: #333;
+    border: 1px solid #dfe6ee;
 }
 
 .pun .postmsg hr {
