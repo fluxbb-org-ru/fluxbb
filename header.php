@@ -107,6 +107,21 @@ if (defined('PUN_ADMIN_CONSOLE'))
 		echo '<link rel="stylesheet" type="text/css" href="style/imports/base_admin.css" />'."\n";
 }
 
+if (in_array(basename($_SERVER['SCRIPT_NAME'], '.php'), array('viewtopic', 'post', 'edit', 'help')) &&
+    file_exists(PUN_ROOT.'style/'.$pun_user['style'].'/highlight.min.css'))
+{
+?>
+<link rel="stylesheet" href="style/<?php echo $pun_user['style'] ?>/highlight.min.css">
+<script type="text/javascript" src="<?php echo 'js/highlight.min.js' ?>"></script>
+<script type="text/javascript">
+/* <![CDATA[ */
+hljs.initHighlightingOnLoad();
+/* ]]> */
+</script>
+
+<?php
+}
+
 if (isset($required_fields))
 {
 	// Output JavaScript to validate form (make sure required fields are filled out)
@@ -151,6 +166,7 @@ function process_form(the_form)
 if (in_array(basename($_SERVER['SCRIPT_NAME'], '.php'), array('viewtopic', 'post', 'edit')) &&
     file_exists(PUN_ROOT.'style/'.$pun_user['style'].'/highlight.min.css'))
 {
+	header("Content-Security-Policy:\n default-src 'self';\n script-src 'unsafe-eval' 'self' 'nonce-Nc3n83cnSAd3wc3Sasdfn939hc3'");
 ?>
 <link rel="stylesheet" href="style/<?php echo $pun_user['style'] ?>/highlight.min.css">
 <script src="js/highlight.min.js"></script>
