@@ -1587,7 +1587,7 @@ li.postreport a, li.postreport a:link, li.postreport a:visited {
     color: #827135;
 }
 
-.pun .codebox, #punhelp .codebox code {
+.pun .codebox {
     background: #f8f8f8;
     color: #333;
     border: 1px solid #dfe6ee;
