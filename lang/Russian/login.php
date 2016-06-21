@@ -1,9 +1,11 @@
 <?php
 
-// Language definitions used in delete.php
+// Language definitions used in login.php
 $lang_login = array(
 
 // Miscellaneous
+'Login errors'		=>	'Ошибка входа',
+'Login errors info'	=>	'Следующие ошибки необходимо исправить чтобы войти:',
 'Wrong user/pass'           =>  'Неверное имя и/или пароль.',
 'Forgotten pass'            =>  'Забыли пароль?',
 'Login redirect'            =>  'Успешный вход. Переадресация &hellip;',
